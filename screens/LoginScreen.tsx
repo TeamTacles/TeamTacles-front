@@ -4,12 +4,18 @@ import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
 import { Hyperlink } from "../components/Hyperlink";
+import { useNavigation } from '@react-navigation/native';
 import { View, StyleSheet, Image, Text, Alert } from "react-native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../types/Navigation";
 
 const logo = require('../assets/logo.png');
 
+type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
 
 export const LoginScreen = () => {
+    const navigation = useNavigation<LoginScreenNavigationProp>();
+
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
@@ -19,6 +25,10 @@ export const LoginScreen = () => {
             return;
         }
         Alert.alert('Sucesso!', `Login com usuário: ${username}`);
+    };
+
+    const goToRegister = () => {
+        navigation.navigate('Register');
     };
 
     return (
@@ -49,7 +59,7 @@ export const LoginScreen = () => {
 
                 <Hyperlink
                     label="Realizar cadastro"
-                    onPress={() => Alert.alert('Cadastro', 'Funcionalidade em desenvolvimento.')} /> {/* redirecionar p tela de cadastro */}
+                    onPress={goToRegister} />
             </FormCard>
         </View>
     );
@@ -61,6 +71,7 @@ const style = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
+        backgroundColor: '#2A2A2A',
     },
     logo: {
         width: 130,
