@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
     containerCard: {
         margin: 'auto',
         paddingTop: 60,
-        paddingBottom: 60,
+        paddingBottom: 40,
         paddingLeft: 20,
         paddingRight: 20,
         borderRadius: 10,

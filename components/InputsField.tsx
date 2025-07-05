@@ -25,7 +25,8 @@ export const InputsField = ({ label, placeholder, value, onChangeText }: InputFi
 
 const styles = StyleSheet.create({
     inputContainer: {
-        marginBottom: 20,
+        marginBottom: 5,
+        marginTop: 20,
         maxWidth: '100%',
     },
     label: {

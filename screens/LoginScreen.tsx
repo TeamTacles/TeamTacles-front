@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
-import { Alert, View } from "react-native";
-import { StyleSheet, Image, Text } from "react-native";
+import { Hyperlink } from "../components/Hyperlink";
+import { View, StyleSheet, Image, Text, Alert } from "react-native";
 
 const logo = require('../assets/logo.png');
 
@@ -40,7 +40,16 @@ export const LoginScreen = () => {
                     value=""
                     onChangeText={setPassword}
                 />
+                <View style={{ width: '100%', alignItems: 'flex-end' }}>
+                    <Hyperlink
+                        label="Esqueci minha senha"
+                        onPress={() => Alert.alert('Recuperação de senha', 'Funcionalidade em desenvolvimento.')} /> {/* redirecionar p tela de recuperação */}
+                </View>
                 <MainButton title="Mergulhar" onPress={handleLogin} />
+
+                <Hyperlink
+                    label="Realizar cadastro"
+                    onPress={() => Alert.alert('Cadastro', 'Funcionalidade em desenvolvimento.')} /> {/* redirecionar p tela de cadastro */}
             </FormCard>
         </View>
     );
@@ -62,7 +71,7 @@ const style = StyleSheet.create({
     introductionText: {
         color: '#ffffff',
         fontSize: 18,
-        marginBottom: 40,
+        marginBottom: 20,
         textAlign: 'center',
     },
 
