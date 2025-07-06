@@ -4,6 +4,7 @@ import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, StyleSheet, Image, Text, Alert } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/Navigation";
@@ -25,7 +26,7 @@ export const ProjectForm = () => {
             return;
         }
         Alert.alert('Sucesso!', `Projeto criado: ${projectName}`);
-        navigation.navigate('Menu');
+        navigation.goBack();
     };
 
     const userWithAvatar = {
@@ -46,11 +47,11 @@ export const ProjectForm = () => {
     };
 
     const closeForm = () => {
-        navigation.navigate('Menu');
+        navigation.goBack();
     };
 
     return (
-        <View style={styles.ProjectFormScreen}>
+        <SafeAreaView style={styles.ProjectFormScreen}>
             <Header
                 userProfile={userWithAvatar}
                 onPressProfile={handleProfilePress}
@@ -84,7 +85,7 @@ export const ProjectForm = () => {
                 />
                 <MainButton title="Despertar o polvo" onPress={handleCreateProject} />
             </FormCard>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -94,7 +95,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
-        backgroundColor: '#2A2A2A',
+        backgroundColor: '#191919',
     },
     title: {
         fontSize: 24,

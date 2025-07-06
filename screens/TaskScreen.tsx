@@ -5,9 +5,19 @@ import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
 import { NewItemButton } from "../components/NewItemButton";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useNavigation } from "@react-navigation/native";
+import { CompositeScreenProps } from '@react-navigation/native';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 
-export const TaskScreen = () => {
+type TaskScreenNavigationProp  = CompositeScreenProps<
+  BottomTabScreenProps<RootTabParamList, 'Tarefas'>, 
+  NativeStackScreenProps<RootStackParamList>
+>;
 
+export const TaskScreen = ({ navigation }: TaskScreenNavigationProp ) => {
     const userWithAvatar = {
         avatarUrl: '../assets/profileIcon.png',
         initials: 'CD', 
@@ -24,6 +34,10 @@ export const TaskScreen = () => {
     const handleNotificationsPress = () => {
         Alert.alert("Notificações Clicadas!");
     };
+
+    const handleNewTask = () => {
+        navigation.navigate('TaskForm');
+    }
 
     return (
         <SafeAreaView style={ styles.safeAreaView }>
@@ -44,7 +58,7 @@ export const TaskScreen = () => {
             </View>
             <View style={ styles.addButtonContainer }>
                 <NewItemButton 
-                    onPress={handleProfilePress}
+                    onPress={handleNewTask}
                 />
             </View>
         </SafeAreaView>

@@ -5,15 +5,17 @@ import { View, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
 import { NewItemButton } from "../components/NewItemButton";
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../types/Navigation";
+import { CompositeScreenProps, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList, RootTabParamList } from "../types/Navigation";
+import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 
-type ProjectScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProjectForm'>;
+type ProjectScreenNavigationProp  = CompositeScreenProps<
+  BottomTabScreenProps<RootTabParamList, 'Projetos'>, 
+  NativeStackScreenProps<RootStackParamList>
+>;
 
-export const ProjectScreen = () => {
-    const navigation = useNavigation<ProjectScreenNavigationProp>();
-
+export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
     const userWithAvatar = {
         avatarUrl: '../assets/profileIcon.png',
         initials: 'CD', 

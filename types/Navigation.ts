@@ -5,3 +5,10 @@ export type RootStackParamList = {
     ProjectForm: undefined;
     TaskForm: undefined;
 };
+
+export type RootTabParamList = {
+    Projetos: undefined;
+    Tarefas: undefined;
+    Equipe: undefined;
+    Configurações: undefined;
+};

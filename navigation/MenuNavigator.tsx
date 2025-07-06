@@ -9,8 +9,9 @@ import { InProgressScreen } from '../screens/InProgressScreen';
 import { TaskScreen } from '../screens/TaskScreen'; 
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
+import { RootTabParamList } from '../types/Navigation';
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
 // Aqui exportamos o Menu. Ele não é um componente que incluímos em cada página, na verdade, ele age como um HUB que permite navegar por diferentes telas. Por isso, no App.tsx, importamos apenas ele, porque ele orquestra a movimentação das telas sozinho.
 export const MenuNavigator = () => {

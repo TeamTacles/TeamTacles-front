@@ -4,6 +4,7 @@ import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
 import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, StyleSheet, Pressable, Text, Alert, Platform } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/Navigation";
@@ -29,7 +30,7 @@ export const TaskForm = () => {
             return;
         }
         Alert.alert('Sucesso!', `Tarefa criada: ${taskName}`);
-        navigation.navigate('Menu');
+        navigation.goBack();
     };
 
     const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
@@ -62,11 +63,11 @@ export const TaskForm = () => {
     };
 
     const closeForm = () => {
-        navigation.navigate('Menu');
+        navigation.goBack();
     };
 
     return (
-        <View style={styles.taskFormScreen}>
+        <SafeAreaView style={styles.taskFormScreen}>
             <Header
                 userProfile={userWithAvatar}
                 onPressProfile={handleProfilePress}
@@ -119,7 +120,7 @@ export const TaskForm = () => {
                 />
                 <MainButton title="Soltar um Tentáculo" onPress={handleCreateTask} />
             </FormCard>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -129,7 +130,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
-        backgroundColor: '#2A2A2A',
+        backgroundColor: '#191919',
     },
     title: {
         fontSize: 24,
