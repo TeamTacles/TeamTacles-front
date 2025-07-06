@@ -21,7 +21,6 @@ const styles = StyleSheet.create({
     hyperlinkContainer: {
         marginTop: 10,
         alignItems: 'center',
-        marginBottom: 20,
     },
     hyperlinkText: {
         color: '#A9D6C6',

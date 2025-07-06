@@ -7,7 +7,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ProjectScreen } from '../screens/ProjectScreen';
 import { InProgressScreen } from '../screens/InProgressScreen';
 import { TaskScreen } from '../screens/TaskScreen'; 
-import { Ionicons } from '@expo/vector-icons'; // Ícones
+import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
 
 const Tab = createBottomTabNavigator();

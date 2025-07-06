@@ -17,7 +17,7 @@ export const FormCard = ({ children }: FormCardProps) => {
 const styles = StyleSheet.create({
     containerCard: {
         margin: 'auto',
-        paddingTop: 60,
+        paddingTop: 40,
         paddingBottom: 40,
         paddingLeft: 20,
         paddingRight: 20,

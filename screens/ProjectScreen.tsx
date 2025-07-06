@@ -1,10 +1,8 @@
 import React, { useState } from "react";
 
 import { Header } from "../components/Header";
-import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { View, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { RootStackParamList } from "../types/Navigation";
 import { SearchBar } from "../components/SearchBar";
 
 export const ProjectScreen = () => {

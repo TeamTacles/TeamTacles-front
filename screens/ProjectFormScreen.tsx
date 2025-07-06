@@ -1,0 +1,105 @@
+import React, { useState } from "react";
+
+import { MainButton } from "../components/MainButton";
+import { InputsField } from "../components/InputsField";
+import { FormCard } from "../components/FormCard";
+import { useNavigation } from '@react-navigation/native';
+import { View, StyleSheet, Image, Text, Alert } from "react-native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../types/Navigation";
+import { Header } from "../components/Header";
+import Icon from 'react-native-vector-icons/Ionicons';
+
+type ProjectFormNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProjectForm'>;
+
+export const ProjectForm = () => {
+    const navigation = useNavigation<ProjectFormNavigationProp>();
+
+    const [projectName, setProjectName] = useState('');
+    const [projectDescription, setProjectDescription] = useState('');
+    const [teamMember, setTeamMember] = useState('');
+
+    const handleCreateProject = () => {
+        if (!projectName || !teamMember) {
+            Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
+            return;
+        }
+        Alert.alert('Sucesso!', `Projeto criado: ${projectName}`);
+        navigation.navigate('Menu');
+    };
+
+    const userWithAvatar = {
+        avatarUrl: '../assets/profileIcon.png',
+        initials: 'CD', 
+    };
+    
+    const userWithInitials = {
+        initials: 'CD', 
+    };
+    
+    const handleProfilePress = () => {
+        Alert.alert("Perfil Clicado!");
+    };
+    
+    const handleNotificationsPress = () => {
+        Alert.alert("Notificações Clicadas!");
+    };
+
+    const closeForm = () => {
+        navigation.navigate('Menu');
+    };
+
+    return (
+        <View style={styles.ProjectFormScreen}>
+            <Header
+                userProfile={userWithAvatar}
+                onPressProfile={handleProfilePress}
+                notificationCount={7}
+                onPressNotifications={handleNotificationsPress}
+            />
+            <FormCard>
+                <Icon 
+                    name="close-outline" size={40} color="#fff" 
+                    style={{ marginBottom: 20, alignSelf: 'flex-end' }}
+                    onPress={closeForm} />
+                <Text style={styles.title}>Criar um Projeto</Text>
+                <InputsField
+                    label="Título: *"
+                    placeholder="Escreva um título para o projeto"
+                    value={projectName}
+                    onChangeText={setProjectName}
+                />
+                <InputsField
+                    label="Descrição:"
+                    placeholder="Escreva uma breve descrição"
+                    value={projectDescription}
+                    onChangeText={setProjectDescription}
+                    maxLength={50}
+                /> 
+                <InputsField
+                    label="Time: *"
+                    placeholder="Digite o nome de usuário ou email"
+                    value={teamMember}
+                    onChangeText={setTeamMember}
+                />
+                <MainButton title="Despertar o polvo" onPress={handleCreateProject} />
+            </FormCard>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    ProjectFormScreen: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: '100%',
+        backgroundColor: '#2A2A2A',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        color: '#BC6135',
+    },
+});

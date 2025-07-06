@@ -6,7 +6,7 @@ interface InputFieldProps extends TextInputProps {
     label: string;
 }
 
-export const InputsField = ({ label, secureTextEntry, ...rest }: InputFieldProps) => {
+export const InputsField = ({ label, secureTextEntry, maxLength, value, ...rest }: InputFieldProps) => {
     const [isPasswordVisible, setPasswordVisible] = useState(false);
 
     const togglePasswordVisibility = () => {
@@ -35,6 +35,13 @@ export const InputsField = ({ label, secureTextEntry, ...rest }: InputFieldProps
                         />
                     </TouchableOpacity>
                 )}
+
+                {maxLength && (
+                    <Text style={styles.charCounter}>
+                        {value?.length || 0} / {maxLength}
+                    </Text>
+                )}
+
             </View>
         </View>
     );
@@ -69,5 +76,9 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         padding: 10,
+    },
+    charCounter: {
+        fontSize: 12,
+        color: '#808080',
     },
 });
