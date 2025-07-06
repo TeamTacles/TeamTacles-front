@@ -24,11 +24,15 @@ export const LoginScreen = () => {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.');
             return;
         }
-        Alert.alert('Sucesso!', `Login com usuário: ${username}`);
+        goToMainPage();
     };
 
     const goToRegister = () => {
         navigation.navigate('Register');
+    };
+
+    const goToMainPage = () => {
+        navigation.navigate('Menu');
     };
 
     return (
