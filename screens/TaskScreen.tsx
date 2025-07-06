@@ -4,6 +4,7 @@ import { Header } from "../components/Header";
 import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
+import { NewItemButton } from "../components/NewItemButton";
 
 export const TaskScreen = () => {
 
@@ -25,7 +26,7 @@ export const TaskScreen = () => {
     };
 
     return (
-        <SafeAreaView style={ style.safeAreaView }>
+        <SafeAreaView style={ styles.safeAreaView }>
             <Header
                 userProfile={userWithAvatar}
                 onPressProfile={handleProfilePress}
@@ -41,13 +42,23 @@ export const TaskScreen = () => {
                     // onSearch={}
                 />
             </View>
+            <View style={ styles.addButtonContainer }>
+                <NewItemButton 
+                    onPress={handleProfilePress}
+                />
+            </View>
         </SafeAreaView>
     );
 };
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
     safeAreaView: {
         flex: 1, 
         backgroundColor: '#191919'
+    }, 
+    addButtonContainer: {
+        position: 'absolute', 
+        right: 25,           
+        bottom: 25,          
     },
 });

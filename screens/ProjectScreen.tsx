@@ -4,6 +4,7 @@ import { Header } from "../components/Header";
 import { View, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
+import { NewItemButton } from "../components/NewItemButton";
 
 export const ProjectScreen = () => {
 
@@ -25,29 +26,37 @@ export const ProjectScreen = () => {
     };
 
     return (
-        <SafeAreaView style={ style.safeAreaView }>
+        <SafeAreaView style={ styles.container }>
             <Header
                 userProfile={userWithAvatar}
                 onPressProfile={handleProfilePress}
                 notificationCount={7}
                 onPressNotifications={handleNotificationsPress}
             />
-            <View>
-                <SearchBar 
-                    title="Seus Terrtórios"
-                    placeholder="Pesquisar Projetos"
-                    // value=""
-                    // onChangeText={}
-                    // onSearch={}
+            <SearchBar 
+                title="Seus Territórios"
+                placeholder="Pesquisar Projetos"
+                // value=""
+                // onChangeText={}
+                // onSearch={}
+            />
+            <View style={ styles.addButtonContainer }>
+                <NewItemButton 
+                    onPress={handleProfilePress}
                 />
             </View>
         </SafeAreaView>
     );
 };
 
-const style = StyleSheet.create({
-    safeAreaView: {
+const styles = StyleSheet.create({
+    container: {
         flex: 1, 
         backgroundColor: '#191919'
+    },
+    addButtonContainer: {
+        position: 'absolute', 
+        right: 25,           
+        bottom: 25,          
     },
 });
