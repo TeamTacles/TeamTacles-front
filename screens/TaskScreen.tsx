@@ -45,6 +45,8 @@ export const TaskScreen = () => {
     );
 };
 
+
+
 const style = StyleSheet.create({
     safeAreaView: {
         flex: 1, 

@@ -1,19 +1,19 @@
 import React from "react";
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
-interface MainBottonProps {
+interface MainButtonProps {
     title: string;
     onPress: () => void;
 }
 
-export const MainButton = ({ title, onPress }: MainBottonProps) => {
+export const MainButton = ({ title, onPress }: MainButtonProps) => {
     return (
-        <View style={styles.buttonContainer}>
-            <Text style={styles.buttonText} onPress={onPress}>
+        <TouchableOpacity style={styles.buttonContainer} onPress={onPress}>
+            <Text style={styles.buttonText}>
                 {title}
             </Text>
-        </View>
+        </TouchableOpacity>
     );
 }
 

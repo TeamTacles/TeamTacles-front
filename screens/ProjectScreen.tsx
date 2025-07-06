@@ -5,6 +5,7 @@ import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from "../types/Navigation";
+import { SearchBar } from "../components/SearchBar";
 
 export const ProjectScreen = () => {
 
@@ -33,6 +34,15 @@ export const ProjectScreen = () => {
                 notificationCount={7}
                 onPressNotifications={handleNotificationsPress}
             />
+            <View>
+                <SearchBar 
+                    title="Seus Terrtórios"
+                    placeholder="Pesquisar Projetos"
+                    // value=""
+                    // onChangeText={}
+                    // onSearch={}
+                />
+            </View>
         </SafeAreaView>
     );
 };
