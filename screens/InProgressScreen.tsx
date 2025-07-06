@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 
 import { Header } from "../components/Header";
-import { SearchBar } from "../components/SearchBar";
 import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-export const ProjectScreen = () => {
+const mascot = require('../assets/mascot.png')
+
+export const InProgressScreen = () => {
 
     const userWithAvatar = {
         avatarUrl: '../assets/profileIcon.png',
@@ -25,29 +26,42 @@ export const ProjectScreen = () => {
     };
 
     return (
-        <SafeAreaView style={ style.safeAreaView }>
+        <SafeAreaView style={ styles.safeAreaView }>
             <Header
                 userProfile={userWithAvatar}
                 onPressProfile={handleProfilePress}
                 notificationCount={7}
                 onPressNotifications={handleNotificationsPress}
             />
-            <View>
-                <SearchBar 
-                    title="Seus territórios"
-                    placeholder="Pesquisar Projetos"
-                    // value=""
-                    // onChangeText={}
-                    // onSearch={}
-                />
+            <View style={ styles.containerScreen }>
+                <Image source={ mascot } style={ styles.imagemMascot } />
+                <Text style={ styles.text }>Estamos trabalhando para tirar essa tela do fundo do mar!</Text>
             </View>
         </SafeAreaView>
     );
 };
 
-const style = StyleSheet.create({
+const styles = StyleSheet.create({
     safeAreaView: {
         flex: 1, 
-        backgroundColor: '#191919'
+        backgroundColor: '#191919',
     },
+    containerScreen: {
+        flex: 1, 
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20
+        
+
+    },
+    imagemMascot: {
+        width: 80,
+        height: 80,
+        marginBottom: 30
+    },
+    text: {
+        color: 'white',
+        fontSize: 20,
+        textAlign: 'center'
+    }
 });
