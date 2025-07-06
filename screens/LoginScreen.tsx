@@ -53,7 +53,7 @@ export const LoginScreen = () => {
                 <View style={{ width: '100%', alignItems: 'flex-end' }}>
                     <Hyperlink
                         label="Esqueci minha senha"
-                        onPress={() => Alert.alert('Recuperação de senha', 'Funcionalidade em desenvolvimento.')} /> {/* redirecionar p tela de recuperação */}
+                        onPress={() => Alert.alert('Recuperação de senha', 'Funcionalidade em desenvolvimento.')} /> 
                 </View>
                 <MainButton title="Mergulhar" onPress={handleLogin} />
 

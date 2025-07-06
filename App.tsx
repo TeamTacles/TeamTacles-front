@@ -6,7 +6,6 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { LoginScreen } from './screens/LoginScreen';
 import { RegisterScreen } from './screens/RegisterScreen';
-import { ProjectScreen } from './screens/ProjectScreen';
 import { RootStackParamList } from "./types/Navigation";
 import { MenuNavigator } from './navigation/MenuNavigator'; 
 
