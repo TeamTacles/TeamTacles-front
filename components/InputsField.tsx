@@ -1,24 +1,41 @@
-import React from "react";
+import React, { useState } from "react";
+import { View, Text, TextInput, StyleSheet, TextInputProps, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-
-interface InputFieldProps {
+interface InputFieldProps extends TextInputProps {
     label: string;
-    placeholder?: string;
-    value: string;
-    onChangeText: (text: string) => void;
 }
 
-export const InputsField = ({ label, placeholder, value, onChangeText }: InputFieldProps) => {
+export const InputsField = ({ label, secureTextEntry, ...rest }: InputFieldProps) => {
+    const [isPasswordVisible, setPasswordVisible] = useState(false);
+
+    const togglePasswordVisibility = () => {
+        setPasswordVisible(!isPasswordVisible);
+    };
+
     return (
         <View style={styles.inputContainer}>
             <Text style={styles.label}>{label}</Text>
-            <TextInput
-                style={styles.input}
-                placeholder={placeholder}
-                value={value}
-                onChangeText={onChangeText}
-            />
+            
+            <View style={styles.inputWrapper}>
+                <TextInput
+                    style={styles.input}
+                    secureTextEntry={secureTextEntry && !isPasswordVisible}
+                    placeholderTextColor="#A9A9A9"
+                    {...rest}
+                />
+                
+                {/* icone p ver senha - se tiver secureTextEntry */}
+                {secureTextEntry && (
+                    <TouchableOpacity onPress={togglePasswordVisibility} style={styles.iconContainer}>
+                        <Icon 
+                            name={isPasswordVisible ? "eye-off-outline" : "eye-outline"} 
+                            size={24} 
+                            color="#808080" 
+                        />
+                    </TouchableOpacity>
+                )}
+            </View>
         </View>
     );
 };
@@ -27,7 +44,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         marginBottom: 5,
         marginTop: 20,
-        maxWidth: '100%',
+        width: '100%',
     },
     label: {
         fontSize: 16,
@@ -35,14 +52,22 @@ const styles = StyleSheet.create({
         marginBottom: 5,
         alignSelf: 'flex-start',
     },
-    input: {
-        height: 40,
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
         borderColor: '#BC6135',
         borderWidth: 1,
         borderRadius: 8,
-        color: '#808080',
+        height: 45, 
+    },
+    input: {
+        flex: 1, 
+        height: '100%',
+        paddingHorizontal: 10,
+        color: '#333333',
+    },
+    iconContainer: {
         padding: 10,
-        width: '100%',
-        backgroundColor: '#fff'
     },
 });

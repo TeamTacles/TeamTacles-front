@@ -6,8 +6,6 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RootStackParamList } from "../types/Navigation";
 
-type MenuScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Menu'>;
-
 export const ProjectScreen = () => {
 
     const userWithAvatar = {

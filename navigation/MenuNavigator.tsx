@@ -5,6 +5,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { ProjectScreen } from '../screens/ProjectScreen';
+import { InProgressScreen } from '../screens/InProgressScreen';
 import { TaskScreen } from '../screens/TaskScreen'; 
 import { Ionicons } from '@expo/vector-icons'; // Ícones
 import { StyleSheet } from 'react-native';
@@ -46,8 +47,8 @@ export const MenuNavigator = () => {
         {/*Aqui definimos as telas que o MenuNavigator irá orquestrar*/}
         <Tab.Screen name="Projetos" component={ProjectScreen} />
         <Tab.Screen name="Tarefas" component={TaskScreen} />
-        <Tab.Screen name="Equipe" component={TaskScreen} />
-        <Tab.Screen name="Configurações" component={TaskScreen} />
+        <Tab.Screen name="Equipe" component={InProgressScreen} />
+        <Tab.Screen name="Configurações" component={InProgressScreen} />
     </Tab.Navigator>
   );
 };

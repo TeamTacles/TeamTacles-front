@@ -17,8 +17,8 @@ export const RegisterScreen = () => {
     const navigation = useNavigation<RegisterScreenNavigationProp>();
 
     const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
 
     const handleLogin = () => {
@@ -26,7 +26,11 @@ export const RegisterScreen = () => {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.');
             return;
         }
-        Alert.alert('Sucesso!', `Registro realizado com sucesso!`);
+        else if (password !== confirmPassword) {
+            Alert.alert('Erro', 'As senhas não coincidem.');
+            return;
+        }
+        Alert.alert('Sucesso!', 'Registro realizado com sucesso!');
     };
 
     const goToLogin = () => {
@@ -43,29 +47,31 @@ export const RegisterScreen = () => {
                 <InputsField
                     label="Usuário"
                     placeholder="👨‍🦲 Nome de Usuário"
-                    value=""
+                    value={username}
                     onChangeText={setUsername}
                 />
 
                 <InputsField
                     label="Email"
                     placeholder="@ Digite seu email"
-                    value=""
+                    value={email}
                     onChangeText={setEmail}
                 />
 
                 <InputsField
                     label="Senha"
                     placeholder="🔒 Digite a sua senha"
-                    value=""
+                    value={password}
                     onChangeText={setPassword}
+                    secureTextEntry={true}
                 />
 
                 <InputsField
                     label="Confirmar Senha"
                     placeholder="🔒 Confirme sua senha"
-                    value=""
+                    value={confirmPassword}
                     onChangeText={setConfirmPassword}
+                    secureTextEntry={true}
                 />
 
                 <MainButton title="Entrar no Mar" onPress={handleLogin} />

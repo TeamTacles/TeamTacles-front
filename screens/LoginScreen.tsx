@@ -41,14 +41,15 @@ export const LoginScreen = () => {
                 <InputsField
                     label="Usuário ou Email"
                     placeholder="👨‍🦲 Digite seu usuário ou email"
-                    value=""
+                    value={username}
                     onChangeText={setUsername}
                 />
                 <InputsField
                     label="Senha"
                     placeholder="🔒 Digite a sua senha"
-                    value=""
+                    value={password}
                     onChangeText={setPassword}
+                    secureTextEntry={true}
                 />
                 <View style={{ width: '100%', alignItems: 'flex-end' }}>
                     <Hyperlink
