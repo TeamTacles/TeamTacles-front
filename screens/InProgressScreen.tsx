@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 
 import { Header } from "../components/Header";
-import { View, StyleSheet, Image, Text, Alert } from "react-native";
+import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-//const mascot = require('../assets/mascot.png');
+const mascot = require('../assets/mascot.png')
 
 export const InProgressScreen = () => {
 
@@ -34,7 +34,7 @@ export const InProgressScreen = () => {
                 onPressNotifications={handleNotificationsPress}
             />
             <View style={ styles.containerScreen }>
-                {/* <Image source={ mascot } style={ styles.imagemMascot } /> */}
+                <Image source={ mascot } style={ styles.imagemMascot } />
                 <Text style={ styles.text }>Estamos trabalhando para tirar essa tela do fundo do mar!</Text>
             </View>
         </SafeAreaView>

@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Header } from "../components/Header";
 import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { SearchBar } from "../components/SearchBar";
 
 export const TaskScreen = () => {
 
@@ -31,6 +32,15 @@ export const TaskScreen = () => {
                 notificationCount={7}
                 onPressNotifications={handleNotificationsPress}
             />
+            <View>
+                <SearchBar 
+                    title="Suas tarefas"
+                    placeholder="Pesquisar Tarefas"
+                    // value=""
+                    // onChangeText={}
+                    // onSearch={}
+                />
+            </View>
         </SafeAreaView>
     );
 };
