@@ -11,6 +11,7 @@ import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { ProjectCard } from "../components/ProjectCard";
 import { getInitialsFromArray } from "../utils/stringUtils"; 
 import { EmptyState } from '../components/EmptyState'; 
+import { ProjectType } from "../types/ProjectType";
 
 const polvo_pescando = require('../assets/polvo_pescando.png');
 
@@ -20,7 +21,7 @@ type ProjectScreenNavigationProp  = CompositeScreenProps<
 >;
 
 export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
-    const [projects, setProjects] = useState<any[]>([]);
+    const [projects, setProjects] = useState<ProjectType[]>([]);
     const [search, setSearch] = useState('');
 
     const userWithAvatar = {
@@ -41,10 +42,11 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
     };
 
     const handleAddProject = (newProjectData: { title: string; description: string; teamMembers: string[] }) => {
+        const now = Date.now();
         const newProject = {
-            id: String(Date.now()), // Gera um ID único baseado no tempo atual
+            id: String(now), // Gera um ID único baseado no tempo atual
             ...newProjectData,
-            lastUpdated: 'agora', 
+            lastUpdated: now, 
         };
         setProjects(currentProjects => [newProject, ...currentProjects]); // aqui adiciona o novo projeto no início da lista
     };
@@ -73,10 +75,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <ProjectCard
-                        title={item.title}
-                        description={item.description}
-                        lastUpdated={item.lastUpdated}
-                        teamMembers={item.teamMembers}
+                        project={item}
                         onPress={() => Alert.alert('Navegar para', item.title)}
                     />
                 )}

@@ -1,20 +1,19 @@
 import React from "react";
 import { BaseCard } from "./BaseCard"; 
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import TimeAgo from "./TimeAgo"; 
+import { ProjectType } from "../types/ProjectType"; 
 
 import { View, Text, StyleSheet } from 'react-native';
 
-interface ProjectCardProps {
-    title: string;
-    description: string;
-    lastUpdated: string;
-    teamMembers: string[];
+type ProjectCardProps = {
+    project: ProjectType;
     onPress: () => void;
 }
 
+export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
+    const { title, description, lastUpdated, teamMembers } = project;
 
-export const ProjectCard = ({ title, description, lastUpdated, teamMembers, onPress }: ProjectCardProps) => {
     return (
         <BaseCard onPress={onPress}>
             <View style={styles.contentContainer}>
@@ -28,7 +27,7 @@ export const ProjectCard = ({ title, description, lastUpdated, teamMembers, onPr
                 <View style={styles.footer}>
                     <View style={styles.updateInfo}>
                         <Icon name="time-outline" size={14} color="#A9A9A9" />
-                        <Text style={styles.updateText}>Atualizado há {lastUpdated}</Text>
+                        <Text style={styles.updateText}>Atualizado <TimeAgo timestamp={lastUpdated} /></Text>
                     </View>
                     <View style={styles.teamContainer}>
                         {teamMembers.map((member, index) => (
@@ -78,7 +77,7 @@ const styles = StyleSheet.create({
     teamContainer: {
         flexDirection: 'row-reverse',
         paddingLeft: 30, // Espaço para os avatares sobrepostos
-        paddingRight: 10// Espaço para o último avatar
+        paddingRight: 10 // Espaço para o último avatar
     },
     avatar: {
         width: 30,
