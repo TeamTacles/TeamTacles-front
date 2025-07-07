@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Header } from "../components/Header";
-import { View, StyleSheet, Alert, FlatList } from "react-native";
+import { View, StyleSheet, Alert, FlatList, Text, Image } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
 import { NewItemButton } from "../components/NewItemButton";
@@ -9,6 +9,10 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { ProjectCard } from "../components/ProjectCard";
+const polvo_pescando = require('../assets/polvo_pescando.png');
+import { getInitialsFromArray } from "../utils/stringUtils"; 
+import { EmptyState } from '../components/EmptyState'; 
+
 
 
 type ProjectScreenNavigationProp  = CompositeScreenProps<
@@ -37,6 +41,8 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
     const handleNotificationsPress = () => {
         Alert.alert("Notificações Clicadas!");
     };
+
+   
 
     const handleAddProject = (newProjectData: { title: string; description: string; teamMembers: string[] }) => {
         const newProject = {
@@ -82,8 +88,14 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                     />
                 )}
                 contentContainerStyle={styles.listContainer}
+                ListEmptyComponent={
+                    <EmptyState
+                        imageSource={polvo_pescando}
+                        title="Nenhum Projeto Encontrado"
+                        subtitle="Clique em + para adicionar um novo projeto."
+                    />
+                }
             />
-            
             <View style={ styles.addButtonContainer }>
                 <NewItemButton 
                     onPress={handleNewProject}
@@ -100,11 +112,34 @@ const styles = StyleSheet.create({
         backgroundColor: '#191919'
     },
     listContainer: {
+        flexGrow: 1,
         paddingHorizontal: 15,
     },
     addButtonContainer: {
         position: 'absolute', 
         right: 25,           
         bottom: 25,          
+    },
+    emptyListContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    emptyImage: {
+        width: 120,
+        height: 120,
+        marginBottom: 20,
+    },
+    emptyText: {
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+        textAlign: 'center',
+    },
+    emptySubText: {
+        color: '#A9A9A9',
+        fontSize: 16,
+        marginTop: 8,
+        textAlign: 'center',
     },
 });
