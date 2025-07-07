@@ -10,11 +10,18 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/Navigation";
 import { Header } from "../components/Header";
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useRoute } from '@react-navigation/native';
+import { getInitialsFromArray } from "../utils/stringUtils";
+
 
 type ProjectFormNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProjectForm'>;
 
 export const ProjectForm = () => {
     const navigation = useNavigation<ProjectFormNavigationProp>();
+    const route = useRoute();
+
+
+    const { onAddProject } = route.params as { onAddProject: (project: any) => void };
 
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState('');
@@ -25,6 +32,12 @@ export const ProjectForm = () => {
             Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
             return;
         }
+
+        onAddProject({
+            title: projectName,
+            description: projectDescription,
+            teamMembers: getInitialsFromArray(teamMember)
+        });
         Alert.alert('Sucesso!', `Projeto criado: ${projectName}`);
         navigation.goBack();
     };
