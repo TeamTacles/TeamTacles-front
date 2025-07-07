@@ -6,8 +6,10 @@ interface InputFieldProps extends TextInputProps {
     label: string;
 }
 
-export const InputsField = ({ label, secureTextEntry, maxLength, value, ...rest }: InputFieldProps) => {
+export const InputsField = ({ label, secureTextEntry, maxLength, value, multiline, numberOfLines, ...rest }: InputFieldProps) => {
     const [isPasswordVisible, setPasswordVisible] = useState(false);
+
+    const [inputHeight, setInputHeight] = useState(45); // altura inicial padrão
 
     const togglePasswordVisibility = () => {
         setPasswordVisible(!isPasswordVisible);
@@ -19,9 +21,16 @@ export const InputsField = ({ label, secureTextEntry, maxLength, value, ...rest 
             
             <View style={styles.inputWrapper}>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, multiline && styles.textarea]}
+                    value={value}
+                    maxLength={maxLength}
                     secureTextEntry={secureTextEntry && !isPasswordVisible}
                     placeholderTextColor="#A9A9A9"
+                    multiline={multiline}
+                    numberOfLines={numberOfLines}
+                    onContentSizeChange={(event) =>
+                        setInputHeight(event.nativeEvent.contentSize.height + 10) // adiciona um padding extra
+                    }
                     {...rest}
                 />
                 
@@ -38,7 +47,7 @@ export const InputsField = ({ label, secureTextEntry, maxLength, value, ...rest 
 
                 {maxLength && (
                     <Text style={styles.charCounter}>
-                        {value?.length || 0} / {maxLength}
+                        {String(value).length || 0} / {maxLength}
                     </Text>
                 )}
 
@@ -80,5 +89,8 @@ const styles = StyleSheet.create({
     charCounter: {
         fontSize: 12,
         color: '#808080',
+    },
+    textarea: {
+        textAlignVertical: 'top',
     },
 });

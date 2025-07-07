@@ -5,7 +5,7 @@ import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, StyleSheet, Pressable, Text, Alert, Platform } from "react-native";
+import { View, StyleSheet, Pressable, Text, Alert, Platform, Button } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/Navigation";
 import { Header } from "../components/Header";
@@ -20,8 +20,9 @@ export const TaskForm = () => {
     const [taskName, setTaskName] = useState('');
     const [taskDescription, setTaskDescription] = useState('');
     const [teamMember, setTeamMember] = useState('');
+    const [dueDate, setDueDate] = useState('');
 
-    const [date, setDate] = useState<Date | undefined>(undefined);
+    const [date, setDate] = useState(new Date());
     const [showPicker, setShowPicker] = useState(false);
 
     const handleCreateTask = () => {
@@ -33,16 +34,35 @@ export const TaskForm = () => {
         navigation.goBack();
     };
 
-    const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        setShowPicker(false); 
-        if (event.type === 'set' && selectedDate) {
-            setDate(selectedDate);
+    const toggleDatePicker = () => {
+        setShowPicker(!showPicker);
+    };
+
+    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        const currentDate = selectedDate || date;
+
+        if (event.type === 'set') {
+            setDate(currentDate);
+            setDueDate(formatDate(currentDate));
+        }
+
+        if (Platform.OS === 'android') {
+            setShowPicker(false);
         }
     };
 
-    const formatDate = (date?: Date): string => {
-        if (!date) return '';
-        return date.toLocaleDateString();
+    // Função para confirmar a data no iOS
+    const confirmIOSDate = () => {
+        setDueDate(date.toLocaleDateString('pt-BR'));
+        setShowPicker(false);
+    };
+
+    const formatDate = (date: Date) => {
+        return date.toLocaleDateString('pt-BR', {
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+        });
     };
 
     const userWithAvatar = {
@@ -92,24 +112,37 @@ export const TaskForm = () => {
                     value={taskDescription}
                     onChangeText={setTaskDescription}
                     maxLength={255}
+                    multiline={true}
+                    numberOfLines={5}
                 /> 
 
-                <Pressable onPress={() => setShowPicker(true)}>
-                    <InputsField
-                        label="Prazo: *"
-                        placeholder="Selecione uma data"
-                        value={formatDate(date)}
-                        editable={false} // Impede digitação manual
-                    />
+                <Pressable onPress={toggleDatePicker}>
+                    <View pointerEvents="none"> 
+                        <InputsField
+                            label="Prazo: *"
+                            placeholder="Selecione uma data"
+                            value={dueDate}
+                            editable={false}
+                        />
+                    </View>
                 </Pressable>
 
                 {showPicker && (
                     <DateTimePicker
-                        value={date || new Date()}
                         mode="date"
                         display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                        onChange={handleDateChange}
+                        value={date}
+                        onChange={onDateChange}
+                        maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() + 1))}
+                        minimumDate={new Date()}
                     />
+                )}
+
+                {showPicker && Platform.OS === 'ios' && (
+                    <View style={styles.iosButtonContainer}>
+                        <Button title="Confirmar" onPress={confirmIOSDate} />
+                        <Button title="Cancelar" onPress={toggleDatePicker} />
+                    </View>
                 )}
 
                 <InputsField
@@ -138,4 +171,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         color: '#BC6135',
     },
+    iosButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+        marginTop: 10,
+    }
 });

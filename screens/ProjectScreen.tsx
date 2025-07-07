@@ -5,8 +5,8 @@ import { View, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
 import { NewItemButton } from "../components/NewItemButton";
-import { CompositeScreenProps, useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
+import { CompositeScreenProps } from '@react-navigation/native';
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 
