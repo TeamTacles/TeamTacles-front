@@ -5,7 +5,7 @@ import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState } from "../components/EmptyState";
 
-const mascot = require('../assets/mascot.png')
+const mascot_isEmpty = require('../assets/polvo_bau.png')
 
 export const InProgressScreen = () => {
 
@@ -35,9 +35,9 @@ export const InProgressScreen = () => {
                 onPressNotifications={handleNotificationsPress}
             />
             <EmptyState
-                imageSource={mascot}
-                title="Estamos à procura da tela!"
-                subtitle="Estamos trabalhando para tirar essa tela do fundo do mar!"
+                imageSource={mascot_isEmpty}
+                title="Estamos à procura do tesouro!"
+                subtitle="Estamos trabalhando para tirar esse baú do fundo do mar!"
             />
         </SafeAreaView>
     );
