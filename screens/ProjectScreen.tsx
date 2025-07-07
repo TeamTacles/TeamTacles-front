@@ -9,21 +9,19 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { ProjectCard } from "../components/ProjectCard";
-const polvo_pescando = require('../assets/polvo_pescando.png');
 import { getInitialsFromArray } from "../utils/stringUtils"; 
 import { EmptyState } from '../components/EmptyState'; 
 
-
+const polvo_pescando = require('../assets/polvo_pescando.png');
 
 type ProjectScreenNavigationProp  = CompositeScreenProps<
   BottomTabScreenProps<RootTabParamList, 'Projetos'>, 
   NativeStackScreenProps<RootStackParamList>
 >;
 
-
-
 export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
     const [projects, setProjects] = useState<any[]>([]);
+    const [search, setSearch] = useState('');
 
     const userWithAvatar = {
         avatarUrl: '../assets/profileIcon.png',
@@ -42,8 +40,6 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         Alert.alert("Notificações Clicadas!");
     };
 
-   
-
     const handleAddProject = (newProjectData: { title: string; description: string; teamMembers: string[] }) => {
         const newProject = {
             id: String(Date.now()), // Gera um ID único baseado no tempo atual
@@ -54,10 +50,10 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
     };
 
     const handleNewProject = () => {
-    navigation.navigate('ProjectForm', { onAddProject: handleAddProject });
-};
+        navigation.navigate('ProjectForm', { onAddProject: handleAddProject });
+    };
 
-    
+    const filteredProjects = projects.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
 
     return (
         <SafeAreaView style={ styles.container }>
@@ -70,13 +66,10 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
             <SearchBar 
                 title="Seus Territórios"
                 placeholder="Pesquisar Projetos"
-                // value=""
-                // onChangeText={}
-                // onSearch={}
+                onChangeText={setSearch}
             />
-
             <FlatList
-                data={projects}
+                data={filteredProjects}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <ProjectCard
@@ -104,7 +97,6 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         </SafeAreaView>
     );
 };
-
 
 const styles = StyleSheet.create({
     container: {

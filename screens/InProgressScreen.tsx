@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Header } from "../components/Header";
 import { View, StyleSheet, Image, Text, Alert, StatusBar } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { EmptyState } from "../components/EmptyState";
 
 const mascot = require('../assets/mascot.png')
 
@@ -33,10 +34,11 @@ export const InProgressScreen = () => {
                 notificationCount={7}
                 onPressNotifications={handleNotificationsPress}
             />
-            <View style={ styles.containerScreen }>
-                <Image source={ mascot } style={ styles.imagemMascot } />
-                <Text style={ styles.text }>Estamos trabalhando para tirar essa tela do fundo do mar!</Text>
-            </View>
+            <EmptyState
+                imageSource={mascot}
+                title="Estamos à procura da tela!"
+                subtitle="Estamos trabalhando para tirar essa tela do fundo do mar!"
+            />
         </SafeAreaView>
     );
 };
