@@ -31,6 +31,7 @@ export const RegisterScreen = () => {
             return;
         }
         Alert.alert('Sucesso!', 'Registro realizado com sucesso!');
+        navigation.navigate('Login');
     };
 
     const goToLogin = () => {
