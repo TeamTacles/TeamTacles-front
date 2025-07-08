@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Header } from "../components/Header";
 import { View, StyleSheet, Text, Alert, FlatList } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,8 +9,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { EmptyState } from '../components/EmptyState';
-import { useAppContext } from "../contexts/AppContext"; // Importe o hook
-import { TaskCard } from "../components/TaskCard"; // Importe o TaskCard
+import { useAppContext } from "../contexts/AppContext"; 
+import { TaskCard } from "../components/TaskCard"; 
 
 const polvo_tasks = require('../assets/polvo_tasks.png');
 
@@ -20,7 +20,8 @@ type TaskScreenNavigationProp = CompositeScreenProps<
 >;
 
 export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
-    const { tasks, projects } = useAppContext(); // Obtenha tasks e projects do contexto
+    const { tasks, projects } = useAppContext(); 
+    const [search, setSearch] = useState('');
 
     const userWithAvatar = {
         initials: 'CD',
@@ -35,7 +36,6 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
     };
 
     const handleNewTask = () => {
-        // Verifica se existe pelo menos um projeto antes de navegar
         if (projects.length === 0) {
             Alert.alert(
                 "Nenhum Projeto Encontrado",
@@ -45,6 +45,8 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
         }
         navigation.navigate('TaskForm');
     };
+
+    const filteredTasks = tasks.filter(t => t.title.toLowerCase().includes(search.toLowerCase()));
 
     return (
         <SafeAreaView style={styles.safeAreaView}>
@@ -57,9 +59,10 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
             <SearchBar
                 title="Suas tarefas"
                 placeholder="Pesquisar Tarefas"
+                onChangeText={setSearch}
             />
             <FlatList
-                data={tasks}
+                data={filteredTasks}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <TaskCard
