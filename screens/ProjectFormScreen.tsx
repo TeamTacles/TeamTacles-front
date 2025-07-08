@@ -1,27 +1,22 @@
 import React, { useState } from "react";
-
 import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, StyleSheet, Image, Text, Alert } from "react-native";
+import { View, StyleSheet, Text, Alert } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/Navigation";
 import { Header } from "../components/Header";
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useRoute } from '@react-navigation/native';
 import { getInitialsFromArray } from "../utils/stringUtils";
-
+import { useAppContext } from "../contexts/AppContext"; // Importe o hook do contexto
 
 type ProjectFormNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProjectForm'>;
 
 export const ProjectForm = () => {
     const navigation = useNavigation<ProjectFormNavigationProp>();
-    const route = useRoute();
-
-
-    const { onAddProject } = route.params as { onAddProject: (project: any) => void };
+    const { addProject } = useAppContext(); // Use o contexto para obter a função addProject
 
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState('');
@@ -33,12 +28,12 @@ export const ProjectForm = () => {
             return;
         }
 
-        onAddProject({
+        addProject({
             title: projectName,
             description: projectDescription,
             teamMembers: getInitialsFromArray(teamMember)
         });
-        Alert.alert('Sucesso!', `Projeto criado: ${projectName}`);
+        
         navigation.goBack();
     };
 
@@ -72,8 +67,8 @@ export const ProjectForm = () => {
                 onPressNotifications={handleNotificationsPress}
             />
             <FormCard>
-                <Icon 
-                    name="close-outline" size={40} color="#fff" 
+                <Icon
+                    name="close-outline" size={40} color="#fff"
                     style={{ marginBottom: 20, alignSelf: 'flex-end' }}
                     onPress={closeForm} />
                 <Text style={styles.title}>Criar um Projeto</Text>
@@ -89,10 +84,10 @@ export const ProjectForm = () => {
                     value={projectDescription}
                     onChangeText={setProjectDescription}
                     maxLength={50}
-                /> 
+                />
                 <InputsField
                     label="Time: *"
-                    placeholder="Digite o nome de usuário ou email"
+                    placeholder="Digite os nomes, separados por vírgula"
                     value={teamMember}
                     onChangeText={setTeamMember}
                 />

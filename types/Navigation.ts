@@ -2,9 +2,7 @@ export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
     Menu: undefined;
-    ProjectForm: {
-        onAddProject: (newProject: any) => void; 
-    };
+    ProjectForm: undefined;
     TaskForm: undefined;
 };
 

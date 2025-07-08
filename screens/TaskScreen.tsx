@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Header } from "../components/Header";
 import { View, StyleSheet, Text, Alert, FlatList } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +9,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { EmptyState } from '../components/EmptyState';
+import { useAppContext } from "../contexts/AppContext"; // Importe o hook
+import { TaskCard } from "../components/TaskCard"; // Importe o TaskCard
 
 const polvo_tasks = require('../assets/polvo_tasks.png');
 
@@ -18,7 +20,7 @@ type TaskScreenNavigationProp = CompositeScreenProps<
 >;
 
 export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
-    const [tasks, setTasks] = useState<any[]>([]);
+    const { tasks, projects } = useAppContext(); // Obtenha tasks e projects do contexto
 
     const userWithAvatar = {
         initials: 'CD',
@@ -33,6 +35,14 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
     };
 
     const handleNewTask = () => {
+        // Verifica se existe pelo menos um projeto antes de navegar
+        if (projects.length === 0) {
+            Alert.alert(
+                "Nenhum Projeto Encontrado",
+                "Você precisa criar um projeto antes de poder adicionar uma tarefa."
+            );
+            return;
+        }
         navigation.navigate('TaskForm');
     };
 
@@ -52,7 +62,12 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
                 data={tasks}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <View><Text style={{ color: 'white' }}>{item.title}</Text></View>
+                    <TaskCard
+                        title={item.title}
+                        projectName={item.projectName}
+                        dueDate={item.dueDate}
+                        onPress={() => Alert.alert("Detalhes da Tarefa", item.title)}
+                    />
                 )}
                 contentContainerStyle={styles.listContainer}
                 ListEmptyComponent={

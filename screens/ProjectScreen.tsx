@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Header } from "../components/Header";
-import { View, StyleSheet, Alert, FlatList, Text, Image } from "react-native";
+import { View, StyleSheet, Alert, FlatList } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
 import { NewItemButton } from "../components/NewItemButton";
@@ -9,28 +9,21 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { ProjectCard } from "../components/ProjectCard";
-import { getInitialsFromArray } from "../utils/stringUtils"; 
-import { EmptyState } from '../components/EmptyState'; 
-import { ProjectType } from "../types/ProjectType";
-
+import { EmptyState } from '../components/EmptyState';
+import { useAppContext } from "../contexts/AppContext"; 
 const polvo_pescando = require('../assets/polvo_pescando.png');
 
-type ProjectScreenNavigationProp  = CompositeScreenProps<
-  BottomTabScreenProps<RootTabParamList, 'Projetos'>, 
+type ProjectScreenNavigationProp = CompositeScreenProps<
+  BottomTabScreenProps<RootTabParamList, 'Projetos'>,
   NativeStackScreenProps<RootStackParamList>
 >;
 
 export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
-    const [projects, setProjects] = useState<ProjectType[]>([]);
+    const { projects } = useAppContext(); 
     const [search, setSearch] = useState('');
 
     const userWithAvatar = {
-        avatarUrl: '../assets/profileIcon.png',
-        initials: 'CD', 
-    };
-
-    const userWithInitials = {
-        initials: 'CD', 
+        initials: 'CD',
     };
 
     const handleProfilePress = () => {
@@ -40,32 +33,22 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
     const handleNotificationsPress = () => {
         Alert.alert("Notificações Clicadas!");
     };
-
-    const handleAddProject = (newProjectData: { title: string; description: string; teamMembers: string[] }) => {
-        const now = Date.now();
-        const newProject = {
-            id: String(now), // Gera um ID único baseado no tempo atual
-            ...newProjectData,
-            lastUpdated: now, 
-        };
-        setProjects(currentProjects => [newProject, ...currentProjects]); // aqui adiciona o novo projeto no início da lista
-    };
-
+    
     const handleNewProject = () => {
-        navigation.navigate('ProjectForm', { onAddProject: handleAddProject });
+        navigation.navigate('ProjectForm'); 
     };
 
     const filteredProjects = projects.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
 
     return (
-        <SafeAreaView style={ styles.container }>
+        <SafeAreaView style={styles.container}>
             <Header
                 userProfile={userWithAvatar}
                 onPressProfile={handleProfilePress}
                 notificationCount={7}
                 onPressNotifications={handleNotificationsPress}
             />
-            <SearchBar 
+            <SearchBar
                 title="Seus Territórios"
                 placeholder="Pesquisar Projetos"
                 onChangeText={setSearch}
@@ -75,7 +58,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
                     <ProjectCard
-                        project={item}
+                        project={item} 
                         onPress={() => Alert.alert('Navegar para', item.title)}
                     />
                 )}
@@ -88,8 +71,8 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                     />
                 }
             />
-            <View style={ styles.addButtonContainer }>
-                <NewItemButton 
+            <View style={styles.addButtonContainer}>
+                <NewItemButton
                     onPress={handleNewProject}
                 />
             </View>
@@ -99,7 +82,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1, 
+        flex: 1,
         backgroundColor: '#191919'
     },
     listContainer: {
@@ -107,30 +90,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
     },
     addButtonContainer: {
-        position: 'absolute', 
-        right: 25,           
-        bottom: 25,          
-    },
-    emptyListContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    emptyImage: {
-        width: 120,
-        height: 120,
-        marginBottom: 20,
-    },
-    emptyText: {
-        color: '#fff',
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    emptySubText: {
-        color: '#A9A9A9',
-        fontSize: 16,
-        marginTop: 8,
-        textAlign: 'center',
+        position: 'absolute',
+        right: 25,
+        bottom: 25,
     },
 });
