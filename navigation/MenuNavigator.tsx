@@ -1,6 +1,3 @@
-
-// Esse Menu o professor ia passar na próxima aula, mas ele não passou. Tomei a liberdade de pesquisar e colocar aqui :)
-
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
@@ -13,12 +10,10 @@ import { RootTabParamList } from '../types/Navigation';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-// Aqui exportamos o Menu. Ele não é um componente que incluímos em cada página, na verdade, ele age como um HUB que permite navegar por diferentes telas. Por isso, no App.tsx, importamos apenas ele, porque ele orquestra a movimentação das telas sozinho.
 export const MenuNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        // Personalizações
         headerShown: false,
         tabBarActiveTintColor: '#EB5F1C', 
         tabBarInactiveTintColor: 'gray',
@@ -45,7 +40,6 @@ export const MenuNavigator = () => {
         tabBarStyle: styles.tabBar,
       })}
     >
-        {/*Aqui definimos as telas que o MenuNavigator irá orquestrar*/}
         <Tab.Screen name="Projetos" component={ProjectScreen} />
         <Tab.Screen name="Tarefas" component={TaskScreen} />
         <Tab.Screen name="Equipe" component={InProgressScreen} />

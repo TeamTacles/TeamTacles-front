@@ -10,13 +10,13 @@ import { RootStackParamList } from "../types/Navigation";
 import { Header } from "../components/Header";
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getInitialsFromArray } from "../utils/stringUtils";
-import { useAppContext } from "../contexts/AppContext"; // Importe o hook do contexto
+import { useAppContext } from "../contexts/AppContext";
 
 type ProjectFormNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProjectForm'>;
 
 export const ProjectForm = () => {
     const navigation = useNavigation<ProjectFormNavigationProp>();
-    const { addProject } = useAppContext(); // Use o contexto para obter a função addProject
+    const { addProject } = useAppContext(); 
 
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState('');
