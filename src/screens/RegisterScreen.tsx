@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-
+import { View, StyleSheet, Image, Text, Alert } from "react-native";
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
 import { Hyperlink } from "../components/Hyperlink";
-import { View, StyleSheet, Image, Text, Alert } from "react-native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { InfoPopup } from "../components/InfoPopup"; 
 import { RootStackParamList } from "../types/Navigation";
-import { useNavigation } from '@react-navigation/native';
-
+import { userService } from '../services/userService'; 
 const logo = require('../assets/logo.png');
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
@@ -20,17 +20,39 @@ export const RegisterScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [popupVisible, setPopupVisible] = useState(false); 
 
-    const handleLogin = () => {
+    const handleRegister = async () => {
         if (!username || !password || !email || !confirmPassword) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.');
             return;
         }
-        else if (password !== confirmPassword) {
+        if (password !== confirmPassword) {
             Alert.alert('Erro', 'As senhas não coincidem.');
             return;
         }
-        Alert.alert('Sucesso!', 'Registro realizado com sucesso!');
+
+        setLoading(true); 
+
+        try {
+    const payload = { 
+        username, email, password, passwordConfirm: confirmPassword 
+    };  
+    const response = await userService.registerUser(payload);
+            
+            setPopupVisible(true);
+
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || "Não foi possível realizar o cadastro.";
+            Alert.alert("Erro no Cadastro", errorMessage);
+        } finally {
+            setLoading(false); 
+        }
+    };
+
+    const handlePopupClose = () => {
+        setPopupVisible(false);
         navigation.navigate('Login');
     };
 
@@ -39,26 +61,24 @@ export const RegisterScreen = () => {
     };
 
     return (
-        <View style={ style.RegisterScreen }>
+        <View style={ styles.container }>
             <FormCard>
-                <Image source={ logo } style={ style.logo } />
-                <Text style={ style.introductionText }>
+                <Image source={ logo } style={ styles.logo } />
+                <Text style={ styles.introductionText }>
                     Pronto para explorar as profundezas com organização?
                 </Text>
                 <InputsField
                     label="Usuário"
-                    placeholder="👨‍🦲 Nome de Usuário"
+                    placeholder="👨‍- Guia Nome de Usuário"
                     value={username}
                     onChangeText={setUsername}
                 />
-
                 <InputsField
                     label="Email"
                     placeholder="@ Digite seu email"
                     value={email}
                     onChangeText={setEmail}
                 />
-
                 <InputsField
                     label="Senha"
                     placeholder="🔒 Digite a sua senha"
@@ -66,7 +86,6 @@ export const RegisterScreen = () => {
                     onChangeText={setPassword}
                     secureTextEntry={true}
                 />
-
                 <InputsField
                     label="Confirmar Senha"
                     placeholder="🔒 Confirme sua senha"
@@ -74,19 +93,29 @@ export const RegisterScreen = () => {
                     onChangeText={setConfirmPassword}
                     secureTextEntry={true}
                 />
-
-                <MainButton title="Entrar no Mar" onPress={handleLogin} />
-
+                <MainButton 
+                    title={loading ? "Registrando..." : "Entrar no Mar"} 
+                    onPress={handleRegister} 
+                    disabled={loading} 
+                />
                 <Hyperlink
                     label="Já sou cadastrado"
-                    onPress={goToLogin} />
+                    onPress={goToLogin} 
+                />
             </FormCard>
+
+            <InfoPopup
+                visible={popupVisible}
+                title="✅ Cadastro Realizado!"
+                message="Enviamos um e-mail de verificação para sua caixa de entrada. Por favor, confirme para ativar sua conta."
+                onClose={handlePopupClose}
+            />
         </View>
     );
 }
 
-const style = StyleSheet.create({
-    RegisterScreen: {
+const styles = StyleSheet.create({
+    container: { 
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
@@ -105,5 +134,4 @@ const style = StyleSheet.create({
         marginBottom: 20,
         textAlign: 'center',
     },
-
 });
