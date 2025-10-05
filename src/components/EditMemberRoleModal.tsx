@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MainButton } from './MainButton';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { ConfirmationModal } from './ConfirmationModal';
 
 export interface MemberData {
-    name: string;
-    email: string;
-    role: 'OWNER' | 'ADMIN' | 'MEMBER';
+  name: string;
+  email: string;
+  role: 'OWNER' | 'ADMIN' | 'MEMBER';
 }
 
 interface EditMemberRoleModalProps {
   visible: boolean;
   member: MemberData | null;
+  currentUserRole: 'OWNER' | 'ADMIN' | 'MEMBER';
   onClose: () => void;
   onSave: (newRole: MemberData['role']) => void;
+  onDelete: () => void;
 }
 
 const ROLES: MemberData['role'][] = ['MEMBER', 'ADMIN', 'OWNER'];
@@ -24,9 +27,10 @@ const roleTranslations: Record<MemberData['role'], string> = {
     MEMBER: 'Membro',
 };
 
-export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visible, member, onClose, onSave }) => {
+export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visible, member, currentUserRole, onClose, onSave, onDelete }) => {
     const [selectedRole, setSelectedRole] = useState<MemberData['role']>('MEMBER');
     const [isPickerVisible, setPickerVisible] = useState(false); 
+    const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false); // Novo estado
 
     useEffect(() => {
         if (member) {
@@ -45,72 +49,96 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
         setPickerVisible(false);
     }
     
+    // Ação que confirma a deleção e chama a função principal
+    const handleConfirmDelete = () => {
+        setConfirmDeleteVisible(false); // Fecha o modal de confirmação
+        onDelete(); // Executa a deleção
+    };
+
     const isOwner = member?.role === 'OWNER';
+    const canDelete = (currentUserRole === 'OWNER' || currentUserRole === 'ADMIN') && !isOwner;
 
     return (
-        <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
-            <View style={styles.centeredView}>
-                <View style={styles.modalView}>
-                    <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                        <Icon name="close-outline" size={30} color="#fff" />
-                    </TouchableOpacity>
-
-                    {member && (
-                        <>
-                            <View style={styles.avatar}>
-                                <Text style={styles.avatarText}>{member.name.substring(0, 2).toUpperCase()}</Text>
-                            </View>
-                            <Text style={styles.name}>{member.name}</Text>
-                            <Text style={styles.email}>{member.email}</Text>
-
-                            <Text style={styles.label}>Cargo:</Text>
-                            <TouchableOpacity 
-                                style={styles.pickerButton} 
-                                onPress={() => !isOwner && setPickerVisible(true)}
-                                disabled={isOwner}
-                            >
-                                <Text style={styles.pickerButtonText}>{roleTranslations[selectedRole]}</Text>
-                                <Icon name="chevron-down-outline" size={24} color="#A9A9A9" />
-                            </TouchableOpacity>
-                            
-                            {isOwner && <Text style={styles.ownerNote}>O cargo de Dono não pode ser alterado.</Text>}
-                            <View style={styles.buttonContainer}>
-                                <MainButton title="Confirmar Alteração" onPress={handleSave} disabled={isOwner} />
-                            </View>                        
-                        </>
-                    )}
-                </View>
-            </View>
-
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={isPickerVisible}
-                onRequestClose={() => setPickerVisible(false)}
-            >
-                <View style={styles.pickerCenteredView}>
-                    <View style={styles.pickerModalView}>
-                        <Text style={styles.pickerTitle}>Selecione um Cargo</Text>
-                        {ROLES.map((role) => (
-                           (role !== 'OWNER') && 
-                            <TouchableOpacity 
-                                key={role} 
-                                style={styles.pickerItem} 
-                                onPress={() => handleSelectRole(role)}
-                            >
-                                <Text style={styles.pickerItemText}>{roleTranslations[role]}</Text>
-                            </TouchableOpacity>
-                        ))}
-                         <TouchableOpacity 
-                            style={[styles.pickerItem, styles.cancelItem]} 
-                            onPress={() => setPickerVisible(false)}
-                        >
-                            <Text style={[styles.pickerItemText, {color: '#ff4545'}]}>Cancelar</Text>
+        <>
+            <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                            <Icon name="close-outline" size={30} color="#fff" />
                         </TouchableOpacity>
+
+                        {member && (
+                            <>
+                                <View style={styles.avatar}>
+                                    <Text style={styles.avatarText}>{member.name.substring(0, 2).toUpperCase()}</Text>
+                                </View>
+                                <Text style={styles.name}>{member.name}</Text>
+                                <Text style={styles.email}>{member.email}</Text>
+
+                                <Text style={styles.label}>Cargo:</Text>
+                                <TouchableOpacity 
+                                    style={styles.pickerButton} 
+                                    onPress={() => !isOwner && setPickerVisible(true)}
+                                    disabled={isOwner}
+                                >
+                                    <Text style={styles.pickerButtonText}>{roleTranslations[selectedRole]}</Text>
+                                    <Icon name="chevron-down-outline" size={24} color="#A9A9A9" />
+                                </TouchableOpacity>
+                                
+                                {isOwner && <Text style={styles.ownerNote}>O cargo de Dono não pode ser alterado.</Text>}
+                                <View style={styles.buttonContainer}>
+                                    <MainButton title="Confirmar Alteração" onPress={handleSave} disabled={isOwner} />
+                                </View>
+
+                                {canDelete && (
+                                    <>
+                                        <View style={styles.divider} />
+                                        {/* Este botão agora abre o nosso modal de confirmação */}
+                                        <TouchableOpacity style={styles.deleteButton} onPress={() => setConfirmDeleteVisible(true)}>
+                                            <Icon name="trash-outline" size={20} color="#ff4545" />
+                                            <Text style={styles.deleteButtonText}>Remover da Equipe</Text>
+                                        </TouchableOpacity>
+                                    </>
+                                )}
+                            </>
+                        )}
                     </View>
                 </View>
+
+                {/* Picker de cargos (sem alteração) */}
+                <Modal
+                    animationType="slide" transparent={true} visible={isPickerVisible}
+                    onRequestClose={() => setPickerVisible(false)}
+                >
+                    <View style={styles.pickerCenteredView}>
+                        <View style={styles.pickerModalView}>
+                            <Text style={styles.pickerTitle}>Selecione um Cargo</Text>
+                            {ROLES.map((role) => (
+                               (role !== 'OWNER') && 
+                                <TouchableOpacity key={role} style={styles.pickerItem} onPress={() => handleSelectRole(role)}>
+                                    <Text style={styles.pickerItemText}>{roleTranslations[role]}</Text>
+                                </TouchableOpacity>
+                            ))}
+                             <TouchableOpacity style={[styles.pickerItem, styles.cancelItem]} onPress={() => setPickerVisible(false)}>
+                                <Text style={[styles.pickerItemText, {color: '#ff4545'}]}>Cancelar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
             </Modal>
-        </Modal>
+
+            {/* Nosso novo modal de confirmação */}
+            {member && (
+                <ConfirmationModal
+                    visible={isConfirmDeleteVisible}
+                    title="Remover Membro"
+                    message={`Você tem certeza que deseja remover ${member.name} da equipe? Esta ação não pode ser desfeita.`}
+                    onClose={() => setConfirmDeleteVisible(false)}
+                    onConfirm={handleConfirmDelete}
+                    confirmText="Remover"
+                />
+            )}
+        </>
     );
 };
 
@@ -228,5 +256,23 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         width: '100%'
-    }
+    },
+    divider: {
+        height: 1,
+        width: '100%',
+        backgroundColor: '#4A4A4A',
+        marginVertical: 20,
+    },
+    deleteButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 10,
+    },
+    deleteButtonText: {
+        color: '#ff4545',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 8,
+    },
 });

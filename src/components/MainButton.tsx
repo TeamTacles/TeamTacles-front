@@ -1,20 +1,23 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, StyleProp, TextStyle, ViewStyle } from 'react-native';
 
 interface MainButtonProps {
     title: string;
     onPress: () => void;
-    disabled?: boolean; 
+    disabled?: boolean;
+    style?: StyleProp<ViewStyle>; // Estilo para o container do botão
+    textStyle?: StyleProp<TextStyle>; // Novo: Estilo para o texto do botão
 }
 
-export const MainButton: React.FC<MainButtonProps> = ({ title, onPress, disabled }) => {
+export const MainButton: React.FC<MainButtonProps> = ({ title, onPress, disabled, style, textStyle }) => {
     return (
         <TouchableOpacity
-            style={[styles.button, disabled && styles.buttonDisabled]}
+            style={[styles.button, disabled && styles.buttonDisabled, style]}
             onPress={onPress}
             disabled={disabled}
         >
-            <Text style={styles.text}>{title}</Text>
+            {/* Aplicamos o novo estilo de texto aqui */}
+            <Text style={[styles.text, textStyle]}>{title}</Text>
         </TouchableOpacity>
     );
 };

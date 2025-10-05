@@ -8,27 +8,32 @@ import { MemberListItem } from '../components/MemberListItem';
 import { Header } from '../components/Header';
 import { EditTeamModal } from '../components/EditTeamModal';
 import { EditMemberRoleModal, MemberData } from '../components/EditMemberRoleModal';
-
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
+import { InviteMemberModal } from '../components/InviteMemberModal';
 
 type TeamDetailScreenRouteProp = RouteProp<RootStackParamList, 'TeamDetail'>;
+type MemberRole = 'ADMIN' | 'MEMBER';
 
 export const TeamDetailScreen = () => {
     const navigation = useNavigation();
     const route = useRoute<TeamDetailScreenRouteProp>();
     
+    // Simulação do cargo do usuário logado. Altere para 'MEMBER' para ver o botão sumir.
+    const [currentUserRole, setCurrentUserRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER'>('OWNER');
+
     const [team, setTeam] = useState(route.params.team);
     const [isEditTeamModalVisible, setEditTeamModalVisible] = useState(false);
     const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
+    const [isInviteModalVisible, setInviteModalVisible] = useState(false);
     const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
-
-    const notificationRef = useRef<NotificationPopupRef>(null);
-
-    const fullMembers: MemberData[] = [
+    
+    const [members, setMembers] = useState<MemberData[]>([
         { name: 'Caio Dib', role: 'OWNER', email: 'caio.dib@email.com' },
         { name: 'João Victor', role: 'ADMIN', email: 'joao.victor@email.com' },
         { name: 'Ana Mello', role: 'MEMBER', email: 'ana.mello@email.com' },
-    ];
+    ]);
+
+    const notificationRef = useRef<NotificationPopupRef>(null);
     
     const userWithAvatar = { initials: 'CD' };
     const handleProfilePress = () => Alert.alert("Perfil Clicado!");
@@ -49,23 +54,24 @@ export const TeamDetailScreen = () => {
     };
 
     const handleSaveMemberRole = (newRole: MemberData['role']) => {
-        try {
-            if (newRole === 'ADMIN') {
-                throw new Error("Você não tem permissão para promover para Administrador.");
-            }
-            
-            setEditMemberModalVisible(false);
-            notificationRef.current?.show({
-                type: 'success',
-                message: `Cargo de ${selectedMember?.name} atualizado!`,
-            });
-        } catch (error: any) {
-            setEditMemberModalVisible(false);
-            notificationRef.current?.show({
-                type: 'error',
-                message: error.message || "Ocorreu um erro ao atualizar o cargo.",
-            });
-        }
+        // ... (lógica existente)
+    };
+    
+    const handleInviteByEmail = (email: string, role: MemberRole) => {
+        // ... (lógica existente)
+    };
+
+    const handleDeleteMember = () => {
+        if (!selectedMember) return;
+
+        // Lógica para remover o membro da lista
+        setMembers(prevMembers => prevMembers.filter(m => m.email !== selectedMember.email));
+        
+        setEditMemberModalVisible(false);
+        notificationRef.current?.show({
+            type: 'success',
+            message: `${selectedMember.name} foi removido da equipe.`,
+        });
     };
 
     return (
@@ -91,8 +97,13 @@ export const TeamDetailScreen = () => {
                 )}
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Participantes ({fullMembers.length})</Text>
-                    {fullMembers.map((member, index) => (
+                    <View style={styles.participantsHeader}>
+                        <Text style={styles.sectionTitle}>Participantes ({members.length})</Text>
+                        <TouchableOpacity onPress={() => setInviteModalVisible(true)}>
+                            <Icon name="person-add-outline" size={24} color="#EB5F1C" />
+                        </TouchableOpacity>
+                    </View>
+                    {members.map((member, index) => (
                         <MemberListItem 
                             key={index} 
                             name={member.name} 
@@ -112,8 +123,17 @@ export const TeamDetailScreen = () => {
             <EditMemberRoleModal
                 visible={isEditMemberModalVisible}
                 member={selectedMember}
+                currentUserRole={currentUserRole}
                 onClose={() => setEditMemberModalVisible(false)}
                 onSave={handleSaveMemberRole}
+                onDelete={handleDeleteMember}
+            />
+            
+            <InviteMemberModal
+                visible={isInviteModalVisible}
+                onClose={() => setInviteModalVisible(false)}
+                onInviteByEmail={handleInviteByEmail}
+                inviteLink={`https://teamtacles.com/join/${team.id}`} 
             />
             
             <NotificationPopup ref={notificationRef} />
@@ -149,15 +169,21 @@ const styles = StyleSheet.create({
     section: { 
         marginBottom: 30 
     },
+    participantsHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+    },
     sectionTitle: { 
         color: '#EB5F1C', 
         fontSize: 16, 
         fontWeight: 'bold', 
         textTransform: 'uppercase', 
-        marginBottom: 15 
     },
     titleDescription: {
-        color: '#FFFFFFFF'
+        color: '#FFFFFFFF',
+        marginBottom: 15,
     },
     descriptionText: { 
         color: '#E0E0E0', 

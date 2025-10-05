@@ -99,7 +99,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
                     )}
 
                     <View style={styles.buttonContainer}>
-                        <MainButton title="Limpar Filtros" onPress={handleClear} />
+                        <MainButton title="Limpar Filtros" onPress={handleClear} style={styles.clearButton} />
                         <MainButton title="Aplicar Filtros" onPress={handleApply} />
                     </View>
                 </View>
@@ -161,6 +161,9 @@ const styles = StyleSheet.create({
     },
     buttonContainer: { 
         marginTop: 20 
+    },
+    clearButton: {
+        backgroundColor: '#888', 
     },
     statusContainer: { 
         flexDirection: 'row', 
