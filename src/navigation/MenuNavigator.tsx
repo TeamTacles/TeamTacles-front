@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { ProjectScreen } from '../screens/ProjectScreen';
-import { InProgressScreen } from '../screens/InProgressScreen';
+import { TeamScreen } from '../screens/TeamScreen';
 import { ConfigurationScreen } from '../screens/ConfigurationScreen';
 import { TaskScreen } from '../screens/TaskScreen'; 
 import { Ionicons } from '@expo/vector-icons';
@@ -27,7 +27,7 @@ export const MenuNavigator = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Tarefas') {
             iconName = focused ? 'reader' : 'reader-outline';
-          } else if (route.name === 'Equipe') {
+          } else if (route.name === 'Equipes') {
             iconName = focused ? 'people' : 'people-outline';
           } else if (route.name === 'Mais') {
             iconName = focused ? 'menu' : 'menu-outline';
@@ -42,7 +42,7 @@ export const MenuNavigator = () => {
     >
         <Tab.Screen name="Projetos" component={ProjectScreen} />
         <Tab.Screen name="Tarefas" component={TaskScreen} />
-        <Tab.Screen name="Equipe" component={InProgressScreen} />
+        <Tab.Screen name="Equipes" component={TeamScreen} />
         <Tab.Screen name="Mais" component={ConfigurationScreen} />
     </Tab.Navigator>
   );

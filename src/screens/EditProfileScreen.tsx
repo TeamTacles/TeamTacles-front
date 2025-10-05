@@ -1,52 +1,50 @@
-// src/screens/EditProfileScreen.tsx
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react'; // <<< ALTERAÇÃO: Adicionado useRef
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Header } from "../components/Header";
-
 import { FormCard } from '../components/FormCard';
 import { InputsField } from '../components/InputsField';
 import { MainButton } from '../components/MainButton';
+import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
 
 export const EditProfileScreen = () => {
     const navigation = useNavigation();
+
+    const notificationRef = useRef<NotificationPopupRef>(null);
 
     const [name, setName] = useState('Caio Dib');
     const [email, setEmail] = useState('caio.dib@example.com');
 
     const handleSaveChanges = () => {
-        Alert.alert("Sucesso", "As suas informações foram atualizadas.");
-        navigation.goBack();
+        try {
+            if (name.length < 3) {
+                throw new Error("O nome deve ter pelo menos 3 caracteres.");
+            }
+
+            notificationRef.current?.show({
+                type: 'success',
+                message: 'As suas informações foram atualizadas!',
+            });
+
+            setTimeout(() => {
+                navigation.goBack();
+            }, 1500);
+
+        } catch (error: any) {
+            notificationRef.current?.show({
+                type: 'error',
+                message: error.message || "Não foi possível salvar as alterações.",
+            });
+        }
     };
     
     const handleChangePassword = () => {
         Alert.alert("Trocar Senha", "Funcionalidade em desenvolvimento.");
     };
 
-    const userWithAvatar = {
-            avatarUrl: '../assets/profileIcon.png',
-            initials: 'CD', 
-        };
-    
-        const userWithInitials = {
-            initials: 'CD', 
-        };
-    
-        const handleProfilePress = () => {
-            Alert.alert("Perfil Clicado!");
-        };
-    
-        const handleNotificationsPress = () => {
-            Alert.alert("Notificações Clicadas!");
-        };
-    
-
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header Customizado com Botão de Voltar */}
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="arrow-back-outline" size={30} color="#fff" />
@@ -65,7 +63,7 @@ export const EditProfileScreen = () => {
                     <InputsField
                         label="Email"
                         value={email}
-                        editable={false} // Emails geralmente não são editáveis diretamente
+                        editable={false} 
                         style={styles.inputDisabled}
                     />
                     <View style={styles.button}>
@@ -79,6 +77,7 @@ export const EditProfileScreen = () => {
                     </View>
                 </View>
             </ScrollView>
+            <NotificationPopup ref={notificationRef} />
         </SafeAreaView>
     );
 };
@@ -105,7 +104,7 @@ const styles = StyleSheet.create({
         padding: 20,
     },
     inputDisabled: {
-        color: '#A9A9A9', // Cor para indicar que o campo está desabilitado
+        color: '#A9A9A9',
     },
     passwordSection: {
         margin: 'auto',

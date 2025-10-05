@@ -1,3 +1,5 @@
+import { TeamType } from '../components/TeamCard';
+
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
@@ -5,11 +7,12 @@ export type RootStackParamList = {
     ProjectForm: undefined;
     TaskForm: undefined;
     EditProfile: undefined;
+    TeamDetail: { team: TeamType };
 };
 
 export type RootTabParamList = {
     Projetos: undefined;
     Tarefas: undefined;
-    Equipe: undefined;
+    Equipes: undefined;
     Mais: undefined;
 };

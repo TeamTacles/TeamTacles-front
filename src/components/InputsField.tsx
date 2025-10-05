@@ -9,17 +9,20 @@ interface InputFieldProps extends TextInputProps {
 export const InputsField = ({ label, secureTextEntry, maxLength, value, multiline, numberOfLines, ...rest }: InputFieldProps) => {
     const [isPasswordVisible, setPasswordVisible] = useState(false);
 
-    const [inputHeight, setInputHeight] = useState(45); // altura inicial padrão
-
     const togglePasswordVisibility = () => {
         setPasswordVisible(!isPasswordVisible);
     };
+
+    const wrapperStyles = [
+        styles.inputWrapper,
+        multiline && styles.multilineInputWrapper,
+    ];
 
     return (
         <View style={styles.inputContainer}>
             <Text style={styles.label}>{label}</Text>
             
-            <View style={styles.inputWrapper}>
+            <View style={wrapperStyles}>
                 <TextInput
                     style={[styles.input, multiline && styles.textarea]}
                     value={value}
@@ -28,13 +31,9 @@ export const InputsField = ({ label, secureTextEntry, maxLength, value, multilin
                     placeholderTextColor="#A9A9A9"
                     multiline={multiline}
                     numberOfLines={numberOfLines}
-                    onContentSizeChange={(event) =>
-                        setInputHeight(event.nativeEvent.contentSize.height + 10) // adiciona um padding extra
-                    }
                     {...rest}
                 />
                 
-                {/* icone p ver senha - se tiver secureTextEntry */}
                 {secureTextEntry && (
                     <TouchableOpacity onPress={togglePasswordVisibility} style={styles.iconContainer}>
                         <Icon 
@@ -45,13 +44,17 @@ export const InputsField = ({ label, secureTextEntry, maxLength, value, multilin
                     </TouchableOpacity>
                 )}
 
-                {maxLength && (
+                {maxLength && !multiline && ( 
                     <Text style={styles.charCounter}>
                         {String(value).length || 0} / {maxLength}
                     </Text>
                 )}
-
             </View>
+             {maxLength && multiline && ( 
+                <Text style={styles.multilineCharCounter}>
+                    {String(value).length || 0} / {maxLength}
+                </Text>
+            )}
         </View>
     );
 };
@@ -77,11 +80,21 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         height: 45, 
     },
+    multilineInputWrapper: {
+        height: 'auto', 
+        minHeight: 120, 
+        alignItems: 'flex-start', 
+    },
     input: {
         flex: 1, 
         height: '100%',
         paddingHorizontal: 10,
         color: '#333333',
+    },
+    textarea: {
+        paddingTop: 10, 
+        paddingBottom: 10,
+        textAlignVertical: 'top',
     },
     iconContainer: {
         padding: 10,
@@ -89,8 +102,13 @@ const styles = StyleSheet.create({
     charCounter: {
         fontSize: 12,
         color: '#808080',
+        paddingRight: 10,
     },
-    textarea: {
-        textAlignVertical: 'top',
-    },
+    // Novo estilo para o contador em campos multiline
+    multilineCharCounter: {
+        fontSize: 12,
+        color: '#A9A9A9',
+        alignSelf: 'flex-end',
+        marginTop: 4,
+    }
 });

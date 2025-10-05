@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, TouchableOpacityProps } from 'react-native';
 
-//card generico
-
 interface BaseCardProps extends TouchableOpacityProps {
   children: React.ReactNode;
 }
@@ -22,8 +20,8 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 15,
 
-    elevation: 5, // Android shadow
-    shadowColor: '#000', // iOS shadow
+    elevation: 5, 
+    shadowColor: '#000', 
     shadowOffset: {
       width: 0,
       height: 2,

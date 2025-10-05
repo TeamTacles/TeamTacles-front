@@ -14,10 +14,9 @@ const lupa = require('../assets/lupa.png')
 
 export const SearchBar = ({ title, placeholder, value, onChangeText, onSearch }: SearchBarProps) => {
 
-    // Função para lidar com a submissão, evitando repetição de código
     const handleSearch = () => {
         if (onSearch) {
-            onSearch(value ?? ''); // Usa o valor atual do input
+            onSearch(value ?? ''); 
         }
     };
 
@@ -71,6 +70,6 @@ const styles = StyleSheet.create({
     textInput: {
         flex: 1,
         color: '#B0B0B0',
-        fontSize: 20,
+        fontSize: 17,
     }
 });

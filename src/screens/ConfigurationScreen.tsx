@@ -1,24 +1,12 @@
 import React, { useState } from "react";
-import { 
-    View, 
-    StyleSheet, 
-    Text, 
-    Alert, 
-    LayoutAnimation, 
-    UIManager, 
-    Platform, 
-    TouchableOpacity,
-    ScrollView // 1. Importar o ScrollView
-} from "react-native";
+import { View, StyleSheet, Text, Alert, LayoutAnimation, UIManager, Platform, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BaseCard } from "../components/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native'; // Adicione ou verifique se já existe
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'; // Adicione se necessário
-import { RootStackParamList } from '../types/Navigation'; // Adicione se necessário
+import { useNavigation } from '@react-navigation/native'; 
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/Navigation'; 
 
-
-// Habilita LayoutAnimation para Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -29,7 +17,6 @@ export const ConfigurationScreen = () => {
 
     const [isProfileExpanded, setProfileExpanded] = useState(false);
 
-    // Dados mocados do usuário
     const user = {
         name: 'Caio Dib',
         initials: 'CD',
@@ -53,7 +40,6 @@ export const ConfigurationScreen = () => {
 
     return (
         <SafeAreaView style={styles.safeAreaView} edges={['top', 'left', 'right']}>
-            {/* 2. Adicionar ScrollView em volta do conteúdo */}
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.profileCircle}>
                     <Text style={styles.profileInitials}>{user.initials}</Text>
@@ -61,7 +47,6 @@ export const ConfigurationScreen = () => {
                 <Text style={styles.profileName}>{user.name}</Text>
 
                 <View style={styles.menuContainer}>
-                    {/* --- Seção de Conta --- */}
                     <Text style={styles.sectionTitle}>Conta</Text>
                     <View style={styles.menuItemGroup}>
                         <BaseCard onPress={toggleProfileExpansion} style={styles.cardOverride}>
@@ -74,7 +59,7 @@ export const ConfigurationScreen = () => {
                         {isProfileExpanded && (
                             <TouchableOpacity 
                                 style={styles.subMenuItem} 
-                                onPress={() => navigation.navigate('EditProfile')} // ALTERE ESTA LINHA
+                                onPress={() => navigation.navigate('EditProfile')}
                             >
                                 <Icon name="pencil-outline" size={24} color="#fff" />
                                 <Text style={styles.subMenuItemText}>Editar</Text>                            
@@ -82,7 +67,6 @@ export const ConfigurationScreen = () => {
                         )}
                     </View>
 
-                    {/* --- Seção de Configurações --- */}
                     <Text style={styles.sectionTitle}>Geral</Text>
                     <BaseCard style={[styles.cardOverride, styles.disabledMenuItem]} disabled>
                         <View style={styles.menuItemContent}>
@@ -103,7 +87,6 @@ export const ConfigurationScreen = () => {
                         </View>
                     </BaseCard>
 
-                    {/* --- Seção 'Sobre' --- */}
                     <Text style={styles.sectionTitle}>Sobre</Text>
                      <BaseCard style={[styles.cardOverride, styles.disabledMenuItem]} disabled>
                         <View style={styles.menuItemContent}>
@@ -118,7 +101,6 @@ export const ConfigurationScreen = () => {
                         </View>
                     </BaseCard>
 
-                    {/* --- Botão de Sair --- */}
                     <BaseCard onPress={handleLogout} style={[styles.cardOverride, styles.logoutButton]}>
                         <View style={styles.menuItemContent}>
                             <Icon name="log-out-outline" size={24} color="#ff4545" />
@@ -131,17 +113,15 @@ export const ConfigurationScreen = () => {
     );
 };
 
-
 const styles = StyleSheet.create({
     safeAreaView: {
         flex: 1,
         backgroundColor: '#191919',
     },
-    // Estilo para o container do ScrollView
     scrollContainer: {
         alignItems: 'center',
         paddingTop: 40,
-        paddingBottom: 20, // Espaço no final da rolagem
+        paddingBottom: 20, 
         paddingHorizontal: 20,
     },
     profileCircle: {
@@ -221,12 +201,12 @@ const styles = StyleSheet.create({
         color: '#888',
     },
     logoutButton: {
-        backgroundColor: 'rgba(255, 69, 69, 0.15)', // Fundo vermelho transparente
+        backgroundColor: 'rgba(255, 69, 69, 0.15)', 
         borderColor: 'rgba(255, 69, 69, 0.25)',
         borderWidth: 1,
     },
     logoutButtonText: {
-        color: '#ff4545', // Texto vermelho
+        color: '#ff4545', 
         fontWeight: 'bold'
     },
 });

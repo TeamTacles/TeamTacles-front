@@ -10,6 +10,7 @@ import { ProjectForm } from './src/screens/ProjectFormScreen';
 import { TaskForm } from './src/screens/TaskFormScreen';       
 import { MenuNavigator } from './src/navigation/MenuNavigator';
 import { EditProfileScreen } from './src/screens/EditProfileScreen';
+import { TeamDetailScreen } from './src/screens/TeamDetailScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,6 +31,7 @@ export default function App() {
               <Stack.Screen name="ProjectForm" component={ProjectForm} />
               <Stack.Screen name="TaskForm" component={TaskForm} />
               <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+              <Stack.Screen name="TeamDetail" component={TeamDetailScreen} />
             </Stack.Group>
 
           </Stack.Navigator>
