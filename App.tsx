@@ -9,6 +9,7 @@ import { RegisterScreen } from './src/screens/RegisterScreen';
 import { ProjectForm } from './src/screens/ProjectFormScreen'; 
 import { TaskForm } from './src/screens/TaskFormScreen';       
 import { MenuNavigator } from './src/navigation/MenuNavigator';
+import { EditProfileScreen } from './src/screens/EditProfileScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -17,17 +18,18 @@ export default function App() {
     <SafeAreaProvider>
       <AppProvider> 
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+          <Stack.Navigator initialRouteName="Menu" screenOptions={{ headerShown: false }}>
             
             <Stack.Group screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="Register" component={RegisterScreen} />
+              {/* <Stack.Screen name="Login" component={LoginScreen} /> */}
+              {/* <Stack.Screen name="Register" component={RegisterScreen} />*/}
               <Stack.Screen name="Menu" component={MenuNavigator} />
             </Stack.Group>
             
             <Stack.Group screenOptions={{ presentation: 'modal', headerShown: false }}>
               <Stack.Screen name="ProjectForm" component={ProjectForm} />
               <Stack.Screen name="TaskForm" component={TaskForm} />
+              <Stack.Screen name="EditProfile" component={EditProfileScreen} />
             </Stack.Group>
 
           </Stack.Navigator>

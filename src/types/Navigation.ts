@@ -4,11 +4,12 @@ export type RootStackParamList = {
     Menu: undefined;
     ProjectForm: undefined;
     TaskForm: undefined;
+    EditProfile: undefined;
 };
 
 export type RootTabParamList = {
     Projetos: undefined;
     Tarefas: undefined;
     Equipe: undefined;
-    Configurações: undefined;
+    Mais: undefined;
 };

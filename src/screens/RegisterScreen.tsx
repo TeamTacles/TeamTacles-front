@@ -69,35 +69,37 @@ export const RegisterScreen = () => {
                 </Text>
                 <InputsField
                     label="Usuário"
-                    placeholder="👨‍- Guia Nome de Usuário"
+                    placeholder="Guia Nome de Usuário"
                     value={username}
                     onChangeText={setUsername}
                 />
                 <InputsField
                     label="Email"
-                    placeholder="@ Digite seu email"
+                    placeholder="Digite seu email"
                     value={email}
                     onChangeText={setEmail}
                 />
                 <InputsField
                     label="Senha"
-                    placeholder="🔒 Digite a sua senha"
+                    placeholder="Digite a sua senha"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={true}
                 />
                 <InputsField
                     label="Confirmar Senha"
-                    placeholder="🔒 Confirme sua senha"
+                    placeholder="Confirme sua senha"
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry={true}
                 />
-                <MainButton 
-                    title={loading ? "Registrando..." : "Entrar no Mar"} 
-                    onPress={handleRegister} 
-                    disabled={loading} 
-                />
+                <View style={{paddingTop: 20}}>
+                    <MainButton 
+                        title={loading ? "Registrando..." : "Entrar no Mar"} 
+                        onPress={handleRegister} 
+                        disabled={loading} 
+                    />
+                </View>
                 <Hyperlink
                     label="Já sou cadastrado"
                     onPress={goToLogin} 
@@ -120,7 +122,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
-        backgroundColor: '#2A2A2A',
+        backgroundColor: '#232323',
     },
     logo: {
         width: 130,

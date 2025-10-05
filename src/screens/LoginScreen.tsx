@@ -44,13 +44,13 @@ export const LoginScreen = () => {
                 </Text>
                 <InputsField
                     label="Usuário ou Email"
-                    placeholder="👨‍🦲 Digite seu usuário ou email"
+                    placeholder="Digite seu usuário ou email"
                     value={username}
                     onChangeText={setUsername}
                 />
                 <InputsField
                     label="Senha"
-                    placeholder="🔒 Digite a sua senha"
+                    placeholder="Digite a sua senha"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={true}
@@ -60,8 +60,9 @@ export const LoginScreen = () => {
                         label="Esqueci minha senha"
                         onPress={() => Alert.alert('Recuperação de senha', 'Funcionalidade em desenvolvimento.')} /> 
                 </View>
-                <MainButton title="Mergulhar" onPress={handleLogin} />
-
+                <View style={{paddingTop: 30}}>
+                    <MainButton title="Mergulhar" onPress={handleLogin} />
+                </View>
                 <Hyperlink
                     label="Realizar cadastro"
                     onPress={goToRegister} />
@@ -76,18 +77,18 @@ const style = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
-        backgroundColor: '#2A2A2A',
+        backgroundColor: '#232323',
     },
     logo: {
         width: 130,
         height: 100,
-        marginBottom: 10,
+        marginBottom: 20,
         alignSelf: 'center'
     },
     introductionText: {
         color: '#ffffff',
         fontSize: 18,
-        marginBottom: 20,
+        marginBottom: 30,
         textAlign: 'center',
     },
 
