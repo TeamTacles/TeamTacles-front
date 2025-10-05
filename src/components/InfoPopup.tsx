@@ -21,7 +21,9 @@ export const InfoPopup: React.FC<InfoPopupProps> = ({ visible, title, message, o
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>{title}</Text>
           <Text style={styles.modalText}>{message}</Text>
-          <MainButton title="Ok, entendi" onPress={onClose} />
+          <View style={styles.mainButtonContainer}>
+            <MainButton title="Ok, entendi" onPress={onClose} />
+          </View>
         </View>
       </View>
     </Modal>
@@ -61,7 +63,10 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 16,
     color: '#E0E0E0',
-    marginBottom: 25,
+    marginBottom: 15,
     textAlign: 'center',
   },
+  mainButtonContainer : {
+    width: '100%'
+  }
 });

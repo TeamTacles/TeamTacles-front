@@ -54,17 +54,37 @@ export const TeamDetailScreen = () => {
     };
 
     const handleSaveMemberRole = (newRole: MemberData['role']) => {
-        // ... (lógica existente)
+        try {
+            if (newRole === 'ADMIN') {
+                throw new Error("Você não tem permissão para promover para Administrador.");
+            }
+            
+            setEditMemberModalVisible(false);
+            notificationRef.current?.show({
+                type: 'success',
+                message: `Cargo de ${selectedMember?.name} atualizado!`,
+            });
+        } catch (error: any) {
+            setEditMemberModalVisible(false);
+            notificationRef.current?.show({
+                type: 'error',
+                message: error.message || "Ocorreu um erro ao atualizar o cargo.",
+            });
+        }
     };
     
     const handleInviteByEmail = (email: string, role: MemberRole) => {
-        // ... (lógica existente)
+        console.log(`Simulando convite para: ${email} com o cargo: ${role}`);
+        setInviteModalVisible(false); // Fecha o modal de convite
+        notificationRef.current?.show({ // Dispara a notificação de sucesso
+            type: 'success',
+            message: `Convite enviado para ${email}!`,
+        });
     };
 
     const handleDeleteMember = () => {
         if (!selectedMember) return;
 
-        // Lógica para remover o membro da lista
         setMembers(prevMembers => prevMembers.filter(m => m.email !== selectedMember.email));
         
         setEditMemberModalVisible(false);
