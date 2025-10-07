@@ -1,4 +1,4 @@
-const getInitialsFromName = (name: string): string => {
+export const getInitialsFromName = (name: string): string => {
     if (!name.trim()) {
         return '';
     } 
@@ -8,7 +8,6 @@ const getInitialsFromName = (name: string): string => {
     .map(word => word.charAt(0)) // pega a primeira letra de cada palavra
     .join('') // junta as letras
     .toUpperCase(); //converte para maiúsculas
-
 }
 
 export const getInitialsFromArray = (namesString: string): string[] => {
@@ -19,4 +18,3 @@ export const getInitialsFromArray = (namesString: string): string[] => {
         .split(',') // divide a string em nomes pela vírgula
         .map(name => getInitialsFromName(name));
 };
-            

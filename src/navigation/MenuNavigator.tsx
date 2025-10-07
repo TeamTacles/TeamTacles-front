@@ -24,7 +24,7 @@ export const MenuNavigator = () => {
           let iconName: React.ComponentProps<typeof Ionicons>['name'];
 
           if (route.name === 'Projetos') {
-            iconName = focused ? 'home' : 'home-outline';
+            iconName = focused ? 'briefcase' : 'briefcase-outline';
           } else if (route.name === 'Tarefas') {
             iconName = focused ? 'reader' : 'reader-outline';
           } else if (route.name === 'Equipes') {

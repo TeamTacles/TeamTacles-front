@@ -3,7 +3,7 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity, Share } from 'react-na
 import Icon from 'react-native-vector-icons/Ionicons';
 import { InputsField } from './InputsField';
 import { MainButton } from './MainButton';
-import { InfoPopup } from './InfoPopup'; // Importe o InfoPopup
+import { InfoPopup } from './InfoPopup';
 
 type MemberRole = 'ADMIN' | 'MEMBER';
 
@@ -17,25 +17,30 @@ interface InviteMemberModalProps {
 export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, onClose, onInviteByEmail, inviteLink }) => {
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<MemberRole>('MEMBER');
-
-  // Estados para controlar o nosso popup de erro customizado
   const [infoPopupVisible, setInfoPopupVisible] = useState(false);
   const [infoPopupMessage, setInfoPopupMessage] = useState('');
 
   const handleInvite = () => {
-    // Validação do e-mail
     if (!email || !email.includes('@')) {
       setInfoPopupMessage("Por favor, insira um endereço de e-mail válido para continuar.");
       setInfoPopupVisible(true);
-      return; // Para a execução aqui
+      return;
     }
-    // Se o e-mail for válido, chama a função de sucesso
     onInviteByEmail(email, selectedRole);
-    setEmail(''); // Limpa o campo
+    setEmail('');
+    onClose(); 
   };
 
   const onShareLink = async () => {
-    // ... (código de compartilhamento sem alterações)
+    if (!inviteLink) return;
+    try {
+      await Share.share({
+        message: `Você foi convidado para uma equipe! Junte-se através do link: ${inviteLink}`,
+        url: inviteLink,
+      });
+    } catch (error) {
+      console.error('Erro ao compartilhar o link', error);
+    }
   };
 
   return (
@@ -43,7 +48,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, o
       <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            {/* ... (resto do JSX do modal sem alterações) */}
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                 <Icon name="close-outline" size={30} color="#fff" />
             </TouchableOpacity>
@@ -87,7 +91,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, o
         </View>
       </Modal>
 
-      {/* Renderiza o InfoPopup para mensagens de erro */}
       <InfoPopup
         visible={infoPopupVisible}
         title="⚠️ Atenção"
@@ -98,7 +101,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, o
   );
 };
 
-// Estilos (sem alterações, mantidos para referência)
 const styles = StyleSheet.create({
     centeredView: { 
         flex: 1, 

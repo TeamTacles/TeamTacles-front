@@ -3,7 +3,6 @@ import { BaseCard } from "./BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
 import TimeAgo from "./TimeAgo"; 
 import { ProjectType } from "../types/ProjectType"; 
-
 import { View, Text, StyleSheet } from 'react-native';
 
 type ProjectCardProps = {
@@ -30,7 +29,7 @@ export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
                     <View style={styles.teamContainer}>
                         {teamMembers.map((member, index) => (
                             <View key={index} style={[styles.avatar, { right: index * 15 }]}>
-                                <Text style={styles.avatarText}>{member}</Text>
+                                <Text style={styles.avatarText}>{member.initials}</Text>
                             </View>
                         ))}
                     </View>

@@ -10,6 +10,7 @@ import { EditTeamModal } from '../components/EditTeamModal';
 import { EditMemberRoleModal, MemberData } from '../components/EditMemberRoleModal';
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
 import { InviteMemberModal } from '../components/InviteMemberModal';
+import { TeamType } from '../components/TeamCard';
 
 type TeamDetailScreenRouteProp = RouteProp<RootStackParamList, 'TeamDetail'>;
 type MemberRole = 'ADMIN' | 'MEMBER';
@@ -18,9 +19,7 @@ export const TeamDetailScreen = () => {
     const navigation = useNavigation();
     const route = useRoute<TeamDetailScreenRouteProp>();
     
-    // Simulação do cargo do usuário logado. Altere para 'MEMBER' para ver o botão sumir.
     const [currentUserRole, setCurrentUserRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER'>('OWNER');
-
     const [team, setTeam] = useState(route.params.team);
     const [isEditTeamModalVisible, setEditTeamModalVisible] = useState(false);
     const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
@@ -75,8 +74,8 @@ export const TeamDetailScreen = () => {
     
     const handleInviteByEmail = (email: string, role: MemberRole) => {
         console.log(`Simulando convite para: ${email} com o cargo: ${role}`);
-        setInviteModalVisible(false); // Fecha o modal de convite
-        notificationRef.current?.show({ // Dispara a notificação de sucesso
+        // A linha "setInviteModalVisible(false)" foi removida daqui
+        notificationRef.current?.show({
             type: 'success',
             message: `Convite enviado para ${email}!`,
         });

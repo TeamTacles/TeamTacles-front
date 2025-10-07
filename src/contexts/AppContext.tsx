@@ -1,13 +1,17 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import { Alert } from 'react-native';
+
+interface Member {
+  name: string;
+  initials: string;
+}
 
 interface Project {
   id: string;
   title: string;
   description: string;
-  teamMembers: string[];
-  lastUpdated: number; 
-  createdAt: number;   
+  teamMembers: Member[];
+  lastUpdated: number;
+  createdAt: number;
 }
 
 interface Task {
@@ -15,7 +19,7 @@ interface Task {
   title: string;
   description: string;
   dueDate: string;
-  projectId: string; 
+  projectId: string;
   projectName: string;
   status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
   createdAt: number;
@@ -32,30 +36,26 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [projects, setProjects] = useState<Project[]>([
-    { 
-      id: '1', 
-      title: 'Website Redesign', 
-      description: 'Renovação completa do site.', 
-      teamMembers: ['CD', 'JV'], 
-      lastUpdated: new Date('2025-09-28').getTime(), 
-      createdAt: new Date('2025-08-10').getTime()   
+    {
+      id: '1',
+      title: 'Website Redesign',
+      description: 'Renovação completa do site.',
+      teamMembers: [{ name: 'Caio Dib', initials: 'CD' }, { name: 'João Victor', initials: 'JV' }],
+      lastUpdated: new Date('2025-09-28').getTime(),
+      createdAt: new Date('2025-08-10').getTime()
     }
   ]);
-  const [tasks, setTasks] = useState<Task[]>([
-      { id: '101', title: 'Criar wireframes', description: '', dueDate: '15 de out, 2025', projectId: '1', projectName: 'Website Redesign', status: 'DONE', createdAt: new Date('2025-09-01').getTime() },
-      { id: '102', title: 'Desenvolver API de login', description: '', dueDate: '25 de out, 2025', projectId: '1', projectName: 'Website Redesign', status: 'IN_PROGRESS', createdAt: new Date('2025-09-15').getTime() },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   const addProject = (projectData: Omit<Project, 'id' | 'lastUpdated' | 'createdAt'>) => {
     const now = Date.now();
     const newProject: Project = {
       id: String(now),
       ...projectData,
-      lastUpdated: now, 
+      lastUpdated: now,
       createdAt: now,
     };
     setProjects(currentProjects => [newProject, ...currentProjects]);
-    Alert.alert('Sucesso!', `Projeto "${projectData.title}" criado.`);
   };
 
   const addTask = (taskData: Omit<Task, 'id' | 'status' | 'createdAt'>) => {
@@ -66,7 +66,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       createdAt: Date.now(),
     };
     setTasks(currentTasks => [newTask, ...currentTasks]);
-    Alert.alert('Sucesso!', `Tarefa "${taskData.title}" criada.`);
   };
 
   return (

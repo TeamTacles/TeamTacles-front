@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { Header } from "../components/Header";
-import { View, StyleSheet, Alert, FlatList } from "react-native";
+import { View, StyleSheet, FlatList } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
 import { NewItemButton } from "../components/NewItemButton";
@@ -10,11 +10,20 @@ import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { ProjectCard } from "../components/ProjectCard";
 import { EmptyState } from '../components/EmptyState';
-import { useAppContext } from "../contexts/AppContext"; 
+import { useAppContext } from "../contexts/AppContext";
 import { FilterModal, Filters } from "../components/FilterModal";
 import { FilterButton } from "../components/FilterButton";
+import { NewProjectModal } from "../components/NewProjectModal";
+import { AddMembersModal } from "../components/AddMembersModal";
+import { TeamType, Member } from "../components/TeamCard";
+import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
 
 const polvo_pescando = require('../assets/polvo_pescando.png');
+
+const MOCK_TEAMS: TeamType[] = [
+    { id: '1', title: 'Frontend Warriors', description: '', members: [{name: 'Caio Dib', initials: 'CD'}, {name: 'João Victor', initials: 'JV'}, {name: 'Ana Mello', initials: 'AM'}], createdAt: new Date() },
+    { id: '2', title: 'Backend Legends', description: '', members: [{name: 'Pedro Ramos', initials: 'PR'}, {name: 'Sofia Costa', initials: 'SC'}], createdAt: new Date() },
+];
 
 type ProjectScreenNavigationProp = CompositeScreenProps<
   BottomTabScreenProps<RootTabParamList, 'Projetos'>,
@@ -22,37 +31,100 @@ type ProjectScreenNavigationProp = CompositeScreenProps<
 >;
 
 export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
-    const { projects } = useAppContext(); 
+    const { projects, addProject } = useAppContext();
+    const notificationRef = useRef<NotificationPopupRef>(null);
+
     const [search, setSearch] = useState('');
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
     const [filters, setFilters] = useState<Filters>({});
-
-    const userWithAvatar = { initials: 'CD' };
-
-    const handleProfilePress = () => Alert.alert("Perfil Clicado!");
-    const handleNotificationsPress = () => Alert.alert("Notificações Clicadas!");
-    const handleNewProject = () => navigation.navigate('ProjectForm'); 
+    const [isNewProjectModalVisible, setNewProjectModalVisible] = useState(false);
+    const [isAddMembersModalVisible, setAddMembersModalVisible] = useState(false);
+    const [newlyCreatedProject, setNewlyCreatedProject] = useState<any | null>(null);
+    const [isCreatingProject, setIsCreatingProject] = useState(false);
+    const [userTeams] = useState<TeamType[]>(MOCK_TEAMS);
     
-    const handleApplyFilters = (newFilters: Filters) => {
-        setFilters(newFilters);
-        setFilterModalVisible(false);
-    };
+    // ALTERAÇÃO: Fila para armazenar as mensagens de notificação
+    const [notificationQueue, setNotificationQueue] = useState<string[]>([]);
 
-    const handleClearFilters = () => {
-        setFilters({});
-        setFilterModalVisible(false);
-    };
+    const userWithAvatar = { initials: 'CD', name: 'Caio Dib' };
 
-    const filteredProjects = useMemo(() => {
-        return projects
-            .filter(p => p.title.toLowerCase().includes(search.toLowerCase()))
-            .filter(p => {
-                const projectDate = new Date(p.createdAt);
-                if (filters.createdAtAfter && projectDate < filters.createdAtAfter) return false;
-                if (filters.createdAtBefore && projectDate > filters.createdAtBefore) return false;
-                return true;
+    const handleProfilePress = () => {};
+    const handleNotificationsPress = () => {};
+    const handleNewProject = () => setNewProjectModalVisible(true);
+    const handleApplyFilters = (newFilters: Filters) => {};
+    const handleClearFilters = () => {};
+
+    const handleCreateProjectAndProceed = async (data: { title: string; description: string }) => {
+        if (!data.title.trim()) {
+            notificationRef.current?.show({ type: 'error', message: 'O título do projeto é obrigatório.' });
+            return;
+        }
+        setIsCreatingProject(true);
+        try {
+            console.log("Simulando API para criar projeto:", data);
+            const responseSimulada = { id: new Date().getTime(), title: data.title, description: data.description };
+            
+            addProject({ 
+                title: responseSimulada.title, 
+                description: responseSimulada.description, 
+                teamMembers: [{ name: userWithAvatar.name, initials: userWithAvatar.initials }] 
             });
-    }, [search, projects, filters]);
+            
+            // ALTERAÇÃO: Adiciona a notificação de projeto criado à fila (em primeiro lugar)
+            setNotificationQueue(prev => [`Projeto "${responseSimulada.title}" criado!`, ...prev]);
+
+            setNewlyCreatedProject(responseSimulada);
+            setNewProjectModalVisible(false);
+            setAddMembersModalVisible(true);
+        } catch (error) {
+            notificationRef.current?.show({ type: 'error', message: 'Não foi possível criar o projeto.' });
+        } finally {
+            setIsCreatingProject(false);
+        }
+    };
+
+    const handleInviteMemberToProject = (email: string, role: any) => {
+        console.log(`Convidando ${email} para o projeto ID ${newlyCreatedProject?.id} com o cargo ${role}`);
+        // ALTERAÇÃO: Adiciona a notificação de convite à fila
+        setNotificationQueue(prev => [...prev, `Convite para ${email} enviado!`]);
+    };
+
+    const handleImportTeamToProject = (teamId: string) => {
+        console.log(`Importando time ID ${teamId} para o projeto ID ${newlyCreatedProject?.id}`);
+        // ALTERAÇÃO: Adiciona a notificação de importação à fila
+        setNotificationQueue(prev => [...prev, 'Membros importados com sucesso!']);
+    };
+
+    // ALTERAÇÃO: Nova função para processar a fila de notificações
+    const processNotificationQueue = () => {
+        if (notificationQueue.length === 0) return;
+
+        // Pega a primeira mensagem da fila
+        const message = notificationQueue[0];
+        notificationRef.current?.show({ type: 'success', message });
+
+        // Remove a mensagem que acabou de ser exibida
+        const newQueue = notificationQueue.slice(1);
+        setNotificationQueue(newQueue);
+
+        // Se ainda houver mensagens, chama a função novamente após 3 segundos
+        if (newQueue.length > 0) {
+            setTimeout(processNotificationQueue, 3000); // 3s de intervalo para a próxima
+        }
+    };
+
+    const handleCloseAddMembersModal = () => {
+        setAddMembersModalVisible(false);
+        // ALTERAÇÃO: Inicia o processamento da fila SÓ QUANDO o modal for fechado
+        if (notificationQueue.length > 0) {
+            setTimeout(processNotificationQueue, 500); // Um pequeno atraso inicial para a animação de fechar o modal
+        }
+        setNewlyCreatedProject(null);
+    };
+    
+    const filteredProjects = useMemo(() => {
+        return projects.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
+    }, [search, projects]);
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -68,64 +140,44 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 </View>
                 <FilterButton style={styles.filterButtonPosition} onPress={() => setFilterModalVisible(true)} />
             </View>
+
             <FlatList
                 data={filteredProjects}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <ProjectCard
-                        project={item} 
-                        onPress={() => Alert.alert('Navegar para', item.title)}
-                    />
-                )}
+                renderItem={({ item }) => <ProjectCard project={item} onPress={() => {}} />}
                 contentContainerStyle={styles.listContainer}
-                ListEmptyComponent={
-                    <EmptyState
-                        imageSource={polvo_pescando}
-                        title="Nenhum Projeto Encontrado"
-                        subtitle="Clique em + para adicionar um novo projeto."
-                    />
-                }
+                ListEmptyComponent={<EmptyState imageSource={polvo_pescando} title="Nenhum Projeto Encontrado" subtitle="Clique em + para adicionar um novo projeto." />}
             />
+
             <View style={styles.addButtonContainer}>
-                <NewItemButton
-                    onPress={handleNewProject}
-                />
+                <NewItemButton onPress={handleNewProject} />
             </View>
-            <FilterModal
-                visible={isFilterModalVisible}
-                filterType="projects"
-                onClose={() => setFilterModalVisible(false)}
-                onApply={handleApplyFilters}
-                onClear={handleClearFilters}
+
+            <FilterModal visible={isFilterModalVisible} filterType="projects" onClose={() => setFilterModalVisible(false)} onApply={handleApplyFilters} onClear={handleClearFilters} />
+            <NewProjectModal
+                visible={isNewProjectModalVisible}
+                onClose={() => setNewProjectModalVisible(false)}
+                onCreate={handleCreateProjectAndProceed}
+                isCreating={isCreatingProject}
             />
+            <AddMembersModal
+                visible={isAddMembersModalVisible}
+                onClose={handleCloseAddMembersModal}
+                onInviteByEmail={handleInviteMemberToProject}
+                onImportTeam={handleImportTeamToProject}
+                userTeams={userTeams}
+                inviteLink={newlyCreatedProject ? `/api/project/join?token=${newlyCreatedProject.id}`: null}
+            />
+            <NotificationPopup ref={notificationRef} />
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: '#191919' 
-    },
-    searchContainer: { 
-        flexDirection: 'row', 
-        alignItems: 'flex-start', 
-        paddingRight: 15 }
-        ,
-    searchBarWrapper: { 
-        flex: 1 
-    },
-    filterButtonPosition: { 
-        marginTop: 75 
-    },
-    listContainer: { 
-        flexGrow: 1, 
-        paddingHorizontal: 15, 
-        paddingBottom: 80 
-    },
-    addButtonContainer: { 
-        position: 'absolute', 
-        right: 25, 
-        bottom: 25 
-    },
+    container: { flex: 1, backgroundColor: '#191919' },
+    searchContainer: { flexDirection: 'row', alignItems: 'flex-start', paddingRight: 15 },
+    searchBarWrapper: { flex: 1 },
+    filterButtonPosition: { marginTop: 75 },
+    listContainer: { flexGrow: 1, paddingHorizontal: 15, paddingBottom: 80 },
+    addButtonContainer: { position: 'absolute', right: 25, bottom: 25 },
 });

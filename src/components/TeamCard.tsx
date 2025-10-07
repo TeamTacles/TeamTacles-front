@@ -3,11 +3,18 @@ import { View, Text, StyleSheet } from 'react-native';
 import { BaseCard } from "./BaseCard"; 
 import Icon from 'react-native-vector-icons/Ionicons';
 
+// 1. Defina e exporte a interface Member
+export interface Member {
+  name: string;
+  initials: string;
+}
+
 export interface TeamType {
   id: string;
   title: string;
   description: string;
-  members: string[]; 
+  // 2. Altere 'members' para usar a nova interface
+  members: Member[]; 
   createdAt: Date; 
 }
 
@@ -44,9 +51,10 @@ export const TeamCard = ({ team, onPress }: TeamCardProps) => {
                         <Text style={styles.memberText}>{members.length} participante{members.length !== 1 ? 's' : ''}</Text>
                     </View>
                     <View style={styles.teamContainer}>
+                        {/* 3. Use 'member.initials' para os avatares */}
                         {members.slice(0, 4).map((member, index) => (
                             <View key={index} style={[styles.avatar, { right: index * 15 }]}>
-                                <Text style={styles.avatarText}>{member}</Text>
+                                <Text style={styles.avatarText}>{member.initials}</Text>
                             </View>
                         ))}
                     </View>

@@ -4,59 +4,50 @@ import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { View, StyleSheet, Text, Alert } from "react-native";
+import { View, StyleSheet, Text } from "react-native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../types/Navigation";
 import { Header } from "../components/Header";
 import Icon from 'react-native-vector-icons/Ionicons';
-import { getInitialsFromArray } from "../utils/stringUtils";
+import { getInitialsFromName } from "../utils/stringUtils";
 import { useAppContext } from "../contexts/AppContext";
+import { InfoPopup } from "../components/InfoPopup";
 
 type ProjectFormNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ProjectForm'>;
 
 export const ProjectForm = () => {
     const navigation = useNavigation<ProjectFormNavigationProp>();
-    const { addProject } = useAppContext(); 
+    const { addProject } = useAppContext();
 
     const [projectName, setProjectName] = useState('');
     const [projectDescription, setProjectDescription] = useState('');
     const [teamMember, setTeamMember] = useState('');
+    const [infoPopup, setInfoPopup] = useState({ visible: false, message: '' });
 
     const handleCreateProject = () => {
         if (!projectName || !teamMember) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios.');
+            setInfoPopup({ visible: true, message: 'Por favor, preencha todos os campos obrigatórios.' });
             return;
         }
+
+        const members = teamMember.split(',').map(name => name.trim()).filter(name => name).map(name => ({
+            name: name,
+            initials: getInitialsFromName(name)
+        }));
 
         addProject({
             title: projectName,
             description: projectDescription,
-            teamMembers: getInitialsFromArray(teamMember)
+            teamMembers: members
         });
         
         navigation.goBack();
     };
 
-    const userWithAvatar = {
-        avatarUrl: '../assets/profileIcon.png',
-        initials: 'CD', 
-    };
-    
-    const userWithInitials = {
-        initials: 'CD', 
-    };
-    
-    const handleProfilePress = () => {
-        Alert.alert("Perfil Clicado!");
-    };
-    
-    const handleNotificationsPress = () => {
-        Alert.alert("Notificações Clicadas!");
-    };
-
-    const closeForm = () => {
-        navigation.goBack();
-    };
+    const userWithAvatar = { initials: 'CD' };
+    const handleProfilePress = () => {};
+    const handleNotificationsPress = () => {};
+    const closeForm = () => navigation.goBack();
 
     return (
         <SafeAreaView style={styles.ProjectFormScreen}>
@@ -83,7 +74,9 @@ export const ProjectForm = () => {
                     placeholder="Escreva uma breve descrição"
                     value={projectDescription}
                     onChangeText={setProjectDescription}
-                    maxLength={50}
+                    maxLength={250}
+                    multiline
+                    numberOfLines={4}
                 />
                 <InputsField
                     label="Time: *"
@@ -91,8 +84,15 @@ export const ProjectForm = () => {
                     value={teamMember}
                     onChangeText={setTeamMember}
                 />
-                <MainButton title="Despertar o polvo" onPress={handleCreateProject} />
+                <MainButton title="Despertar o Polvo" onPress={handleCreateProject} />
             </FormCard>
+
+            <InfoPopup
+                visible={infoPopup.visible}
+                title="⚠️ Atenção"
+                message={infoPopup.message}
+                onClose={() => setInfoPopup({ visible: false, message: '' })}
+            />
         </SafeAreaView>
     );
 }
