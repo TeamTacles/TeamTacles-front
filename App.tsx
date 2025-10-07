@@ -19,13 +19,13 @@ export default function App() {
     <SafeAreaProvider>
       <AppProvider> 
         <NavigationContainer>
-          <Stack.Navigator initialRouteName="Menu" screenOptions={{ headerShown: false }}>
-            
-            <Stack.Group screenOptions={{ headerShown: false }}>
-              {/* <Stack.Screen name="Login" component={LoginScreen} /> */}
-              {/* <Stack.Screen name="Register" component={RegisterScreen} />*/}
-              <Stack.Screen name="Menu" component={MenuNavigator} />
-            </Stack.Group>
+          
+         <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
+    <Stack.Group screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Menu" component={MenuNavigator} />
+    </Stack.Group>
             
             <Stack.Group screenOptions={{ presentation: 'modal', headerShown: false }}>
               <Stack.Screen name="ProjectForm" component={ProjectForm} />

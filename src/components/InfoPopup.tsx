@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, StyleSheet } from 'react-native';
+import { Modal, View, Text, StyleSheet, Image, ImageSourcePropType } from 'react-native';
 import { MainButton } from './MainButton';
 
 interface InfoPopupProps {
@@ -7,9 +7,10 @@ interface InfoPopupProps {
   title: string;
   message: string;
   onClose: () => void;
+  imageSource?: ImageSourcePropType; 
 }
 
-export const InfoPopup: React.FC<InfoPopupProps> = ({ visible, title, message, onClose }) => {
+export const InfoPopup: React.FC<InfoPopupProps> = ({ visible, title, message, onClose, imageSource }) => {
   return (
     <Modal
       animationType="fade"
@@ -19,6 +20,8 @@ export const InfoPopup: React.FC<InfoPopupProps> = ({ visible, title, message, o
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
+          {imageSource && <Image source={imageSource} style={styles.popupImage} />}
+
           <Text style={styles.modalTitle}>{title}</Text>
           <Text style={styles.modalText}>{message}</Text>
           <View style={styles.mainButtonContainer}>
@@ -53,6 +56,12 @@ const styles = StyleSheet.create({
     elevation: 5,
     width: '90%',
   },
+
+  popupImage: {
+    width: 80,
+    height: 80,
+    marginBottom: 20, 
+  },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -63,10 +72,11 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 16,
     color: '#E0E0E0',
-    marginBottom: 15,
+    marginBottom: 20, 
     textAlign: 'center',
   },
   mainButtonContainer : {
-    width: '100%'
+    width: '100%',
+    marginTop: 10, 
   }
 });

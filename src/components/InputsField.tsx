@@ -4,9 +4,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 interface InputFieldProps extends TextInputProps {
     label: string;
+    error?: string;
 }
 
-export const InputsField = ({ label, secureTextEntry, maxLength, value, multiline, numberOfLines, ...rest }: InputFieldProps) => {
+export const InputsField = ({ label, secureTextEntry, maxLength, value, multiline, numberOfLines, error, ...rest }: InputFieldProps) => {
     const [isPasswordVisible, setPasswordVisible] = useState(false);
 
     const togglePasswordVisibility = () => {
@@ -16,6 +17,7 @@ export const InputsField = ({ label, secureTextEntry, maxLength, value, multilin
     const wrapperStyles = [
         styles.inputWrapper,
         multiline && styles.multilineInputWrapper,
+        error ? styles.errorWrapper : null, 
     ];
 
     return (
@@ -50,7 +52,10 @@ export const InputsField = ({ label, secureTextEntry, maxLength, value, multilin
                     </Text>
                 )}
             </View>
-             {maxLength && multiline && ( 
+
+            {error && <Text style={styles.errorText}>{error}</Text>}
+
+            {maxLength && multiline && ( 
                 <Text style={styles.multilineCharCounter}>
                     {String(value).length || 0} / {maxLength}
                 </Text>
@@ -104,11 +109,21 @@ const styles = StyleSheet.create({
         color: '#808080',
         paddingRight: 10,
     },
-    // Novo estilo para o contador em campos multiline
     multilineCharCounter: {
         fontSize: 12,
         color: '#A9A9A9',
         alignSelf: 'flex-end',
         marginTop: 4,
+    },
+    errorWrapper: {
+        borderColor: '#FF5A5F', 
+        borderWidth: 1.5,
+    },
+    errorText: {
+        color: '#FF5A5F', 
+        fontSize: 12,
+        marginTop: 4,
+        marginLeft: 2, 
+        alignSelf: 'flex-start',
     }
 });
