@@ -1,5 +1,4 @@
 import React from "react";
-
 import { View, Text, StyleSheet } from 'react-native';
 
 interface HyperlinkProps {
@@ -7,7 +6,7 @@ interface HyperlinkProps {
     onPress: () => void;
 }
 
-export const Hyperlink = ({ label, onPress }: HyperlinkProps) => {
+const Hyperlink = ({ label, onPress }: HyperlinkProps) => {
     return (
         <View style={styles.hyperlinkContainer}>
             <Text style={styles.hyperlinkText} onPress={onPress}>
@@ -27,3 +26,5 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
 });
+
+export default Hyperlink; 

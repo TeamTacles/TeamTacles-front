@@ -1,5 +1,5 @@
 import { TeamType } from '../components/TeamCard';
-
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'; 
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
@@ -16,3 +16,5 @@ export type RootTabParamList = {
     Equipes: undefined;
     Mais: undefined;
 };
+export type AuthNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
+

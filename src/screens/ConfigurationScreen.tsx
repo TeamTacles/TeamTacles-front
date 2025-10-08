@@ -6,12 +6,15 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native'; 
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/Navigation'; 
+import { useAppContext } from '../contexts/AppContext';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 export const ConfigurationScreen = () => {
+    const { signOut } = useAppContext(); 
+
     type ConfigurationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
     const navigation = useNavigation<ConfigurationScreenNavigationProp>();
 
@@ -33,7 +36,8 @@ export const ConfigurationScreen = () => {
             "Você tem certeza que deseja sair?",
             [
                 { text: "Cancelar", style: "cancel" },
-                { text: "Sair", style: "destructive", onPress: () => console.log("Usuário deslogado") }
+                // --- A ÚNICA CORREÇÃO ESTÁ AQUI ---
+                { text: "Sair", style: "destructive", onPress: signOut }
             ]
         );
     };
@@ -62,7 +66,7 @@ export const ConfigurationScreen = () => {
                                 onPress={() => navigation.navigate('EditProfile')}
                             >
                                 <Icon name="pencil-outline" size={24} color="#fff" />
-                                <Text style={styles.subMenuItemText}>Editar</Text>                            
+                                <Text style={styles.subMenuItemText}>Editar</Text>                               
                             </TouchableOpacity>
                         )}
                     </View>
@@ -74,7 +78,7 @@ export const ConfigurationScreen = () => {
                             <Text style={[styles.menuItemText, styles.disabledText]}>Notificações</Text>
                         </View>
                     </BaseCard>
-                     <BaseCard style={[styles.cardOverride, styles.disabledMenuItem]} disabled>
+                    <BaseCard style={[styles.cardOverride, styles.disabledMenuItem]} disabled>
                         <View style={styles.menuItemContent}>
                             <Icon name="contrast-outline" size={24} color="#888" />
                             <Text style={[styles.menuItemText, styles.disabledText]}>Aparência</Text>
@@ -88,7 +92,7 @@ export const ConfigurationScreen = () => {
                     </BaseCard>
 
                     <Text style={styles.sectionTitle}>Sobre</Text>
-                     <BaseCard style={[styles.cardOverride, styles.disabledMenuItem]} disabled>
+                    <BaseCard style={[styles.cardOverride, styles.disabledMenuItem]} disabled>
                         <View style={styles.menuItemContent}>
                             <Icon name="cloud-upload-outline" size={24} color="#888" />
                             <Text style={[styles.menuItemText, styles.disabledText]}>Atualizações</Text>

@@ -6,10 +6,10 @@ import { isAxiosError } from "axios";
 import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
-import { Hyperlink } from "../components/Hyperlink";
-import { InfoPopup } from "../components/InfoPopup";
+import Hyperlink from '../components/Hyperlink'; 
 import { RootStackParamList } from "../types/Navigation";
 import { userService } from '../services/userService';
+import { InfoPopup } from "../components/InfoPopup";
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
@@ -93,7 +93,7 @@ export const RegisterScreen = () => {
         <View style={styles.container}>
             <FormCard>
                 <Image source={require('../assets/logo.png')} style={styles.logo} />
-                <Text style={styles.introductionText}>Pronto para explorar as profundezas com organização?</Text>
+                <Text style={styles.introductionText}>Organize seus projetos com a inteligência de um polvo.</Text>
                 <InputsField label="Usuário" value={username} onChangeText={(text) => handleInputChange('username', text, setUsername)} error={errors.username} />
                 <InputsField label="Email" value={email} onChangeText={(text) => handleInputChange('email', text, setEmail)} error={errors.email} keyboardType="email-address" autoCapitalize="none" />
                 <InputsField label="Senha" value={password} onChangeText={(text) => handleInputChange('password', text, setPassword)} secureTextEntry={true} error={errors.password} />

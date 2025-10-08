@@ -4,3 +4,12 @@ export type RegisterPayload = {
   password: string;
   passwordConfirm: string; 
 };
+
+export interface LoginData {
+  email?: string;
+  password?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+}
