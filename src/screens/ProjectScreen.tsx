@@ -64,15 +64,14 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
             console.log("Simulando API para criar projeto:", data);
             const responseSimulada = { id: new Date().getTime(), title: data.title, description: data.description };
             
+            // --- AQUI ESTÁ A CORREÇÃO ---
+            // Remova a propriedade teamMembers daqui. A função addProject já faz isso.
             addProject({ 
                 title: responseSimulada.title, 
                 description: responseSimulada.description, 
-                teamMembers: [{ name: userWithAvatar.name, initials: userWithAvatar.initials }] 
             });
             
-            // ALTERAÇÃO: Adiciona a notificação de projeto criado à fila (em primeiro lugar)
             setNotificationQueue(prev => [`Projeto "${responseSimulada.title}" criado!`, ...prev]);
-
             setNewlyCreatedProject(responseSimulada);
             setNewProjectModalVisible(false);
             setAddMembersModalVisible(true);
@@ -143,8 +142,15 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
 
             <FlatList
                 data={filteredProjects}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => <ProjectCard project={item} onPress={() => {}} />}
+            // AQUI ESTÁ A CORREÇÃO:
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) =>
+                    <ProjectCard
+                        project={item}
+                        // Esta linha já está correta, pois item.id é um number
+                        onPress={() => navigation.navigate('ProjectDetail', { projectId: item.id, projectTitle: item.title })}
+                    />
+                }              
                 contentContainerStyle={styles.listContainer}
                 ListEmptyComponent={<EmptyState imageSource={polvo_pescando} title="Nenhum Projeto Encontrado" subtitle="Clique em + para adicionar um novo projeto." />}
             />

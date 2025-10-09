@@ -8,6 +8,7 @@ export type RootStackParamList = {
     TaskForm: undefined;
     EditProfile: undefined;
     TeamDetail: { team: TeamType };
+    ProjectDetail: { projectId: number; projectTitle: string };
 };
 
 export type RootTabParamList = {

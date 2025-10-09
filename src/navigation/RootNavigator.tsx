@@ -10,11 +10,11 @@ import { RootStackParamList } from "../types/Navigation";
 
 import { LoginScreen } from '../screens/LoginScreen'; // <-- CORRIGIDO: Importação nomeada com chaves
 import { RegisterScreen } from '../screens/RegisterScreen';
-import { ProjectForm } from '../screens/ProjectFormScreen';
 import { TaskForm } from '../screens/TaskFormScreen';
 import { MenuNavigator } from './MenuNavigator';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { TeamDetailScreen } from '../screens/TeamDetailScreen';
+import { ProjectDetailScreen } from '../screens/ProjectDetailScreen'; 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -34,10 +34,10 @@ const AppNavigator = () => (
     </Stack.Group>
     
     <Stack.Group screenOptions={{ presentation: 'modal', headerShown: false }}>
-      <Stack.Screen name="ProjectForm" component={ProjectForm} />
       <Stack.Screen name="TaskForm" component={TaskForm} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="TeamDetail" component={TeamDetailScreen} />
+      <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
     </Stack.Group>
   </Stack.Navigator>
 );
@@ -56,8 +56,11 @@ const RootNavigator = () => {
 
   return (
     <NavigationContainer>
-      {signed ? <AppNavigator /> : <AuthNavigator />}
+      <AppNavigator />
     </NavigationContainer>
+    // NavigationContainer>
+    //  {signed ? <AppNavigator /> : <AuthNavigator />}
+    //</NavigationContainer>
   );
 };
 

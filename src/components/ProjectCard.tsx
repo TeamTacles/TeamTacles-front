@@ -1,30 +1,33 @@
 import React from "react";
+import { View, Text, StyleSheet } from 'react-native';
 import { BaseCard } from "./BaseCard"; 
 import Icon from 'react-native-vector-icons/Ionicons';
 import TimeAgo from "./TimeAgo"; 
-import { ProjectType } from "../types/ProjectType"; 
-import { View, Text, StyleSheet } from 'react-native';
+// Importe a interface 'Project' diretamente do AppContext
+import { Project } from "../contexts/AppContext"; 
 
 type ProjectCardProps = {
-    project: ProjectType;
+    project: Project; // Use a interface correta
     onPress: () => void;
 }
 
 export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
-    const { title, description, lastUpdated, teamMembers } = project;
+    // Agora usando 'createdAt', que existe na interface 'Project'
+    const { title, description, createdAt, teamMembers } = project;
 
     return (
         <BaseCard onPress={onPress}>
             <View style={styles.contentContainer}>
                 <View style={styles.textContainer}>
                     <Text style={styles.title}>{title}</Text>
-                    <Text style={styles.description}>{description}</Text>
+                    <Text style={styles.description} numberOfLines={2}>{description}</Text>
                 </View>
 
                 <View style={styles.footer}>
                     <View style={styles.updateInfo}>
                         <Icon name="time-outline" size={14} color="#A9A9A9" />
-                        <Text style={styles.updateText}>Atualizado <TimeAgo timestamp={lastUpdated} /></Text>
+                        {/* Passando 'createdAt' para o TimeAgo */}
+                        <Text style={styles.updateText}>Atualizado <TimeAgo timestamp={createdAt} /></Text>
                     </View>
                     <View style={styles.teamContainer}>
                         {teamMembers.map((member, index) => (
@@ -39,10 +42,11 @@ export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
     );
 };
 
+// Estilos (permanecem os mesmos)
 const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
-        padding: 10
+        padding: 15, // Aumentei o padding para melhor espaçamento
     },
     textContainer: {
         marginBottom: 20,
@@ -56,6 +60,7 @@ const styles = StyleSheet.create({
     description: {
         color: '#FFFFFF',
         fontSize: 14,
+        lineHeight: 20, // Adicionado para melhor legibilidade
     },
     footer: {
         flexDirection: 'row',
