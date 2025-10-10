@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ScrollView, 
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../types/Navigation';
 import { Header } from '../components/Header';
@@ -11,11 +12,11 @@ import { MemberListItem } from '../components/MemberListItem';
 import { EditMemberRoleModal, MemberData } from '../components/EditMemberRoleModal';
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
 
-// --- NOVO IMPORT ---
 import { EditTeamModal } from '../components/EditTeamModal';
 import { TeamType } from '../components/TeamCard';
 
-
+// Tipos para navegação e rotas
+type ProjectDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ProjectDetailRouteProp = RouteProp<RootStackParamList, 'ProjectDetail'>;
 
 // --- DADOS MOCADOS PARA TESTE ---
@@ -86,10 +87,10 @@ const TaskCard = ({ task }: { task: ProjectTask }) => {
 
 
 export const ProjectDetailScreen = () => {
-    const navigation = useNavigation();
+    // AQUI ESTÁ A CORREÇÃO: Apenas uma declaração, com o tipo correto.
+    const navigation = useNavigation<ProjectDetailNavigationProp>();
     const notificationRef = useRef<NotificationPopupRef>(null);
 
-    // --- ESTADOS ADICIONADOS/MODIFICADOS ---
     const [project, setProject] = useState<ProjectDetails | null>(MOCK_PROJECT_DETAILS);
     const [isEditModalVisible, setEditModalVisible] = useState(false);
     const [isMembersListModalVisible, setMembersListModalVisible] = useState(false);
@@ -127,7 +128,6 @@ export const ProjectDetailScreen = () => {
         notificationRef.current?.show({ type: 'success', message: `${selectedMember.name} foi removido do projeto.` });
     };
 
-    // --- NOVA FUNÇÃO PARA SALVAR EDIÇÃO DO PROJETO ---
     const handleSaveProject = (updatedData: { title: string; description: string }) => {
         setProject(prev => prev ? { ...prev, ...updatedData } : null);
         setEditModalVisible(false);
@@ -143,7 +143,6 @@ export const ProjectDetailScreen = () => {
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <Header userProfile={userWithAvatar} onPressProfile={() => {}} notificationCount={7} onPressNotifications={() => {}} />
             
-            {/* --- CABEÇALHO MODIFICADO COM O ÍCONE DE LÁPIS --- */}
             <View style={styles.pageHeader}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Icon name="arrow-back-outline" size={30} color="#EB5F1C" />
@@ -160,13 +159,16 @@ export const ProjectDetailScreen = () => {
                 <Text style={styles.projectDescription}>{project?.description}</Text>
 
                 <View style={styles.infoBar}>
-                    <TouchableOpacity style={styles.infoButton} onPress={() => Alert.alert('Relatórios', 'Função de relatórios em desenvolvimento.')}>
-                        <Icon name="document-text-outline" size={20} color="#A9A9A9" />
+                    <TouchableOpacity 
+                        style={styles.infoButton} 
+                        onPress={() => project && navigation.navigate('ReportCenter', { projectId: project.id })} 
+                    >
+                        <Icon name="document-text-outline" size={20} color="#ffffffff" />
                         <Text style={styles.infoTitle}>Relatórios</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.infoButton} onPress={() => setMembersListModalVisible(true)}>
-                        <Icon name="people-outline" size={20} color="#A9A9A9" />
+                        <Icon name="people-outline" size={20} color="#ffffffff" />
                         <Text style={styles.infoTitle}>Membros</Text>
                     </TouchableOpacity>
                 </View>
@@ -181,7 +183,12 @@ export const ProjectDetailScreen = () => {
                 
                 <View style={styles.listContainer}>
                     {tasks.length > 0 ? (
-                        tasks.map(item => <TaskCard key={item.id} task={item} />)
+                        tasks.map(item => <TouchableOpacity 
+                                key={item.id} 
+                                onPress={() => project && navigation.navigate('TaskDetail', { projectId: project.id, taskId: item.id })}
+                            >
+                                <TaskCard task={item} />
+                            </TouchableOpacity>)
                     ) : (
                         <Text style={styles.emptyText}>Nenhuma tarefa encontrada.</Text>
                     )}
@@ -225,10 +232,8 @@ export const ProjectDetailScreen = () => {
                 onDelete={handleDeleteMember}
             />
             
-            {/* --- NOVO MODAL PARA EDITAR O PROJETO --- */}
             <EditTeamModal
                 visible={isEditModalVisible}
-                // Adaptamos o objeto 'project' para ser compatível com a prop 'team' do modal
                 team={project ? { ...project, id: project.id.toString(), members: [], createdAt: new Date() } as TeamType : null}
                 onClose={() => setEditModalVisible(false)}
                 onSave={handleSaveProject}
@@ -241,7 +246,6 @@ export const ProjectDetailScreen = () => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#191919' },
-    // --- ESTILO DO CABEÇALHO AJUSTADO ---
     pageHeader: { 
         flexDirection: 'row', 
         alignItems: 'center', 
@@ -310,8 +314,6 @@ const styles = StyleSheet.create({
     taskInfo: { flexDirection: 'row', alignItems: 'center' },
     taskInfoText: { color: '#A9A9A9', fontSize: 12, marginLeft: 5 },
     taskFooterAvatars: { flexDirection: 'row-reverse' },
-    separatorContainer: { alignItems: 'center', marginTop: 15 },
-    separator: { color: '#EB5F1C', fontSize: 20 },
     avatarSmall: { width: 24, height: 24, borderRadius: 12, backgroundColor: '#3C3C3C', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#2A2A2A', marginLeft: -8 },
     avatarTextSmall: { color: '#fff', fontWeight: 'bold', fontSize: 10 },
 });

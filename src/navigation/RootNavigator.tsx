@@ -15,6 +15,8 @@ import { MenuNavigator } from './MenuNavigator';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { TeamDetailScreen } from '../screens/TeamDetailScreen';
 import { ProjectDetailScreen } from '../screens/ProjectDetailScreen'; 
+import { ReportCenterScreen } from '../screens/ReportCenterScreen'; 
+import { TaskDetailScreen } from '../screens/TaskDetailScreen'; 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -38,6 +40,8 @@ const AppNavigator = () => (
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="TeamDetail" component={TeamDetailScreen} />
       <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
+      <Stack.Screen name="ReportCenter" component={ReportCenterScreen} />
+      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} /> 
     </Stack.Group>
   </Stack.Navigator>
 );
