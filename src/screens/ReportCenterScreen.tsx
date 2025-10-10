@@ -108,11 +108,11 @@ export const ReportCenterScreen = () => {
                                 <Text style={styles.staticPickerText} numberOfLines={1}>{projectName}</Text>
                             </View>
                         </View>
-                        <FilterPicker label="Membro" items={memberItems} selectedValue={selectedMemberId} onValueChange={(v) => setSelectedMemberId(v === 0 ? null : v as number)} placeholder="Todos" />
+                        <FilterPicker label="Membro" style={{ width: '48%' }} items={memberItems} selectedValue={selectedMemberId} onValueChange={(v) => setSelectedMemberId(v === 0 ? null : v as number)} placeholder="Todos" />
                     </View>
                     <View style={styles.filterRow}>
-                        <FilterPicker label="Status" items={statusItems} selectedValue={selectedStatus} onValueChange={(v) => setSelectedStatus(v as string)} />
-                        <FilterPicker label="Período" items={periodItems} selectedValue={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as string)} />
+                        <FilterPicker label="Status" style={{ width: '48%' }}  items={statusItems} selectedValue={selectedStatus} onValueChange={(v) => setSelectedStatus(v as string)} />
+                        <FilterPicker label="Período" style={{ width: '48%' }}  items={periodItems} selectedValue={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as string)} />
                     </View>
                     <MainButton title="Gerar Relatório" iconName="archive-outline" onPress={handleGenerateReport} />
                 </View>
