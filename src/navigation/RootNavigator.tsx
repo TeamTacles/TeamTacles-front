@@ -1,14 +1,10 @@
-// Arquivo: src/navigation/RootNavigator.tsx
-
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-
 import { useAppContext } from '../contexts/AppContext';
 import { RootStackParamList } from "../types/Navigation";
-
-import { LoginScreen } from '../screens/LoginScreen'; // <-- CORRIGIDO: Importação nomeada com chaves
+import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
 import { TaskForm } from '../screens/TaskFormScreen';
 import { MenuNavigator } from './MenuNavigator';
@@ -17,6 +13,8 @@ import { TeamDetailScreen } from '../screens/TeamDetailScreen';
 import { ProjectDetailScreen } from '../screens/ProjectDetailScreen'; 
 import { ReportCenterScreen } from '../screens/ReportCenterScreen'; 
 import { TaskDetailScreen } from '../screens/TaskDetailScreen'; 
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen'; 
+
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -25,6 +23,8 @@ const AuthNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+
   </Stack.Navigator>
 );
 
@@ -60,11 +60,8 @@ const RootNavigator = () => {
 
   return (
     <NavigationContainer>
-      <AppNavigator />
+      {signed ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
-    // NavigationContainer>
-    //  {signed ? <AppNavigator /> : <AuthNavigator />}
-    //</NavigationContainer>
   );
 };
 

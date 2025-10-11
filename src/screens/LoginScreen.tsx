@@ -1,19 +1,15 @@
-// Arquivo: src/screens/LoginScreen.tsx
 
 import React, { useState } from "react";
 import { View, StyleSheet, Image, Text, Alert } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-
-// NOSSAS ADIÇÕES
 import { useAppContext } from "../contexts/AppContext"; 
 import { LoginData } from "../types/AuthTypes";
 
-// SEUS COMPONENTES
 import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
-import Hyperlink from '../components/Hyperlink'; 
+import Hyperlink from '../components/Hyperlink';
 import { RootStackParamList } from "../types/Navigation";
 
 const logo = require('../assets/logo.png');
@@ -23,15 +19,13 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, '
 export const LoginScreen = () => {
     const navigation = useNavigation<LoginScreenNavigationProp>();
     
-    // NOSSAS ADIÇÕES
     const { signIn } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
 
-    // MUDANÇA CRÍTICA: de 'username' para 'email' para bater com a API
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleLogin = async () => { // <-- MUDANÇA: Função agora é async
+    const handleLogin = async () => { 
         if (!email || !password) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos.');
             return;
@@ -41,9 +35,7 @@ export const LoginScreen = () => {
         try {
             const credentials: LoginData = { email, password };
             await signIn(credentials);
-            // Se o login for bem-sucedido, o RootNavigator já cuida do redirecionamento.
-            // A linha abaixo não é mais necessária:
-            // goToMainPage();
+           
         } catch (error) {
             Alert.alert('Falha no Login', 'Credenciais inválidas. Verifique seus dados e tente novamente.');
         } finally {
@@ -55,11 +47,7 @@ export const LoginScreen = () => {
         navigation.navigate('Register');
     };
 
-    // Esta função não é mais necessária, o RootNavigator faz o trabalho
-    // const goToMainPage = () => {
-    //     navigation.navigate('Menu');
-    // };
-
+  
     return (
         <View style={ style.LoginScreen }>
             <FormCard>
@@ -68,10 +56,10 @@ export const LoginScreen = () => {
                     Organize seus projetos com a inteligência de um polvo.
                 </Text>
                 <InputsField
-                    label="Email" // <-- MUDANÇA: Label ajustada para clareza
+                    label="Email" 
                     placeholder="Digite seu email"
                     value={email}
-                    onChangeText={setEmail} // <-- MUDANÇA: de setUsername para setEmail
+                    onChangeText={setEmail} 
                     keyboardType="email-address"
                     autoCapitalize="none"
                 />
@@ -82,11 +70,9 @@ export const LoginScreen = () => {
                     onChangeText={setPassword}
                     secureTextEntry={true}
                 />
-                <View style={{ width: '100%', alignItems: 'flex-end' }}>
-                    <Hyperlink
-                        label="Esqueci minha senha"
-                        onPress={() => Alert.alert('Recuperação de senha', 'Funcionalidade em desenvolvimento.')} /> 
-                </View>
+                <Hyperlink
+                    label="Esqueci minha senha"
+                    onPress={() => navigation.navigate('ForgotPassword')} />
                 <View style={{paddingTop: 30}}>
                     <MainButton 
                         title={isLoading ? "Mergulhando..." : "Mergulhar"} 
