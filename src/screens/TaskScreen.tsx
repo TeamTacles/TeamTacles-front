@@ -1,3 +1,5 @@
+// src/screens/TaskScreen.tsx
+
 import React, { useState, useMemo } from "react";
 import { Header } from "../components/Header";
 import { View, StyleSheet, Alert, FlatList } from "react-native";
@@ -13,8 +15,55 @@ import { useAppContext } from "../contexts/AppContext";
 import { TaskCard } from "../components/TaskCard"; 
 import { FilterModal, Filters } from "../components/FilterModal";
 import { FilterButton } from "../components/FilterButton";
+import { Task } from "../contexts/AppContext"; // Importe o tipo Task
 
 const polvo_tasks = require('../assets/polvo_tasks.png');
+
+// --- DADOS MOCADOS PARA A TELA DE TAREFAS ---
+const MOCK_TASKS: Task[] = [
+    {
+        id: 101,
+        title: 'Revisar protótipo de alta fidelidade',
+        description: 'Verificar todos os fluxos de usuário.',
+        dueDate: new Date(Date.now() + 86400000 * 5).toISOString(), // Prazo: 5 dias a partir de hoje
+        projectId: 1,
+        projectName: 'Projeto TeamTacles',
+        status: 'IN_PROGRESS',
+        createdAt: new Date(Date.now() - 86400000 * 2).getTime(), // Criado há 2 dias
+    },
+    {
+        id: 102,
+        title: 'Desenvolver tela de Login',
+        description: 'Implementar a interface e a lógica de autenticação.',
+        dueDate: new Date(Date.now() + 86400000 * 10).toISOString(), // Prazo: 10 dias
+        projectId: 1,
+        projectName: 'Projeto TeamTacles',
+        status: 'TO_DO',
+        createdAt: new Date(Date.now() - 86400000).getTime(), // Criado ontem
+    },
+    {
+        id: 103,
+        title: 'Configurar ambiente de testes',
+        description: 'Instalar e configurar o Jest e a Testing Library.',
+        dueDate: new Date('2025-10-10T23:59:59Z').toISOString(), // Prazo: 10 de Outubro de 2025 (atrasado)
+        projectId: 2,
+        projectName: 'Website Redesign',
+        status: 'TO_DO',
+        createdAt: new Date('2025-10-01T23:59:59Z').getTime(),
+    },
+    {
+        id: 104,
+        title: 'Entregar relatório de performance',
+        description: 'Gerar o relatório do último trimestre.',
+        dueDate: new Date('2025-09-30T23:59:59Z').toISOString(), // Prazo: 30 de Setembro de 2025 (concluído)
+        projectId: 2,
+        projectName: 'Website Redesign',
+        status: 'DONE',
+        createdAt: new Date('2025-09-15T23:59:59Z').getTime(),
+    },
+];
+// --- FIM DOS DADOS MOCADOS ---
+
 
 type TaskScreenNavigationProp = CompositeScreenProps<
   BottomTabScreenProps<RootTabParamList, 'Tarefas'>,
@@ -22,7 +71,10 @@ type TaskScreenNavigationProp = CompositeScreenProps<
 >;
 
 export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
-    const { tasks, projects } = useAppContext(); 
+    // Agora usamos um estado local inicializado com os dados mocados
+    const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS); 
+    const { projects } = useAppContext(); 
+    
     const [search, setSearch] = useState('');
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
     const [filters, setFilters] = useState<Filters>({});
@@ -80,13 +132,11 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
             </View>
             <FlatList
                 data={filteredTasks}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                     <TaskCard
-                        title={item.title}
-                        projectName={item.projectName}
-                        dueDate={item.dueDate}
-                        onPress={() => Alert.alert("Detalhes da Tarefa", item.title)}
+                        task={item}
+                        onPress={() => navigation.navigate('TaskDetail', { projectId: item.projectId, taskId: item.id })}
                     />
                 )}
                 contentContainerStyle={styles.listContainer}
@@ -98,11 +148,6 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
                     />
                 }
             />
-            <View style={styles.addButtonContainer}>
-                <NewItemButton
-                    onPress={handleNewTask}
-                />
-            </View>
             <FilterModal
                 visible={isFilterModalVisible}
                 filterType="tasks"

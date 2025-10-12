@@ -6,7 +6,6 @@ import { useAppContext } from '../contexts/AppContext';
 import { RootStackParamList } from "../types/Navigation";
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
-import { TaskForm } from '../screens/TaskFormScreen';
 import { MenuNavigator } from './MenuNavigator';
 import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { TeamDetailScreen } from '../screens/TeamDetailScreen';
@@ -36,7 +35,6 @@ const AppNavigator = () => (
     </Stack.Group>
     
     <Stack.Group screenOptions={{ presentation: 'modal', headerShown: false }}>
-      <Stack.Screen name="TaskForm" component={TaskForm} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="TeamDetail" component={TeamDetailScreen} />
       <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
@@ -60,8 +58,11 @@ const RootNavigator = () => {
 
   return (
     <NavigationContainer>
-      {signed ? <AppNavigator /> : <AuthNavigator />}
+      <AppNavigator /> 
     </NavigationContainer>
+    //<NavigationContainer>
+      //{signed ? <AppNavigator /> : <AuthNavigator />}
+    //</NavigationContainer>
   );
 };
 

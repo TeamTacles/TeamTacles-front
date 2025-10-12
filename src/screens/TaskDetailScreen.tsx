@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 import { RootStackParamList } from '../types/Navigation';
 import { Header } from '../components/Header';
@@ -58,21 +59,48 @@ export const TaskDetailScreen = () => {
     const [isAssignModalVisible, setAssignModalVisible] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState<TaskMember | null>(null);
     const [isAssignmentsExpanded, setAssignmentsExpanded] = useState(true);
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
 
-    // Array de status COM CORES PARA O BACKGROUND
     const statusItems = [
-        { label: 'A Fazer', value: 'TO_DO', color: '#ff4545' },
+        { label: 'A Fazer', value: 'TO_DO', color: '#FFA500' },
         { label: 'Em Andamento', value: 'IN_PROGRESS', color: '#FFD700' },
         { label: 'Concluído', value: 'DONE', color: '#2E7D32' },
     ];
 
-    useEffect(() => { /* ... sua lógica para buscar dados da API ... */ 
-        // Mock
-        const taskData: TaskDetails = { id: taskId, title: 'Revisar protótipo de alta fidelidade', description: 'Verificar todos os fluxos de usuário e garantir que os componentes estão alinhados com o design system.', status: 'IN_PROGRESS', createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), dueDate: new Date(Date.now() + 86400000 * 5).toISOString(), ownerId: 101, assignments: [ { userId: 101, username: 'Gabriela S.', taskRole: 'OWNER' }, { userId: 102, username: 'Caio Dib', taskRole: 'ASSIGNEE' } ] };
+    const isOverdue = task ? new Date(task.dueDate) < new Date() && task.status !== 'DONE' : false;
+
+    useEffect(() => { 
+        const taskData: TaskDetails = { id: taskId, title: 'Revisar protótipo de alta fidelidade', description: 'Verificar todos os fluxos de usuário e garantir que os componentes estão alinhados com o design system.', status: 'IN_PROGRESS', createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), dueDate: '2020-01-01T00:00:00Z', ownerId: 101, assignments: [ { userId: 101, username: 'Gabriela S.', taskRole: 'OWNER' }, { userId: 102, username: 'Caio Dib', taskRole: 'ASSIGNEE' } ] };
         const membersData = { content: [ { userId: 101, username: 'Gabriela S.'}, { userId: 102, username: 'Caio Dib'}, { userId: 103, username: 'Pedro L.'} ] };
-        setTask(taskData); setProjectMembers(membersData.content); setLoading(false);
+        
+        setTask(taskData);
+        setDate(new Date(taskData.dueDate));
+        setProjectMembers(membersData.content); 
+        setLoading(false);
     }, [taskId, projectId]);
     
+    const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        setShowDatePicker(Platform.OS === 'ios');
+        if (event.type === 'set' && selectedDate) {
+            const newDate = selectedDate;
+            setDate(newDate);
+            if (Platform.OS === 'android') {
+                updateTaskDueDate(newDate);
+            }
+        }
+    };
+
+    const confirmIOSDate = () => {
+        setShowDatePicker(false);
+        updateTaskDueDate(date);
+    };
+
+    const updateTaskDueDate = (newDate: Date) => {
+        setTask(prev => prev ? { ...prev, dueDate: newDate.toISOString() } : null);
+        notificationRef.current?.show({ type: 'success', message: 'Prazo atualizado com sucesso!' });
+    };
+
     const handleUpdateStatus = (newStatus: string | number) => { setTask(prev => prev ? { ...prev, status: newStatus as TaskStatus } : null); notificationRef.current?.show({type: 'success', message: 'Status Atualizado!'}) };
     const handleSaveTaskDetails = (updatedData: { title: string; description: string }) => { setTask(prev => prev ? { ...prev, ...updatedData } : null); setEditModalVisible(false); };
     const handleConfirmRemove = () => { /* ... */ };
@@ -108,7 +136,24 @@ export const TaskDetailScreen = () => {
 
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <View style={styles.section}><Text style={styles.taskTitle}>{task.title}</Text><Text style={styles.descriptionText}>{task.description || 'Nenhuma descrição fornecida.'}</Text></View>
-                <View style={styles.infoGrid}><View style={styles.infoBox}><Text style={styles.infoLabel}>Criada</Text><Text style={styles.infoValue}><TimeAgo timestamp={new Date(task.createdAt).getTime()} /></Text></View><View style={styles.infoBox}><Text style={styles.infoLabel}>Prazo</Text><Text style={styles.infoValue}>{new Date(task.dueDate).toLocaleDateString('pt-BR')}</Text></View></View>
+                
+                <View style={styles.infoGrid}>
+                    <View style={styles.infoBox}><Text style={styles.infoLabel}>Criada</Text><Text style={styles.infoValue}><TimeAgo timestamp={new Date(task.createdAt).getTime()} /></Text></View>
+                    
+                    <TouchableOpacity style={styles.infoBox} onPress={() => setShowDatePicker(true)}>
+                        {/* INÍCIO DA ALTERAÇÃO */}
+                        <View style={styles.labelContainer}>
+                            <Text style={styles.infoLabel}>Prazo</Text>
+                            <Text style={styles.editText}>(editar)</Text>
+                        </View>
+                        {/* FIM DA ALTERAÇÃO */}
+                        <View style={styles.dueDateContainer}>
+                            <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>{new Date(task.dueDate).toLocaleDateString('pt-BR')}</Text>
+                            {isOverdue && <Icon name="warning" size={16} color="#ff4545" style={styles.editIcon} />}
+                        </View>
+                    </TouchableOpacity>
+                </View>
+
                 <View style={styles.section}><FilterPicker label="Status" items={statusItems} selectedValue={task.status} onValueChange={handleUpdateStatus} /></View>
                 
                 <View style={styles.section}>
@@ -119,7 +164,6 @@ export const TaskDetailScreen = () => {
                     {isAssignmentsExpanded && (
                         <View style={styles.membersContainer}>
                             {task.assignments.map(member => ( <MemberRow key={member.userId} member={member} onRemove={() => openRemoveConfirmation(member)} /> ))}
-                            {/* BOTÃO DE ADICIONAR NOVO MEMBRO */}
                             <TouchableOpacity style={styles.addMemberRow} onPress={() => setAssignModalVisible(true)}>
                                 <Icon name="add-circle-outline" size={30} color="#EB5F1C" />
                                 <Text style={styles.addMemberText}>Adicionar responsável</Text>
@@ -127,6 +171,25 @@ export const TaskDetailScreen = () => {
                         </View>
                     )}
                 </View>
+
+                {showDatePicker && (
+                    <DateTimePicker
+                        mode="date"
+                        display="default"
+                        value={date}
+                        onChange={handleDateChange}
+                    />
+                )}
+                {showDatePicker && Platform.OS === 'ios' && (
+                    <View style={styles.iosPickerButtons}>
+                        <TouchableOpacity style={styles.iosPickerButton} onPress={() => setShowDatePicker(false)}>
+                            <Text style={styles.iosPickerButtonText}>Cancelar</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.iosPickerButton, styles.iosPickerButtonConfirm]} onPress={confirmIOSDate}>
+                            <Text style={styles.iosPickerButtonText}>Confirmar</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </ScrollView>
 
             <EditTaskModal visible={isEditModalVisible} task={task} onClose={() => setEditModalVisible(false)} onSave={handleSaveTaskDetails} />
@@ -150,7 +213,22 @@ const styles = StyleSheet.create({
     infoGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 },
     infoBox: { backgroundColor: '#2A2A2A', borderRadius: 10, padding: 15, width: '48%' },
     infoLabel: { color: '#A9A9A9', fontSize: 14, marginBottom: 5 },
+    // NOVOS ESTILOS
+    labelContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    editText: {
+        color: '#A9A9A9',
+        fontSize: 12,
+        marginLeft: 4,
+        fontStyle: 'italic',
+    },
+    // FIM DOS NOVOS ESTILOS
     infoValue: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+    overdueText: { color: '#ff4545' },
+    dueDateContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    editIcon: { marginLeft: 8 },
     collapsibleHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     membersContainer: { paddingTop: 5 },
     memberRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
@@ -159,17 +237,27 @@ const styles = StyleSheet.create({
     memberInfo: { flex: 1 },
     memberName: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
     memberRole: { color: '#A9A9A9', fontSize: 14 },
-    // Estilos para o novo botão de adicionar
-    addMemberRow: {
+    addMemberRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, paddingLeft: 4, },
+    addMemberText: { color: '#EB5F1C', fontSize: 16, fontWeight: 'bold', marginLeft: 12, },
+    iosPickerButtons: {
         flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 10,
-        paddingLeft: 4, // Alinha com o avatar
+        justifyContent: 'space-between',
+        backgroundColor: '#3C3C3C',
+        padding: 10,
+        borderTopWidth: 1,
+        borderColor: '#555'
     },
-    addMemberText: {
-        color: '#EB5F1C',
+    iosPickerButton: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+    },
+    iosPickerButtonConfirm: {
+        backgroundColor: '#EB5F1C',
+        borderRadius: 8,
+    },
+    iosPickerButtonText: {
+        color: '#FFFFFF',
         fontSize: 16,
-        fontWeight: 'bold',
-        marginLeft: 12,
-    },
+        fontWeight: 'bold'
+    }
 });
