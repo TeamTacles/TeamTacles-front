@@ -18,3 +18,12 @@ export const forgotPassword = async (email: string): Promise<ForgotPasswordRespo
     throw new Error(error.response?.data?.message || 'Não foi possível enviar o e-mail de recuperação.');
   }
 };
+
+export interface ResendVerificationResponse {
+  message: string;
+}
+
+export const resendVerification = async (email: string): Promise<ResendVerificationResponse> => {
+  const response = await api.post<ResendVerificationResponse>('/auth/resend-verification', { email });
+  return response.data;
+};

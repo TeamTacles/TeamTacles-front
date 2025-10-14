@@ -1,17 +1,21 @@
 import React, { useState } from "react";
-import { View, StyleSheet, Image, Text, Alert, Platform } from "react-native"; 
+import { View, StyleSheet, Image, Text } from "react-native";
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { isAxiosError } from "axios";
 import { useAppContext } from "../contexts/AppContext";
 import { LoginData } from "../types/AuthTypes";
 import { getErrorMessage } from "../utils/errorHandler";
+import { ErrorCode } from "../types/ErrorCode";
+import { resendVerification } from "../services/authService";
 
 import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
 import Hyperlink from '../components/Hyperlink';
 import { RootStackParamList } from "../types/Navigation";
+import { VerificationPopup } from "../components/VerificationPopup";
+import { InfoPopup } from "../components/InfoPopup";
 
 const logo = require('../assets/logo.png');
 
@@ -19,23 +23,27 @@ type LoginScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, '
 
 export const LoginScreen = () => {
     const navigation = useNavigation<LoginScreenNavigationProp>();
-    
+
     const { signIn } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
+    // Estados para popups
+    const [showVerificationPopup, setShowVerificationPopup] = useState(false);
+    const [showErrorPopup, setShowErrorPopup] = useState(false);
+    const [showResendSuccessPopup, setShowResendSuccessPopup] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [isResending, setIsResending] = useState(false);
+
     const handleLogin = async () => {
         const trimmedEmail = email.trim();
         const trimmedPassword = password.trim();
 
         if (!trimmedEmail || !trimmedPassword) {
-            if (Platform.OS === 'web') {
-                window.alert('Por favor, preencha todos os campos.');
-            } else {
-                Alert.alert('Erro', 'Por favor, preencha todos os campos.');
-            }
+            setErrorMessage('Por favor, preencha todos os campos.');
+            setShowErrorPopup(true);
             return;
         }
 
@@ -45,19 +53,37 @@ export const LoginScreen = () => {
             await signIn(credentials);
 
         } catch (error) {
-            const errorMessage = isAxiosError(error)
-                ? getErrorMessage(error)
-                : 'Erro ao tentar fazer login. Tente novamente.';
+            console.log('💬 Erro capturado no login:', error);
 
-            console.log('💬 Mensagem que será exibida:', errorMessage);
-            
-            if (Platform.OS === 'web') {
-                window.alert('Falha no Login\n\n' + errorMessage);
+            // Verifica se é erro de conta não verificada
+            if (isAxiosError(error) && error.response?.data?.errorCode === ErrorCode.ACCOUNT_NOT_VERIFIED) {
+                setShowVerificationPopup(true);
             } else {
-                Alert.alert('Falha no Login', errorMessage);
+                const message = isAxiosError(error)
+                    ? getErrorMessage(error)
+                    : 'Erro ao tentar fazer login. Tente novamente.';
+
+                setErrorMessage(message);
+                setShowErrorPopup(true);
             }
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleResendVerification = async () => {
+        setIsResending(true);
+        try {
+            await resendVerification(email.trim());
+            setShowVerificationPopup(false);
+            setShowResendSuccessPopup(true);
+        } catch (error) {
+            console.error('Erro ao reenviar verificação:', error);
+            setShowVerificationPopup(false);
+            setErrorMessage('Erro ao reenviar e-mail de verificação. Tente novamente.');
+            setShowErrorPopup(true);
+        } finally {
+            setIsResending(false);
         }
     };
 
@@ -65,9 +91,36 @@ export const LoginScreen = () => {
         navigation.navigate('Register');
     };
 
-  
+
     return (
         <View style={ style.LoginScreen }>
+            {/* Popup de verificação de conta */}
+            <VerificationPopup
+                visible={showVerificationPopup}
+                email={email}
+                onResend={handleResendVerification}
+                onClose={() => setShowVerificationPopup(false)}
+                isResending={isResending}
+                imageSource={require('../assets/email_sent_icon.png')}
+            />
+
+            {/* Popup de sucesso ao reenviar */}
+            <InfoPopup
+                visible={showResendSuccessPopup}
+                title="E-mail Enviado"
+                message="E-mail de verificação reenviado! Verifique sua caixa de entrada."
+                onClose={() => setShowResendSuccessPopup(false)}
+                imageSource={require('../assets/email_sent_icon.png')}
+            />
+
+            {/* Popup de erro genérico */}
+            <InfoPopup
+                visible={showErrorPopup}
+                title="Falha no Login"
+                message={errorMessage}
+                onClose={() => setShowErrorPopup(false)}
+            />
+
             <FormCard>
                 <Image source={ logo } style={ style.logo } />
                 <Text style={ style.introductionText }>
