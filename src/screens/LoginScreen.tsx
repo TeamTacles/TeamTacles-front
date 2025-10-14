@@ -101,7 +101,7 @@ export const LoginScreen = () => {
                 onResend={handleResendVerification}
                 onClose={() => setShowVerificationPopup(false)}
                 isResending={isResending}
-                imageSource={require('../assets/email_sent_icon.png')}
+                imageSource={require('../assets/polvo_nao_verificado.png')}
             />
 
             {/* Popup de sucesso ao reenviar */}
@@ -110,7 +110,7 @@ export const LoginScreen = () => {
                 title="E-mail Enviado"
                 message="E-mail de verificação reenviado! Verifique sua caixa de entrada."
                 onClose={() => setShowResendSuccessPopup(false)}
-                imageSource={require('../assets/email_sent_icon.png')}
+                imageSource={require('../assets/polvo_verificar.png')}
             />
 
             {/* Popup de erro genérico */}
