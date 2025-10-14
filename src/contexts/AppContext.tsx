@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../services/api'; 
+import { setOnUnauthorizedCallback } from '../services/api';
 import { login as loginService } from '../services/authService';
 import { LoginData } from '../types/AuthTypes'; 
 
@@ -86,12 +86,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     async function loadStorageData() {
       const storedToken = await AsyncStorage.getItem('@TeamTacles:token');
       if (storedToken) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
         setToken(storedToken);
       }
       setLoading(false);
     }
     loadStorageData();
+
+    // Configura o callback para quando o token expirar (401)
+    setOnUnauthorizedCallback(() => {
+      setToken(null);
+    });
   }, []);
 
   async function signIn(credentials: LoginData) {
@@ -99,7 +103,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const { token: newToken } = response;
 
     setToken(newToken);
-    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
     await AsyncStorage.setItem('@TeamTacles:token', newToken);
   }
 

@@ -91,9 +91,10 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start', 
     },
     input: {
-        flex: 1, 
+        flex: 1,
         height: '100%',
-        paddingHorizontal: 10,
+        paddingLeft: 20,
+        paddingRight: 20,
         color: '#333333',
     },
     textarea: {

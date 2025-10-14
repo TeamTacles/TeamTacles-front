@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react'; 
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,17 +7,23 @@ import { FormCard } from '../components/FormCard';
 import { InputsField } from '../components/InputsField';
 import { MainButton } from '../components/MainButton';
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
-import { userService } from '../services/userService'; 
-import { getErrorMessage } from '../utils/errorHandler'; // ✅ ADICIONE
+import { ChangePasswordModal } from '../components/ChangePasswordModal';
+import { DeleteAccountModal } from '../components/DeleteAccountModal';
+import { userService } from '../services/userService';
+import { getErrorMessage } from '../utils/errorHandler';
+import { useAppContext } from '../contexts/AppContext';
 
 export const EditProfileScreen = () => {
     const navigation = useNavigation();
     const notificationRef = useRef<NotificationPopupRef>(null);
+    const { signOut } = useAppContext();
 
-    const [name, setName] = useState(''); 
-    const [email, setEmail] = useState(''); 
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
-    const [loadingData, setLoadingData] = useState(true); 
+    const [loadingData, setLoadingData] = useState(true);
+    const [changePasswordModalVisible, setChangePasswordModalVisible] = useState(false);
+    const [deleteAccountModalVisible, setDeleteAccountModalVisible] = useState(false); 
 
     useEffect(() => {
         loadUserData();
@@ -70,7 +76,16 @@ export const EditProfileScreen = () => {
     };
     
     const handleChangePassword = () => {
-        Alert.alert("Trocar Senha", "Funcionalidade em desenvolvimento.");
+        setChangePasswordModalVisible(true);
+    };
+
+    const handlePasswordChange = async (password: string, passwordConfirm: string) => {
+        await userService.changePassword({ password, passwordConfirm });
+    };
+
+    const handleDeleteAccount = async () => {
+        await userService.deleteAccount();
+        signOut();
     };
 
     if (loadingData) {
@@ -110,8 +125,9 @@ export const EditProfileScreen = () => {
                     <InputsField
                         label="Email"
                         value={email}
-                        editable={false} 
+                        editable={false}
                         style={styles.inputDisabled}
+                        textContentType="emailAddress"
                     />
                     <View style={styles.button}>
                         <MainButton 
@@ -126,9 +142,28 @@ export const EditProfileScreen = () => {
                     <View style={styles.passwordButton}>
                         <MainButton title="Trocar Senha" onPress={handleChangePassword} />
                     </View>
+                    <View style={styles.deleteButton}>
+                        <MainButton
+                            title="Deletar Conta"
+                            onPress={() => setDeleteAccountModalVisible(true)}
+                            style={styles.deleteButtonStyle}
+                        />
+                    </View>
                 </View>
             </ScrollView>
             <NotificationPopup ref={notificationRef} />
+            <ChangePasswordModal
+                visible={changePasswordModalVisible}
+                onClose={() => setChangePasswordModalVisible(false)}
+                onChangePassword={handlePasswordChange}
+                notificationRef={notificationRef}
+            />
+            <DeleteAccountModal
+                visible={deleteAccountModalVisible}
+                onClose={() => setDeleteAccountModalVisible(false)}
+                onDeleteAccount={handleDeleteAccount}
+                notificationRef={notificationRef}
+            />
         </SafeAreaView>
     );
 };
@@ -172,7 +207,13 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     passwordButton: {
+        marginBottom: 10,
+    },
+    deleteButton: {
 
+    },
+    deleteButtonStyle: {
+        backgroundColor: '#FF3B30',
     },
     sectionTitle: {
         color: '#ffffffff',
