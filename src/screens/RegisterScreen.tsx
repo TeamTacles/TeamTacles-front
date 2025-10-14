@@ -10,6 +10,7 @@ import Hyperlink from '../components/Hyperlink';
 import { RootStackParamList } from "../types/Navigation";
 import { userService } from '../services/userService';
 import { InfoPopup } from "../components/InfoPopup";
+import { ErrorCode } from '../types/ErrorCode'; 
 
 type RegisterScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
 
@@ -25,7 +26,6 @@ export const RegisterScreen = () => {
     const [errorPopupVisible, setErrorPopupVisible] = useState(false);
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
 
-    // Função de validação do formulário (FRONT-END)
     const validateForm = () => {
         const newErrors: { [key: string]: string } = {};
         if (!username) newErrors.username = "O nome de usuário é obrigatório.";
@@ -41,7 +41,6 @@ export const RegisterScreen = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Função de validação e submissão do formulário (BACK-END)
     const handleRegister = async () => {
         if (!validateForm()) return;
 
@@ -50,13 +49,17 @@ export const RegisterScreen = () => {
             await userService.registerUser({ username, email, password, passwordConfirm: confirmPassword });
             setSuccessPopupVisible(true);
         } catch (error) {
+            console.error('❌ Erro ao registrar:', error);
+            
             if (isAxiosError(error) && error.response) {
-                const { status, data } = error.response;
-                if (status === 409 && data?.errorCode) {
-                    const newErrors: { [key: string]: string } = {};
-                    if (data.errorCode === 'USERNAME_ALREADY_EXISTS') newErrors.username = "Este nome de usuário já está em uso.";
-                    else if (data.errorCode === 'EMAIL_ALREADY_EXISTS') newErrors.email = "Este email já está cadastrado.";
-                    setErrors(newErrors);
+                const errorCode = error.response.data?.errorCode;
+                
+                if (errorCode === ErrorCode.USERNAME_ALREADY_EXISTS) {
+                    setErrors({ username: "Este nome de usuário já está em uso." });
+                } else if (errorCode === ErrorCode.EMAIL_ALREADY_EXISTS) {
+                    setErrors({ email: "Este email já está cadastrado." });
+                } else if (errorCode === ErrorCode.PASSWORD_MISMATCH) {
+                    setErrors({ confirmPassword: "As senhas não coincidem." });
                 } else {
                     setErrorPopupVisible(true);
                 }
@@ -68,7 +71,6 @@ export const RegisterScreen = () => {
         }
     };
 
-    // Função para atualizar os campos e limpar erros específicos
     const handleInputChange = (field: string, value: string, setter: (value: string) => void) => {
         setter(value);
         if (errors[field]) {
@@ -104,7 +106,6 @@ export const RegisterScreen = () => {
                 <Hyperlink label="Já sou cadastrado" onPress={goToLogin} />
             </FormCard>
 
-            {/* Popup de Sucesso */}
             <InfoPopup
                 visible={successPopupVisible}
                 imageSource={require('../assets/email_sent_icon.png')}
@@ -113,7 +114,6 @@ export const RegisterScreen = () => {
                 onClose={handleSuccessPopupClose}
             />
 
-            {/* POPUP ERROS GENÉRICOS */}
             <InfoPopup
                 visible={errorPopupVisible}
                 imageSource={require('../assets/error_500.png')} 

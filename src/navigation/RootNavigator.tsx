@@ -58,11 +58,8 @@ const RootNavigator = () => {
 
   return (
     <NavigationContainer>
-      <AppNavigator /> 
+      {signed ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
-    //<NavigationContainer>
-      //{signed ? <AppNavigator /> : <AuthNavigator />}
-    //</NavigationContainer>
   );
 };
 

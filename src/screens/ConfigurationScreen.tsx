@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, StyleSheet, Text, Alert, LayoutAnimation, UIManager, Platform, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState} from "react"; 
+import { View, StyleSheet, Text, Alert, LayoutAnimation, UIManager, Platform, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BaseCard } from "../components/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,10 +7,10 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/Navigation'; 
 import { useAppContext } from '../contexts/AppContext';
+import { userService } from '../services/userService'; 
+import { useFocusEffect } from '@react-navigation/native'; 
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// Caro programador futuro, aqui podemos analisar o caso se é uma boa pratica carregar em tempo real os dados/nome do utilizador sempre que ele abre a aba ou se isso é uma má pratica por ficar dando GET demais na API.
 
 export const ConfigurationScreen = () => {
     const { signOut } = useAppContext(); 
@@ -19,11 +19,38 @@ export const ConfigurationScreen = () => {
     const navigation = useNavigation<ConfigurationScreenNavigationProp>();
 
     const [isProfileExpanded, setProfileExpanded] = useState(false);
+    const [user, setUser] = useState({ name: '', initials: '' }); 
+    const [loadingData, setLoadingData] = useState(true);
 
-    const user = {
-        name: 'Caio Dib',
-        initials: 'CD',
-    };
+   useFocusEffect(
+        React.useCallback(() => {
+            loadUserData();
+        }, [])
+    );
+    const loadUserData = async () => {
+    try {
+        setLoadingData(true);
+        
+        const userData = await userService.getCurrentUser();
+        
+        const initials = userData.username
+            .split(' ')
+            .map((n: string) => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+        
+        
+        setUser({
+            name: userData.username,
+            initials: initials
+        });
+    } catch (error) {
+        // Error handling can be added here if needed
+    } finally {
+        setLoadingData(false);
+    }
+};
 
     const toggleProfileExpansion = () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -31,16 +58,31 @@ export const ConfigurationScreen = () => {
     };
 
     const handleLogout = () => {
-        Alert.alert(
-            "Sair da Conta",
-            "Você tem certeza que deseja sair?",
-            [
-                { text: "Cancelar", style: "cancel" },
-                // --- A ÚNICA CORREÇÃO ESTÁ AQUI ---
-                { text: "Sair", style: "destructive", onPress: signOut }
-            ]
-        );
+        if (Platform.OS === 'web') {
+            if (window.confirm('Você tem certeza que deseja sair?')) {
+                signOut();
+            }
+        } else {
+            Alert.alert(
+                "Sair da Conta",
+                "Você tem certeza que deseja sair?",
+                [
+                    { text: "Cancelar", style: "cancel" },
+                    { text: "Sair", style: "destructive", onPress: signOut }
+                ]
+            );
+        }
     };
+
+    if (loadingData) {
+        return (
+            <SafeAreaView style={styles.safeAreaView} edges={['top', 'left', 'right']}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#EB5F1C" />
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.safeAreaView} edges={['top', 'left', 'right']}>
@@ -121,6 +163,11 @@ const styles = StyleSheet.create({
     safeAreaView: {
         flex: 1,
         backgroundColor: '#191919',
+    },
+    loadingContainer: { 
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     scrollContainer: {
         alignItems: 'center',

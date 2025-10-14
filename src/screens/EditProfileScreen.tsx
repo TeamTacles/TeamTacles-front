@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react'; // <<< ALTERAÇÃO: Adicionado useRef
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react'; 
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,20 +7,48 @@ import { FormCard } from '../components/FormCard';
 import { InputsField } from '../components/InputsField';
 import { MainButton } from '../components/MainButton';
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
+import { userService } from '../services/userService'; 
+import { getErrorMessage } from '../utils/errorHandler'; // ✅ ADICIONE
 
 export const EditProfileScreen = () => {
     const navigation = useNavigation();
-
     const notificationRef = useRef<NotificationPopupRef>(null);
 
-    const [name, setName] = useState('Caio Dib');
-    const [email, setEmail] = useState('caio.dib@example.com');
+    const [name, setName] = useState(''); 
+    const [email, setEmail] = useState(''); 
+    const [loading, setLoading] = useState(false);
+    const [loadingData, setLoadingData] = useState(true); 
 
-    const handleSaveChanges = () => {
+    useEffect(() => {
+        loadUserData();
+    }, []);
+
+    const loadUserData = async () => {
+        try {
+            const userData = await userService.getCurrentUser();
+            setName(userData.username);
+            setEmail(userData.email);
+        } catch (error) {
+            notificationRef.current?.show({
+                type: 'error',
+                message: 'Erro ao carregar seus dados.',
+            });
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    const handleSaveChanges = async () => {
         try {
             if (name.length < 3) {
                 throw new Error("O nome deve ter pelo menos 3 caracteres.");
             }
+
+            setLoading(true);
+
+            await userService.updateProfile({
+                username: name,
+            });
 
             notificationRef.current?.show({
                 type: 'success',
@@ -34,14 +62,32 @@ export const EditProfileScreen = () => {
         } catch (error: any) {
             notificationRef.current?.show({
                 type: 'error',
-                message: error.message || "Não foi possível salvar as alterações.",
+                message: getErrorMessage(error),
             });
+        } finally {
+            setLoading(false);
         }
     };
     
     const handleChangePassword = () => {
         Alert.alert("Trocar Senha", "Funcionalidade em desenvolvimento.");
     };
+
+    if (loadingData) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                        <Icon name="arrow-back-outline" size={30} color="#fff" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Editar Perfil</Text>
+                </View>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#EB5F1C" />
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -59,6 +105,7 @@ export const EditProfileScreen = () => {
                         placeholder="Digite seu nome completo"
                         value={name}
                         onChangeText={setName}
+                        editable={!loading}
                     />
                     <InputsField
                         label="Email"
@@ -67,7 +114,11 @@ export const EditProfileScreen = () => {
                         style={styles.inputDisabled}
                     />
                     <View style={styles.button}>
-                        <MainButton title="Salvar Alterações" onPress={handleSaveChanges} />
+                        <MainButton 
+                            title={loading ? "Salvando..." : "Salvar Alterações"} 
+                            onPress={handleSaveChanges}
+                            disabled={loading}
+                        />
                     </View>
                 </FormCard>
                 <View style={styles.passwordSection}>
@@ -86,6 +137,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#191919',
+    },
+    loadingContainer: { 
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         flexDirection: 'row',
