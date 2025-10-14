@@ -28,15 +28,20 @@ export const RegisterScreen = () => {
 
     const validateForm = () => {
         const newErrors: { [key: string]: string } = {};
-        if (!username) newErrors.username = "O nome de usuário é obrigatório.";
-        else if (username.length > 50) newErrors.username = "Usuário não pode ter mais de 50 caracteres.";
-        if (!email) newErrors.email = "O email é obrigatório.";
-        else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = "O formato do email é inválido.";
-        else if (email.length > 100) newErrors.email = "O email não pode exceder 100 caracteres.";
-        if (!password) newErrors.password = "A senha é obrigatória.";
-        else if (password.length < 5 || password.length > 100) newErrors.password = "A senha deve ter entre 5 e 100 caracteres.";
-        if (!confirmPassword) newErrors.confirmPassword = "A confirmação de senha é obrigatória.";
-        else if (password && password !== confirmPassword) newErrors.confirmPassword = "As senhas não coincidem.";
+        const trimmedUsername = username.trim();
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password.trim();
+        const trimmedConfirmPassword = confirmPassword.trim();
+
+        if (!trimmedUsername) newErrors.username = "O nome de usuário é obrigatório.";
+        else if (trimmedUsername.length > 50) newErrors.username = "Usuário não pode ter mais de 50 caracteres.";
+        if (!trimmedEmail) newErrors.email = "O email é obrigatório.";
+        else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) newErrors.email = "O formato do email é inválido.";
+        else if (trimmedEmail.length > 100) newErrors.email = "O email não pode exceder 100 caracteres.";
+        if (!trimmedPassword) newErrors.password = "A senha é obrigatória.";
+        else if (trimmedPassword.length < 5 || trimmedPassword.length > 100) newErrors.password = "A senha deve ter entre 5 e 100 caracteres.";
+        if (!trimmedConfirmPassword) newErrors.confirmPassword = "A confirmação de senha é obrigatória.";
+        else if (trimmedPassword && trimmedPassword !== trimmedConfirmPassword) newErrors.confirmPassword = "As senhas não coincidem.";
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
@@ -46,7 +51,15 @@ export const RegisterScreen = () => {
 
         setLoading(true);
         try {
-            await userService.registerUser({ username, email, password, passwordConfirm: confirmPassword });
+            // Remove espaços em branco no início e fim dos campos
+            const trimmedData = {
+                username: username.trim(),
+                email: email.trim(),
+                password: password.trim(),
+                passwordConfirm: confirmPassword.trim()
+            };
+
+            await userService.registerUser(trimmedData);
             setSuccessPopupVisible(true);
         } catch (error) {
             console.error('❌ Erro ao registrar:', error);

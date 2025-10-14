@@ -1,10 +1,11 @@
-
 import React, { useState } from "react";
-import { View, StyleSheet, Image, Text, Alert } from "react-native";
+import { View, StyleSheet, Image, Text, Alert, Platform } from "react-native"; 
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useAppContext } from "../contexts/AppContext"; 
+import { isAxiosError } from "axios";
+import { useAppContext } from "../contexts/AppContext";
 import { LoginData } from "../types/AuthTypes";
+import { getErrorMessage } from "../utils/errorHandler";
 
 import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
@@ -25,19 +26,36 @@ export const LoginScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleLogin = async () => { 
-        if (!email || !password) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+    const handleLogin = async () => {
+        const trimmedEmail = email.trim();
+        const trimmedPassword = password.trim();
+
+        if (!trimmedEmail || !trimmedPassword) {
+            if (Platform.OS === 'web') {
+                window.alert('Por favor, preencha todos os campos.');
+            } else {
+                Alert.alert('Erro', 'Por favor, preencha todos os campos.');
+            }
             return;
         }
 
         setIsLoading(true);
         try {
-            const credentials: LoginData = { email, password };
+            const credentials: LoginData = { email: trimmedEmail, password: trimmedPassword };
             await signIn(credentials);
-           
+
         } catch (error) {
-            Alert.alert('Falha no Login', 'Credenciais inválidas. Verifique seus dados e tente novamente.');
+            const errorMessage = isAxiosError(error)
+                ? getErrorMessage(error)
+                : 'Erro ao tentar fazer login. Tente novamente.';
+
+            console.log('💬 Mensagem que será exibida:', errorMessage);
+            
+            if (Platform.OS === 'web') {
+                window.alert('Falha no Login\n\n' + errorMessage);
+            } else {
+                Alert.alert('Falha no Login', errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }
