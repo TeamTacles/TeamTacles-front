@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { Header } from "../components/Header";
 import { View, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Text } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -129,6 +129,15 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         return projects.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
     }, [search, projects]);
 
+    // Handler para onEndReached com proteção contra chamadas durante refresh
+    const handleEndReached = useCallback(() => {
+        // Só carrega mais se há projetos disponíveis, não está carregando,
+        // não está fazendo refresh, e já tem projetos carregados (evita race condition na inicialização)
+        if (hasMoreProjects && !loadingProjects && !refreshingProjects && projects.length > 0) {
+            loadMoreProjects();
+        }
+    }, [hasMoreProjects, loadingProjects, refreshingProjects, projects.length, loadMoreProjects]);
+
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
             <Header
@@ -157,12 +166,8 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 ListEmptyComponent={<EmptyState imageSource={polvo_pescando} title="Nenhum Projeto Encontrado" subtitle="Clique em + para adicionar um novo projeto." />}
 
                 // Infinite Scroll
-                onEndReached={() => {
-                    if (hasMoreProjects && !loadingProjects) {
-                        loadMoreProjects();
-                    }
-                }}
-                onEndReachedThreshold={0.1}
+                onEndReached={handleEndReached}
+                onEndReachedThreshold={0.5}
 
                 // Pull-to-refresh
                 onRefresh={refreshProjects}

@@ -132,8 +132,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // Pull-to-refresh: Recarrega projetos do zero
   const refreshProjects = async (): Promise<void> => {
-    setRefreshingProjects(true);
     try {
+      setRefreshingProjects(true);
       const response = await projectService.getProjects(0, 20);
 
       // Converte os projetos da API para o formato do front-end
@@ -146,12 +146,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         createdAt: Date.now()
       }));
 
-      // Substitui toda a lista
+      // Atualiza todos os estados
       setProjects(projectsFromApi);
       setCurrentPage(1); // Próxima página será 1
       setHasMoreProjects(!response.last);
     } catch (error) {
       console.error('Erro ao atualizar projetos:', error);
+      // Em caso de erro, reseta os estados
+      setProjects([]);
+      setCurrentPage(0);
+      setHasMoreProjects(false);
     } finally {
       setRefreshingProjects(false);
     }
