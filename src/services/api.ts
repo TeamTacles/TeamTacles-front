@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const baseURL = 'http://192.168.0.137:8080/api';
+const baseURL = 'http://192.168.0.137:8080/api'; // caro dev, para fim de testes, altere este IP para o IP da sua máquina local (CMD > ipconfig)
 
 const api = axios.create({
   baseURL: baseURL,
@@ -10,9 +10,10 @@ const api = axios.create({
   },
 });
 
-// Adiciona token nas requisições
+// Interceptor para adicionar token em cada requisição
 api.interceptors.request.use(
   async (config) => {
+    //busco o token do armazenamento a cada requisição
     const token = await AsyncStorage.getItem('@TeamTacles:token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -33,7 +34,7 @@ export const setOnUnauthorizedCallback = (callback: () => void) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    // ✅ 401 sem errorCode = token expirado
+    //  401 sem errorCode = token expirado
     if (error.response?.status === 401 && !error.response?.data?.errorCode) {
       await AsyncStorage.removeItem('@TeamTacles:token');
       if (onUnauthorizedCallback) {

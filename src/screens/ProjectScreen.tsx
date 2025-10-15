@@ -61,22 +61,18 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         }
         setIsCreatingProject(true);
         try {
-            console.log("Simulando API para criar projeto:", data);
-            const responseSimulada = { id: new Date().getTime(), title: data.title, description: data.description };
-            
-            // --- AQUI ESTÁ A CORREÇÃO ---
-            // Remova a propriedade teamMembers daqui. A função addProject já faz isso.
-            addProject({ 
-                title: responseSimulada.title, 
-                description: responseSimulada.description, 
+            // Chama a API  para criar o projeto
+            await addProject({
+                title: data.title,
+                description: data.description,
             });
-            
-            setNotificationQueue(prev => [`Projeto "${responseSimulada.title}" criado!`, ...prev]);
-            setNewlyCreatedProject(responseSimulada);
+
+            setNotificationQueue(prev => [`Projeto "${data.title}" criado!`, ...prev]);
             setNewProjectModalVisible(false);
             setAddMembersModalVisible(true);
-        } catch (error) {
-            notificationRef.current?.show({ type: 'error', message: 'Não foi possível criar o projeto.' });
+        } catch (error: any) {
+            const errorMessage = error.message || 'Não foi possível criar o projeto.';
+            notificationRef.current?.show({ type: 'error', message: errorMessage });
         } finally {
             setIsCreatingProject(false);
         }

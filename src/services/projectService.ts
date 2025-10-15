@@ -53,8 +53,21 @@ const getProjectTasks = async (projectId: number): Promise<PagedResponse<Project
   return response.data;
 };
 
+// --- CRIAÇÃO DE PROJETO ---
+
+export interface CreateProjectRequest {
+  title: string;
+  description: string;
+}
+
+const createProject = async (projectData: CreateProjectRequest): Promise<ProjectDetails> => {
+  const response = await api.post<ProjectDetails>('/project', projectData);
+  return response.data;
+};
+
 export const projectService = {
   getProjectById,
   getProjectMembers,
   getProjectTasks,
+  createProject,
 };

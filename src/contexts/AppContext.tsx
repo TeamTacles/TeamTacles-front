@@ -2,7 +2,9 @@ import React, { createContext, useState, useContext, ReactNode, useEffect } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setOnUnauthorizedCallback } from '../services/api';
 import { login as loginService } from '../services/authService';
-import { LoginData } from '../types/AuthTypes'; 
+import { LoginData } from '../types/AuthTypes';
+import { projectService, CreateProjectRequest } from '../services/projectService';
+import { getErrorMessage } from '../utils/errorHandler'; 
 
 // --- TIPOS ALINHADOS COM OS DTOs JAVA ---
 
@@ -53,10 +55,10 @@ interface AppContextType {
   signOut(): void;
 
   projects: Project[];
-  teams: Team[]; // Adicionado
+  teams: Team[];
   tasks: Task[];
-  // Funções de 'add' serão ajustadas para simular a criação com tipos corretos
-  addProject: (project: Omit<Project, 'id' | 'createdAt' | 'teamMembers'>) => void;
+  // Função de criação de projeto agora retorna Promise e pode lançar erro
+  addProject: (project: CreateProjectRequest) => Promise<void>;
   addTask: (task: Omit<Task, 'id' | 'status' | 'createdAt'>) => void;
 }
 
@@ -113,21 +115,32 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   // --- FUNÇÕES DE CRIAÇÃO ATUALIZADAS ---
 
-  const addProject = (projectData: Omit<Project, 'id' | 'createdAt' | 'teamMembers'>) => {
-    const now = Date.now();
-    const newProject: Project = { 
-        id: now, // Gera um ID numérico
-        ...projectData, 
-        teamMembers: [{name: 'Usuário Atual', initials: 'UA'}], // Simula o criador como membro
-        createdAt: now 
-    };
-    setProjects(currentProjects => [newProject, ...currentProjects]);
+  const addProject = async (projectData: CreateProjectRequest): Promise<void> => {
+    try {
+      // Chama a API para criar o projeto
+      const createdProject = await projectService.createProject(projectData);
+
+      // Adiciona o projeto criado à lista local
+      const newProject: Project = {
+        id: createdProject.id,
+        title: createdProject.title,
+        description: createdProject.description,
+        teamMembers: [{name: 'Você', initials: 'VC'}], 
+        createdAt: Date.now() 
+      };
+
+      setProjects(currentProjects => [newProject, ...currentProjects]);
+    } catch (error) {
+      // Propaga o erro para ser tratado no componente que chamou
+      const errorMessage = getErrorMessage(error);
+      throw new Error(errorMessage);
+    }
   };
 
   const addTask = (taskData: Omit<Task, 'id' | 'status' | 'createdAt'>) => {
     const now = Date.now();
     const newTask: Task = { 
-        id: now, // Gera um ID numérico
+        id: now, 
         ...taskData, 
         status: 'TO_DO', 
         createdAt: now 
@@ -143,7 +156,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         signIn,
         signOut,
         projects,
-        teams, // Exposto no contexto
+        teams, 
         tasks,
         addProject,
         addTask,
