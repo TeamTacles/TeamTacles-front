@@ -1,34 +1,32 @@
-// src/components/EditTaskModal.tsx
+// src/components/EditProjectModal.tsx
 
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MainButton } from './MainButton';
 import { InputsField } from './InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { ProjectDetails } from '../services/projectService'; // Usando o tipo de detalhes do projeto
 
-interface TaskData {
-  title: string;
-  description: string;
-}
-
-interface EditTaskModalProps {
+interface EditProjectModalProps {
   visible: boolean;
-  task: TaskData | null;
+  project: ProjectDetails | null;
   onClose: () => void;
   onSave: (updatedData: { title: string; description: string }) => void;
-  onDelete: () => void; // Adicionada a função para deletar
+  onDelete: () => void; // A função para deletar
 }
 
-export const EditTaskModal: React.FC<EditTaskModalProps> = ({ visible, task, onClose, onSave, onDelete }) => {
+export const EditProjectModal: React.FC<EditProjectModalProps> = ({ visible, project, onClose, onSave, onDelete }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    
+    // O estado para o modal de confirmação foi movido para a tela principal
 
     useEffect(() => {
-        if (task) {
-            setTitle(task.title);
-            setDescription(task.description);
+        if (project) {
+            setTitle(project.title);
+            setDescription(project.description);
         }
-    }, [task]);
+    }, [project]);
 
     const handleSave = () => {
         onSave({ title, description });
@@ -41,13 +39,13 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ visible, task, onC
                     <TouchableOpacity style={styles.closeButton} onPress={onClose}>
                         <Icon name="close-outline" size={30} color="#fff" />
                     </TouchableOpacity>
-                    <Text style={styles.modalTitle}>Editar Tarefa</Text>
+                    <Text style={styles.modalTitle}>Editar Projeto</Text>
                     <ScrollView>
                         <InputsField
-                            label="Título da Tarefa"
+                            label="Título do Projeto"
                             value={title}
                             onChangeText={setTitle}
-                            maxLength={100}
+                            maxLength={50}
                         />
                         <InputsField
                             label="Descrição"
@@ -55,18 +53,18 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ visible, task, onC
                             onChangeText={setDescription}
                             multiline={true}      
                             numberOfLines={4}  
-                            maxLength={500}     
+                            maxLength={250}     
                         />
                     </ScrollView>
                     <View style={styles.buttonContainer}>
                       <MainButton title="Salvar Alterações" onPress={handleSave} />
                     </View>
 
-                    {/* Seção para deletar a tarefa */}
+                    {/* Seção para deletar o projeto */}
                     <View style={styles.divider} />
                     <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
                         <Icon name="trash-outline" size={20} color="#ff4545" />
-                        <Text style={styles.deleteButtonText}>Excluir Tarefa</Text>
+                        <Text style={styles.deleteButtonText}>Excluir Projeto</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -75,11 +73,41 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ visible, task, onC
 };
 
 const styles = StyleSheet.create({
-    centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.7)' },
-    modalView: { maxHeight: '80%', width: '90%', backgroundColor: '#2A2A2A', borderRadius: 20, padding: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
-    modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20, textAlign: 'center' },
-    closeButton: { position: 'absolute', top: 10, right: 10, padding: 5, zIndex: 1 },
-    buttonContainer: { marginTop: 20 },
+    centeredView: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        backgroundColor: 'rgba(0, 0, 0, 0.7)' 
+    },
+    modalView: { 
+        maxHeight: '80%', 
+        width: '90%', 
+        backgroundColor: '#2A2A2A', 
+        borderRadius: 20, 
+        padding: 25, 
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 2 }, 
+        shadowOpacity: 0.25, 
+        shadowRadius: 4, 
+        elevation: 5 
+    },
+    modalTitle: { 
+        fontSize: 22, 
+        fontWeight: 'bold', 
+        color: '#FFFFFF', 
+        marginBottom: 20, 
+        textAlign: 'center' 
+    },
+    closeButton: { 
+        position: 'absolute', 
+        top: 10, 
+        right: 10, 
+        padding: 5, 
+        zIndex: 1 
+    },
+    buttonContainer: {
+      marginTop: 10, 
+    },
     divider: {
         height: 1,
         width: '100%',

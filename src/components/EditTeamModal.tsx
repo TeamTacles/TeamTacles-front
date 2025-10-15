@@ -6,15 +6,17 @@ import { MainButton } from './MainButton';
 import { InputsField } from './InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TeamType } from './TeamCard';
+import { ConfirmationModal } from './ConfirmationModal'; // Importe o ConfirmationModal
 
 interface EditTeamModalProps {
   visible: boolean;
   team: TeamType | null;
   onClose: () => void;
   onSave: (updatedData: { title: string; description: string }) => void;
+  onDelete: () => void; // Adicionada a função para deletar
 }
 
-export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onClose, onSave }) => {
+export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onClose, onSave, onDelete }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
 
@@ -42,6 +44,7 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onC
                             label="Título da Equipe"
                             value={title}
                             onChangeText={setTitle}
+                            maxLength={50}
                         />
                         <InputsField
                             label="Descrição"
@@ -55,6 +58,13 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onC
                     <View style={styles.buttonContainer}>
                       <MainButton title="Salvar Alterações" onPress={handleSave} />
                     </View>
+
+                    {/* Seção para deletar a equipe */}
+                    <View style={styles.divider} />
+                    <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
+                        <Icon name="trash-outline" size={20} color="#ff4545" />
+                        <Text style={styles.deleteButtonText}>Excluir Equipe</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
         </Modal>
@@ -96,5 +106,23 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
       marginTop: 10, 
-    }
+    },
+    divider: {
+        height: 1,
+        width: '100%',
+        backgroundColor: '#4A4A4A',
+        marginVertical: 20,
+    },
+    deleteButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 10,
+    },
+    deleteButtonText: {
+        color: '#ff4545',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 8,
+    },
 });

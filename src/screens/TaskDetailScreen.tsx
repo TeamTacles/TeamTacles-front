@@ -13,9 +13,14 @@ import { Header } from '../components/Header';
 import { FilterPicker } from '../components/FilterPicker';
 import { EditTaskModal } from '../components/EditTaskModal';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { AssignTaskMemberModal } from '../components/AssignTaskMemberModal';
+import { SelectTaskMembersModal } from '../components/SelectTaskMembersModal';
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
 import TimeAgo from '../components/TimeAgo';
+// --- INÍCIO DA CORREÇÃO ---
+// Importe o tipo correto de ProjectMember e remova a definição local
+import { ProjectMember } from '../services/projectService';
+// --- FIM DA CORREÇÃO ---
+
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -24,7 +29,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 // --- TIPOS ---
 type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'DONE';
 interface TaskMember { userId: number; username: string; taskRole: 'OWNER' | 'ASSIGNEE'; }
-interface ProjectMember { userId: number; username: string; }
+// A definição local de ProjectMember foi removida daqui
 interface TaskDetails {
   id: number; title: string; description: string; status: TaskStatus;
   createdAt: string; dueDate: string; ownerId: number; assignments: TaskMember[];
@@ -56,6 +61,7 @@ export const TaskDetailScreen = () => {
     const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
     const [isEditModalVisible, setEditModalVisible] = useState(false);
     const [isConfirmRemoveVisible, setConfirmRemoveVisible] = useState(false);
+    const [isConfirmDeleteTaskVisible, setConfirmDeleteTaskVisible] = useState(false);
     const [isAssignModalVisible, setAssignModalVisible] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState<TaskMember | null>(null);
     const [isAssignmentsExpanded, setAssignmentsExpanded] = useState(true);
@@ -72,7 +78,15 @@ export const TaskDetailScreen = () => {
 
     useEffect(() => { 
         const taskData: TaskDetails = { id: taskId, title: 'Revisar protótipo de alta fidelidade', description: 'Verificar todos os fluxos de usuário e garantir que os componentes estão alinhados com o design system.', status: 'IN_PROGRESS', createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), dueDate: '2020-01-01T00:00:00Z', ownerId: 101, assignments: [ { userId: 101, username: 'Gabriela S.', taskRole: 'OWNER' }, { userId: 102, username: 'Caio Dib', taskRole: 'ASSIGNEE' } ] };
-        const membersData = { content: [ { userId: 101, username: 'Gabriela S.'}, { userId: 102, username: 'Caio Dib'}, { userId: 103, username: 'Pedro L.'} ] };
+        
+        // Mock de membros do projeto com a estrutura correta (adicionando email e projectRole)
+        const membersData: { content: ProjectMember[] } = { 
+            content: [ 
+                { userId: 101, username: 'Gabriela S.', email: 'gabriela@email.com', projectRole: 'OWNER'}, 
+                { userId: 102, username: 'Caio Dib', email: 'caio@email.com', projectRole: 'ADMIN' }, 
+                { userId: 103, username: 'Pedro L.', email: 'pedro@email.com', projectRole: 'MEMBER' } 
+            ] 
+        };
         
         setTask(taskData);
         setDate(new Date(taskData.dueDate));
@@ -106,13 +120,33 @@ export const TaskDetailScreen = () => {
     const handleConfirmRemove = () => { /* ... */ };
     const openRemoveConfirmation = (member: TaskMember) => { setMemberToRemove(member); setConfirmRemoveVisible(true); };
     
-    const handleAssignMember = (userId: number) => {
-        const memberToAdd = projectMembers.find(m => m.userId === userId);
-        if (memberToAdd && task) {
-            setTask({ ...task, assignments: [...task.assignments, { ...memberToAdd, taskRole: 'ASSIGNEE' }] });
+    const handleSaveNewAssignments = (selectedMemberIds: number[]) => {
+        if (!task || selectedMemberIds.length === 0) {
+            setAssignModalVisible(false);
+            return;
         }
+
+        const newAssignments = selectedMemberIds.map(id => {
+            const member = projectMembers.find(p => p.userId === id);
+            return {
+                userId: id,
+                username: member?.username || 'Desconhecido',
+                taskRole: 'ASSIGNEE' as const,
+            };
+        });
+
+        setTask(prev => prev ? { ...prev, assignments: [...prev.assignments, ...newAssignments] } : null);
         setAssignModalVisible(false);
-        notificationRef.current?.show({ type: 'success', message: 'Membro adicionado!' });
+        notificationRef.current?.show({ type: 'success', message: 'Membros adicionados!' });
+    };
+
+    const handleConfirmDeleteTask = () => {
+        setConfirmDeleteTaskVisible(false);
+        setEditModalVisible(false);
+        navigation.goBack();
+        setTimeout(() => {
+            notificationRef.current?.show({ type: 'success', message: 'Tarefa excluída com sucesso!' });
+        }, 500);
     };
 
     const toggleAssignments = () => {
@@ -141,12 +175,10 @@ export const TaskDetailScreen = () => {
                     <View style={styles.infoBox}><Text style={styles.infoLabel}>Criada</Text><Text style={styles.infoValue}><TimeAgo timestamp={new Date(task.createdAt).getTime()} /></Text></View>
                     
                     <TouchableOpacity style={styles.infoBox} onPress={() => setShowDatePicker(true)}>
-                        {/* INÍCIO DA ALTERAÇÃO */}
                         <View style={styles.labelContainer}>
                             <Text style={styles.infoLabel}>Prazo</Text>
                             <Text style={styles.editText}>(editar)</Text>
                         </View>
-                        {/* FIM DA ALTERAÇÃO */}
                         <View style={styles.dueDateContainer}>
                             <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>{new Date(task.dueDate).toLocaleDateString('pt-BR')}</Text>
                             {isOverdue && <Icon name="warning" size={16} color="#ff4545" style={styles.editIcon} />}
@@ -192,9 +224,32 @@ export const TaskDetailScreen = () => {
                 )}
             </ScrollView>
 
-            <EditTaskModal visible={isEditModalVisible} task={task} onClose={() => setEditModalVisible(false)} onSave={handleSaveTaskDetails} />
-            <AssignTaskMemberModal visible={isAssignModalVisible} onClose={() => setAssignModalVisible(false)} projectMembers={projectMembers} assignedUserIds={task.assignments.map(m => m.userId)} onAssign={handleAssignMember} />
+            <EditTaskModal 
+                visible={isEditModalVisible} 
+                task={task} 
+                onClose={() => setEditModalVisible(false)} 
+                onSave={handleSaveTaskDetails}
+                onDelete={() => setConfirmDeleteTaskVisible(true)}
+            />
+            
+            <SelectTaskMembersModal 
+                visible={isAssignModalVisible} 
+                onClose={() => setAssignModalVisible(false)} 
+                projectMembers={projectMembers.filter(pm => !task.assignments.some(a => a.userId === pm.userId))}
+                onSave={handleSaveNewAssignments} 
+            />
+            
             <ConfirmationModal visible={isConfirmRemoveVisible} title="Remover Membro" message={`Tem certeza que deseja remover ${memberToRemove?.username} desta tarefa?`} onClose={() => setConfirmRemoveVisible(false)} onConfirm={handleConfirmRemove} confirmText="Remover" />
+            
+            <ConfirmationModal 
+                visible={isConfirmDeleteTaskVisible} 
+                title="Excluir Tarefa" 
+                message={`Você tem certeza que deseja excluir a tarefa "${task.title}"?`} 
+                onClose={() => setConfirmDeleteTaskVisible(false)} 
+                onConfirm={handleConfirmDeleteTask} 
+                confirmText="Excluir" 
+            />
+
             <NotificationPopup ref={notificationRef} />
         </SafeAreaView>
     );
@@ -213,7 +268,6 @@ const styles = StyleSheet.create({
     infoGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 },
     infoBox: { backgroundColor: '#2A2A2A', borderRadius: 10, padding: 15, width: '48%' },
     infoLabel: { color: '#A9A9A9', fontSize: 14, marginBottom: 5 },
-    // NOVOS ESTILOS
     labelContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -224,7 +278,6 @@ const styles = StyleSheet.create({
         marginLeft: 4,
         fontStyle: 'italic',
     },
-    // FIM DOS NOVOS ESTILOS
     infoValue: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
     overdueText: { color: '#ff4545' },
     dueDateContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

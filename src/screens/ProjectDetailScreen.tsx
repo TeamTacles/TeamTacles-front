@@ -13,8 +13,8 @@ import { ProjectDetails, ProjectMember, ProjectTask } from '../services/projectS
 import { MemberListItem } from '../components/MemberListItem';
 import { EditMemberRoleModal, MemberData } from '../components/EditMemberRoleModal';
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
-import { EditTeamModal } from '../components/EditTeamModal';
-import { TeamType } from '../components/TeamCard';
+import { EditProjectModal } from '../components/EditProjectModal';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ProjectTaskCard } from '../components/ProjectTaskCard';
 import { NewItemButton } from '../components/NewItemButton';
 import { NewTaskModal } from '../components/NewTaskModal';
@@ -44,6 +44,7 @@ const MOCK_INITIAL_TASKS: ProjectTask[] = [
     { id: 105, title: 'Mais uma tarefa', description: 'Para preencher a lista.', status: 'TO_DO', dueDate: '2025-12-31T00:00:00Z', ownerId: 3, assignments: [{ userId: 3, username: 'João S.' }] },
 ];
 
+
 export const ProjectDetailScreen = () => {
     const navigation = useNavigation<ProjectDetailNavigationProp>();
     const notificationRef = useRef<NotificationPopupRef>(null);
@@ -51,6 +52,7 @@ export const ProjectDetailScreen = () => {
     const [tasks, setTasks] = useState<ProjectTask[]>(MOCK_INITIAL_TASKS);
     
     const [isEditModalVisible, setEditModalVisible] = useState(false);
+    const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
     const [isMembersListModalVisible, setMembersListModalVisible] = useState(false);
     const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
     const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
@@ -98,10 +100,29 @@ export const ProjectDetailScreen = () => {
     const [members, setMembers] = useState<MemberData[]>(MOCK_MEMBERS.map(m => ({ name: m.username, email: m.email, role: m.projectRole })));
     const userWithAvatar = { initials: 'CD' };
 
-    const handleMemberPress = (member: MemberData) => { /* ... */ };
+    const handleMemberPress = (member: MemberData) => { 
+        setSelectedMember(member);
+        setEditMemberModalVisible(true);
+    };
     const handleSaveMemberRole = (newRole: MemberData['role']) => { /* ... */ };
     const handleDeleteMember = () => { /* ... */ };
-    const handleSaveProject = (updatedData: { title: string; description: string }) => { /* ... */ };
+
+    const handleSaveProjectDetails = (updatedData: { title: string; description: string }) => {
+        setProject(prev => prev ? { ...prev, ...updatedData } : null);
+        setEditModalVisible(false);
+        notificationRef.current?.show({ type: 'success', message: 'Projeto atualizado!' });
+    };
+
+    const handleConfirmDeleteProject = () => {
+        setConfirmDeleteVisible(false);
+        setEditModalVisible(false);
+        
+        navigation.goBack();
+        
+        setTimeout(() => {
+            notificationRef.current?.show({ type: 'success', message: 'Projeto excluído com sucesso!' });
+        }, 500);
+    };
 
     const handleProceedToMemberSelection = (data: { title: string; description: string; dueDate: Date }) => {
         setNewTaskData(data);
@@ -146,7 +167,7 @@ export const ProjectDetailScreen = () => {
     const handleCloseSelectMembersModal = () => {
         setSelectMembersModalVisible(false);
         if (newTaskData) {
-            handleFinalizeTaskCreation([]); // Finaliza a criação da tarefa sem membros adicionais
+            handleFinalizeTaskCreation([]);
         }
     };
 
@@ -159,7 +180,7 @@ export const ProjectDetailScreen = () => {
                     <Icon name="arrow-back-outline" size={30} color="#EB5F1C" />
                 </TouchableOpacity>
                 <View style={styles.projectHeaderText}>
-                    <Text style={styles.projectTitle} numberOfLines={1}>{project?.title}</Text>
+                    <Text style={styles.titleHeaderText}>Detalhes do Projeto</Text>
                 </View>
                 <TouchableOpacity onPress={() => setEditModalVisible(true)}>
                     <Icon name="pencil-outline" size={24} color="#FFFFFF" />
@@ -167,7 +188,10 @@ export const ProjectDetailScreen = () => {
             </View>
             
             <View style={styles.staticContent}>
-                <Text style={styles.projectDescription}>{project?.description}</Text>
+                <View style={styles.projectDetails}>
+                    <Text style={styles.projectTitle} numberOfLines={1}>{project?.title}</Text>
+                    <Text style={styles.projectDescription}>{project?.description}</Text>
+                </View>
                 <View style={styles.infoBar}>
                     <TouchableOpacity style={styles.infoButton} onPress={() => project && navigation.navigate('ReportCenter', { projectId: project.id })}>
                         <Icon name="document-text-outline" size={20} color="#ffffffff" />
@@ -206,10 +230,31 @@ export const ProjectDetailScreen = () => {
                 <NewItemButton onPress={() => setNewTaskModalVisible(true)} />
             </View>
             
-            {/* Modais */}
+            {/* --- INÍCIO DA CORREÇÃO DO MODAL DE MEMBROS --- */}
             <Modal animationType="fade" transparent={true} visible={isMembersListModalVisible} onRequestClose={() => setMembersListModalVisible(false)}>
-                {/* ... */}
+                <View style={styles.modalCenteredView}>
+                    <View style={styles.modalView}>
+                        <TouchableOpacity style={styles.modalCloseButton} onPress={() => setMembersListModalVisible(false)}>
+                            <Icon name="close-outline" size={30} color="#fff" />
+                        </TouchableOpacity>
+                        <Text style={styles.modalTitle}>Membros do Projeto</Text>
+                        <FlatList
+                            data={members}
+                            keyExtractor={(item) => item.email}
+                            renderItem={({ item }) => (
+                                <MemberListItem 
+                                    name={item.name} 
+                                    role={item.role} 
+                                    onPress={() => handleMemberPress(item)}
+                                />
+                            )}
+                            ItemSeparatorComponent={() => <View style={styles.separatorLine} />}
+                        />
+                    </View>
+                </View>
             </Modal>
+            {/* --- FIM DA CORREÇÃO --- */}
+            
             <Modal animationType="fade" transparent={true} visible={isSortModalVisible} onRequestClose={() => setSortModalVisible(false)}>
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setSortModalVisible(false)} activeOpacity={1}>
                     <View style={[styles.sortModalView, { top: sortMenuPosition.top, right: sortMenuPosition.right }]}>
@@ -225,8 +270,24 @@ export const ProjectDetailScreen = () => {
                     </View>
                 </TouchableOpacity>
             </Modal>
-            <EditMemberRoleModal visible={isEditMemberModalVisible} member={selectedMember} currentUserRole={currentUserRole} onClose={() => setEditMemberModalVisible(false)} onSave={() => {}} onDelete={() => {}} />
-            <EditTeamModal visible={isEditModalVisible} team={project ? { ...project, id: project.id.toString(), members: [], createdAt: new Date() } as TeamType : null} onClose={() => setEditModalVisible(false)} onSave={() => {}} />
+            <EditMemberRoleModal visible={isEditMemberModalVisible} member={selectedMember} currentUserRole={currentUserRole} onClose={() => setEditMemberModalVisible(false)} onSave={handleSaveMemberRole} onDelete={handleDeleteMember} />
+            
+            <EditProjectModal
+                visible={isEditModalVisible}
+                project={project}
+                onClose={() => setEditModalVisible(false)}
+                onSave={handleSaveProjectDetails}
+                onDelete={() => setConfirmDeleteVisible(true)}
+            />
+            
+            <ConfirmationModal
+                visible={isConfirmDeleteVisible}
+                title="Excluir Projeto"
+                message={`Você tem certeza que deseja excluir o projeto "${project?.title}"? Esta ação não pode ser desfeita.`}
+                onClose={() => setConfirmDeleteVisible(false)}
+                onConfirm={handleConfirmDeleteProject}
+                confirmText="Excluir"
+            />
             
             <NewTaskModal 
                 visible={isNewTaskModalVisible} 
@@ -245,14 +306,19 @@ export const ProjectDetailScreen = () => {
     );
 };
 
-// ... (seus estilos permanecem os mesmos)
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#191919' },
     pageHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10 },
     backButton: { marginRight: 15 },
+    titleHeaderText: {
+        color: '#FFFFFF', fontSize: 24, fontWeight: 'bold'
+    },
     projectHeaderText: { flex: 1 },
     projectTitle: { color: '#EB5F1C', fontSize: 24, fontWeight: 'bold' },
-    
+    projectDetails: {
+        gap: 10,
+        marginTop: 10,
+    },
     staticContent: {
         paddingHorizontal: 15,
     },
