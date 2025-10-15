@@ -9,6 +9,7 @@ export interface ProjectDetails {
   id: number;
   title: string;
   description: string;
+  projectRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
 }
 
 // Baseado em ProjectMemberResponseDTO.java
@@ -34,6 +35,12 @@ export interface ProjectTask {
 }
 
 // --- FUNÇÕES DE API ---
+
+// Busca todos os projetos do usuário autenticado (paginado)
+const getProjects = async (page = 0, size = 20): Promise<PagedResponse<ProjectDetails>> => {
+  const response = await api.get<PagedResponse<ProjectDetails>>(`/project?page=${page}&size=${size}`);
+  return response.data;
+};
 
 // Busca os detalhes do projeto
 const getProjectById = async (projectId: number): Promise<ProjectDetails> => {
@@ -66,6 +73,7 @@ const createProject = async (projectData: CreateProjectRequest): Promise<Project
 };
 
 export const projectService = {
+  getProjects,
   getProjectById,
   getProjectMembers,
   getProjectTasks,

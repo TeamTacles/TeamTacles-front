@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from "react";
 import { Header } from "../components/Header";
-import { View, StyleSheet, FlatList } from "react-native";
+import { View, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Text } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../components/SearchBar";
 import { NewItemButton } from "../components/NewItemButton";
@@ -31,7 +31,15 @@ type ProjectScreenNavigationProp = CompositeScreenProps<
 >;
 
 export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
-    const { projects, addProject } = useAppContext();
+    const {
+        projects,
+        addProject,
+        loadMoreProjects,
+        refreshProjects,
+        loadingProjects,
+        refreshingProjects,
+        hasMoreProjects
+    } = useAppContext();
     const notificationRef = useRef<NotificationPopupRef>(null);
 
     const [search, setSearch] = useState('');
@@ -138,17 +146,54 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
 
             <FlatList
                 data={filteredProjects}
-            // AQUI ESTÁ A CORREÇÃO:
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) =>
                     <ProjectCard
                         project={item}
-                        // Esta linha já está correta, pois item.id é um number
                         onPress={() => navigation.navigate('ProjectDetail', { projectId: item.id, projectTitle: item.title })}
                     />
-                }              
+                }
                 contentContainerStyle={styles.listContainer}
                 ListEmptyComponent={<EmptyState imageSource={polvo_pescando} title="Nenhum Projeto Encontrado" subtitle="Clique em + para adicionar um novo projeto." />}
+
+                // Infinite Scroll
+                onEndReached={() => {
+                    if (hasMoreProjects && !loadingProjects) {
+                        loadMoreProjects();
+                    }
+                }}
+                onEndReachedThreshold={0.1}
+
+                // Pull-to-refresh
+                onRefresh={refreshProjects}
+                refreshing={refreshingProjects}
+
+                // Loading indicator no fim da lista
+                ListFooterComponent={() => {
+                    if (loadingProjects) {
+                        return (
+                            <View style={styles.loadingFooter}>
+                                <ActivityIndicator size="large" color="#EB5F1C" />
+                            </View>
+                        );
+                    }
+
+                    // Mostra botão "Carregar Mais" se houver mais projetos (útil para web/desktop)
+                    if (hasMoreProjects && projects.length > 0) {
+                        return (
+                            <View style={styles.loadingFooter}>
+                                <TouchableOpacity
+                                    style={styles.loadMoreButton}
+                                    onPress={loadMoreProjects}
+                                >
+                                    <Text style={styles.loadMoreText}>Carregar Mais</Text>
+                                </TouchableOpacity>
+                            </View>
+                        );
+                    }
+
+                    return null;
+                }}
             />
 
             <View style={styles.addButtonContainer}>
@@ -182,4 +227,16 @@ const styles = StyleSheet.create({
     filterButtonPosition: { marginTop: 75 },
     listContainer: { flexGrow: 1, paddingHorizontal: 15, paddingBottom: 80 },
     addButtonContainer: { position: 'absolute', right: 25, bottom: 25 },
+    loadingFooter: { padding: 20, alignItems: 'center' },
+    loadMoreButton: {
+        backgroundColor: '#EB5F1C',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 8,
+    },
+    loadMoreText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
 });

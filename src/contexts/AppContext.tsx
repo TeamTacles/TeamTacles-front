@@ -57,8 +57,14 @@ interface AppContextType {
   projects: Project[];
   teams: Team[];
   tasks: Task[];
-  // Função de criação de projeto agora retorna Promise e pode lançar erro
+  loadingProjects: boolean;
+  refreshingProjects: boolean;
+  hasMoreProjects: boolean;
+  // Funções de projetos
   addProject: (project: CreateProjectRequest) => Promise<void>;
+  loadMoreProjects: () => Promise<void>;
+  refreshProjects: () => Promise<void>;
+  // Funções de tarefas
   addTask: (task: Omit<Task, 'id' | 'status' | 'createdAt'>) => void;
 }
 
@@ -68,19 +74,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // --- DADOS MOCADOS COM TIPOS CORRIGIDOS ---
+  // --- ESTADOS DE PAGINAÇÃO DE PROJETOS ---
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [hasMoreProjects, setHasMoreProjects] = useState(true);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [refreshingProjects, setRefreshingProjects] = useState(false);
 
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 1, // number
-      title: 'Website Redesign',
-      description: 'Renovação completa do site.',
-      teamMembers: [{ name: 'Caio Dib', initials: 'CD' }, { name: 'João Victor', initials: 'JV' }],
-      createdAt: new Date('2025-08-10').getTime()
-    }
-  ]);
-
-  const [teams, setTeams] = useState<Team[]>([]); // Inicializado vazio por enquanto
+  // --- OUTROS DADOS DA API ---
+  const [teams, setTeams] = useState<Team[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
 
 
@@ -100,6 +102,19 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
+  // Carrega os projetos automaticamente quando o usuário estiver autenticado
+  useEffect(() => {
+    if (token) {
+      // Carrega a primeira página ao fazer login
+      refreshProjects();
+    } else {
+      // Limpa os projetos quando faz logout
+      setProjects([]);
+      setCurrentPage(0);
+      setHasMoreProjects(true);
+    }
+  }, [token]);
+
   async function signIn(credentials: LoginData) {
     const response = await loginService(credentials);
     const { token: newToken } = response;
@@ -113,7 +128,62 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
   }
 
-  // --- FUNÇÕES DE CRIAÇÃO ATUALIZADAS ---
+  // --- FUNÇÕES DE MANIPULAÇÃO DE PROJETOS ---
+
+  // Pull-to-refresh: Recarrega projetos do zero
+  const refreshProjects = async (): Promise<void> => {
+    setRefreshingProjects(true);
+    try {
+      const response = await projectService.getProjects(0, 20);
+
+      // Converte os projetos da API para o formato do front-end
+      const projectsFromApi: Project[] = response.content.map(project => ({
+        id: project.id,
+        title: project.title,
+        description: project.description,
+        projectRole: project.projectRole,
+        teamMembers: [{name: 'Você', initials: 'VC'}],
+        createdAt: Date.now()
+      }));
+
+      // Substitui toda a lista
+      setProjects(projectsFromApi);
+      setCurrentPage(1); // Próxima página será 1
+      setHasMoreProjects(!response.last);
+    } catch (error) {
+      console.error('Erro ao atualizar projetos:', error);
+    } finally {
+      setRefreshingProjects(false);
+    }
+  };
+
+  // Infinite scroll: Carrega mais projetos
+  const loadMoreProjects = async (): Promise<void> => {
+    if (!hasMoreProjects || loadingProjects) return;
+
+    setLoadingProjects(true);
+    try {
+      const response = await projectService.getProjects(currentPage, 20);
+
+      const newProjects: Project[] = response.content.map(project => ({
+        id: project.id,
+        title: project.title,
+        description: project.description,
+        projectRole: project.projectRole,
+        teamMembers: [{name: 'Você', initials: 'VC'}],
+        createdAt: Date.now()
+      }));
+
+      // Adiciona novos projetos aos existentes (não substitui!)
+      setProjects(prev => [...prev, ...newProjects]);
+      setCurrentPage(prev => prev + 1);
+      setHasMoreProjects(!response.last);
+    } catch (error) {
+      console.error('Erro ao carregar mais projetos:', error);
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
 
   const addProject = async (projectData: CreateProjectRequest): Promise<void> => {
     try {
@@ -156,9 +226,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         signIn,
         signOut,
         projects,
-        teams, 
+        teams,
         tasks,
+        loadingProjects,
+        refreshingProjects,
+        hasMoreProjects,
         addProject,
+        loadMoreProjects,
+        refreshProjects,
         addTask,
       }}
     >
