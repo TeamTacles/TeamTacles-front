@@ -1,5 +1,4 @@
 import api from './api';
-import { RegisterPayload } from '../types/AuthTypes';
 
 interface UpdateProfilePayload {
   username?: string;
@@ -10,11 +9,6 @@ interface ChangePasswordPayload {
   password: string;
   passwordConfirm: string;
 }
-
-const registerUser = async (payload: RegisterPayload) => {
-  const response = await api.post('/user/register', payload);
-  return response.data;
-};
 
 const updateProfile = async (payload: UpdateProfilePayload) => {
   const response = await api.patch('/user', payload);
@@ -37,7 +31,6 @@ const deleteAccount = async () => {
 };
 
 export const userService = {
-  registerUser,
   updateProfile,
   getCurrentUser,
   changePassword,

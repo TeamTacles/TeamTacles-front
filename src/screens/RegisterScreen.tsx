@@ -6,9 +6,9 @@ import { isAxiosError } from "axios";
 import { MainButton } from "../components/MainButton";
 import { InputsField } from "../components/InputsField";
 import { FormCard } from "../components/FormCard";
-import Hyperlink from '../components/Hyperlink'; 
+import Hyperlink from '../components/Hyperlink';
 import { RootStackParamList } from "../types/Navigation";
-import { userService } from '../services/userService';
+import { register } from '../services/authService';
 import { InfoPopup } from "../components/InfoPopup";
 import { ErrorCode } from '../types/ErrorCode'; 
 
@@ -59,7 +59,7 @@ export const RegisterScreen = () => {
                 passwordConfirm: confirmPassword.trim()
             };
 
-            await userService.registerUser(trimmedData);
+            await register(trimmedData);
             setSuccessPopupVisible(true);
         } catch (error) {
             console.error('❌ Erro ao registrar:', error);

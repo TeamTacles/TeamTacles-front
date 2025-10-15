@@ -1,6 +1,6 @@
 // src/screens/TaskScreen.tsx
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Header } from "../components/Header";
 import { View, StyleSheet, Alert, FlatList } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,11 +11,12 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, RootTabParamList } from "../types/Navigation";
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { EmptyState } from '../components/EmptyState';
-import { useAppContext } from "../contexts/AppContext"; 
-import { TaskCard } from "../components/TaskCard"; 
+import { useAppContext } from "../contexts/AppContext";
+import { useProjects } from "../hooks/useProjects";
+import { Task } from "../hooks/useTasks";
+import { TaskCard } from "../components/TaskCard";
 import { FilterModal, Filters } from "../components/FilterModal";
 import { FilterButton } from "../components/FilterButton";
-import { Task } from "../contexts/AppContext"; // Importe o tipo Task
 
 const polvo_tasks = require('../assets/polvo_tasks.png');
 
@@ -72,8 +73,9 @@ type TaskScreenNavigationProp = CompositeScreenProps<
 
 export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
     // Agora usamos um estado local inicializado com os dados mocados
-    const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS); 
-    const { projects } = useAppContext(); 
+    const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+    const { signed } = useAppContext();
+    const { projects } = useProjects(signed); 
     
     const [search, setSearch] = useState('');
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);

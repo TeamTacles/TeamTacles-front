@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Header } from "../components/Header";
 import { View, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Text } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,6 +11,7 @@ import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { ProjectCard } from "../components/ProjectCard";
 import { EmptyState } from '../components/EmptyState';
 import { useAppContext } from "../contexts/AppContext";
+import { useProjects } from "../hooks/useProjects";
 import { FilterModal, Filters } from "../components/FilterModal";
 import { FilterButton } from "../components/FilterButton";
 import { NewProjectModal } from "../components/NewProjectModal";
@@ -31,6 +32,7 @@ type ProjectScreenNavigationProp = CompositeScreenProps<
 >;
 
 export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
+    const { signed } = useAppContext();
     const {
         projects,
         addProject,
@@ -39,7 +41,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         loadingProjects,
         refreshingProjects,
         hasMoreProjects
-    } = useAppContext();
+    } = useProjects(signed);
     const notificationRef = useRef<NotificationPopupRef>(null);
 
     const [search, setSearch] = useState('');
@@ -126,7 +128,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
     };
     
     const filteredProjects = useMemo(() => {
-        return projects.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
+        return projects.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()));
     }, [search, projects]);
 
     // Handler para onEndReached com proteção contra chamadas durante refresh
