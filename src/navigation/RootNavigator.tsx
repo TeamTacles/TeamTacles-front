@@ -58,12 +58,12 @@ const RootNavigator = () => {
 
   return (
     //Comentar o código abaixo quando testar 
-    //<NavigationContainer>
-      //<AppNavigator />
-    //</NavigationContainer>
     <NavigationContainer>
-      {signed ? <AppNavigator /> : <AuthNavigator />}
+      <AppNavigator />
     </NavigationContainer>
+    //<NavigationContainer>
+      //{signed ? <AppNavigator /> : <AuthNavigator />}
+    //</NavigationContainer>
   );
 };
 

@@ -1,32 +1,48 @@
 // src/screens/ReportCenterScreen.tsx
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { PieChart, BarChart } from 'react-native-chart-kit';
+import * as Progress from 'react-native-progress';
 
 import { RootStackParamList } from '../types/Navigation';
 import { MainButton } from '../components/MainButton';
 import { Header } from '../components/Header';
 import { FilterPicker } from '../components/FilterPicker';
 import { TaskReportRow } from '../components/TaskReportRow';
-// import { projectService } from '../services/projectService';
-// import { taskService } from '../services/taskService';
 
-// --- TIPOS ---
-type TaskSummary = { totalCount: number; doneCount: number; inProgressCount: number; overdueCount: number; };
+// --- TIPOS (Baseados nos seus DTOs) ---
+type TaskSummary = { totalCount: number; doneCount: number; inProgressCount: number; toDoCount: number; overdueCount: number; };
+type MemberPerformance = { userId: number; username: string; completedTasksCount: number; };
 type RecentTask = { id: number; title: string; projectName: string; status: 'TO_DO' | 'IN_PROGRESS' | 'DONE'; dueDate: string; assignments: { username: string }[]; };
 
-// --- COMPONENTE DE KPI COM COR ---
-const KpiCard = ({ title, value, color }: { title: string, value: number, color?: string }) => (
-    <View style={styles.kpiCard}>
-        <Text style={styles.kpiTitle}>{title}</Text>
-        <Text style={[styles.kpiValue, { color: color || '#FFFFFF' }]}>{value}</Text>
-    </View>
-);
-
 type ReportCenterRouteProp = RouteProp<RootStackParamList, 'ReportCenter'>;
+
+// 1. Paleta de cores para as barras do gráfico
+const barColorPalette = ['#EB5F1C', '#FFA500', '#FFD700', '#3CB371', '#4682B4'];
+
+// Configuração dos gráficos
+const chartConfig = {
+    backgroundGradientFromOpacity: 0,
+    backgroundGradientToOpacity: 0,
+    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+    strokeWidth: 2,
+    barPercentage: 0.8,
+    useShadowColorFromDataset: false,
+    decimalPlaces: 0,
+    // Função para colorir as barras individualmente
+    getBarColor: (opacity = 1, index: number) => barColorPalette[index % barColorPalette.length],
+};
+
+const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) {
+        return text;
+    }
+    return `${text.substring(0, maxLength)}...`;
+};
 
 export const ReportCenterScreen = () => {
     const navigation = useNavigation();
@@ -37,8 +53,8 @@ export const ReportCenterScreen = () => {
     const [summary, setSummary] = useState<TaskSummary | null>(null);
     const [tasks, setTasks] = useState<RecentTask[]>([]);
     const [projectName, setProjectName] = useState('Carregando...');
+    const [performance, setPerformance] = useState<MemberPerformance[]>([]);
 
-    // --- ESTADOS DOS FILTROS (PROJETO REMOVIDO) ---
     const [selectedMemberId, setSelectedMemberId] = useState<number | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [selectedPeriod, setSelectedPeriod] = useState<string>('30d');
@@ -50,12 +66,21 @@ export const ReportCenterScreen = () => {
     const handleGenerateReport = async () => {
         setLoading(true);
         try {
-            // DADOS MOCADOS
-            await new Promise(resolve => setTimeout(resolve, 1000)); 
-            setSummary({ totalCount: 33, doneCount: 12, inProgressCount: 18, overdueCount: 3 });
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            setSummary({ totalCount: 33, doneCount: 12, inProgressCount: 18, toDoCount: 3, overdueCount: 3 });
             setTasks([
                 { id: 1, title: 'Coletar Requisitos Funcionais', projectName: 'TeamTacles', assignments: [{username: 'Gabriela S.'}], status: 'DONE', dueDate: '2025-05-12T00:00:00Z' },
                 { id: 2, title: 'Protótipo de Baixa Fidelidade', projectName: 'TeamTacles', assignments: [{username: 'Caio D.'}], status: 'IN_PROGRESS', dueDate: '2025-06-18T00:00:00Z' },
+            ]);
+            // Adicionando mais membros para testar o scroll
+            setPerformance([
+                { userId: 1, username: 'Caio Dib', completedTasksCount: 8 },
+                { userId: 2, username: 'Gabriela S.', completedTasksCount: 12 },
+                { userId: 3, username: 'João Victor Magalhães', completedTasksCount: 5 }, // Nome longo para teste
+                { userId: 4, username: 'Ana M.', completedTasksCount: 7 },
+                { userId: 5, username: 'Pedro L.', completedTasksCount: 9 },
+                { userId: 6, username: 'Mariana C.', completedTasksCount: 11 },
+                { userId: 7, username: 'Lucas F.', completedTasksCount: 4 },
             ]);
         } catch (error) {
             console.error("Erro ao buscar dados do relatório:", error);
@@ -65,12 +90,7 @@ export const ReportCenterScreen = () => {
     };
 
     useEffect(() => {
-        // Busca os dados do projeto (nome) e membros para os filtros
         const loadInitialData = async () => {
-            // const projectDetails = await projectService.getProjectById(projectId);
-            // const membersResponse = await projectService.getProjectMembers(projectId);
-            
-            // MOCK
             const projectDetails = { title: "Projeto TeamTacles" };
             const membersResponse = { content: [ { userId: 10, username: 'Gabriela Santana' }, { userId: 11, username: 'Caio Dib' } ] };
 
@@ -82,6 +102,30 @@ export const ReportCenterScreen = () => {
         };
         loadInitialData();
     }, [projectId]);
+    
+    const completionPercentage = summary && summary.totalCount > 0 
+        ? summary.doneCount / summary.totalCount 
+        : 0;
+
+    const pieChartData = summary ? [
+        { name: truncateText('Concluídas', 10), population: summary.doneCount, color: '#3CB371', legendFontColor: '#7F7F7F', legendFontSize: 14 },
+        { name: truncateText('Em Andamento', 10), population: summary.inProgressCount, color: '#FFD700', legendFontColor: '#7F7F7F', legendFontSize: 14 },
+        { name: truncateText('A Fazer', 10), population: summary.toDoCount, color: '#FFA500', legendFontColor: '#7F7F7F', legendFontSize: 14 },
+        { name: truncateText('Atrasadas', 10), population: summary.overdueCount, color: '#ff4545', legendFontColor: '#7F7F7F', legendFontSize: 14 },
+    ].filter(item => item.population > 0) : [];
+
+    const barChartData = {
+        labels: performance.map(p => truncateText(p.username, 10)),
+        datasets: [{
+            data: performance.map(p => p.completedTasksCount),
+            // Adicionando as cores ao dataset
+            colors: performance.map((_, index) => (opacity = 1) => barColorPalette[index % barColorPalette.length])
+        }]
+    };
+    
+    // Cálculo da largura dinâmica do gráfico de barras
+    const barChartWidth = Math.max(Dimensions.get('window').width - 40, performance.length * 80);
+
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -101,7 +145,6 @@ export const ReportCenterScreen = () => {
                 <View style={styles.filterSection}>
                     <Text style={styles.sectionTitle}>Filtros</Text>
                     <View style={styles.filterRow}>
-                        {/* FILTRO DE PROJETO SUBSTITUÍDO POR TEXTO ESTÁTICO */}
                         <View style={styles.staticPickerContainer}>
                             <Text style={styles.staticPickerLabel}>Projeto</Text>
                             <View style={styles.staticPickerButton}>
@@ -121,15 +164,69 @@ export const ReportCenterScreen = () => {
                     <ActivityIndicator size="large" color="#EB5F1C" style={{ marginTop: 40 }}/>
                 ) : summary && (
                     <>
-                        <View style={styles.kpiContainer}>
-                            <KpiCard title="Total de Tarefas" value={summary.totalCount} />
-                            <KpiCard title="Concluídas" value={summary.doneCount} color="#3CB371" />
-                            <KpiCard title="Em Andamento" value={summary.inProgressCount} color="#FFD700" />
-                            <KpiCard title="Atrasadas" value={summary.overdueCount} color="#ff4545" />
+                        <View style={styles.progressSection}>
+                            <Text style={styles.sectionTitle}>Progresso Geral</Text>
+                            <View style={styles.progressContainer}>
+                                <View style={styles.progressCircleContainer}>
+                                    <Progress.Circle
+                                        size={100}
+                                        progress={completionPercentage}
+                                        color={'#3CB371'}
+                                        unfilledColor={'#3C3C3C'}
+                                        borderWidth={0}
+                                        thickness={8}
+                                        showsText={true}
+                                        formatText={() => `${Math.round(completionPercentage * 100)}%`}
+                                        textStyle={styles.progressText}
+                                    />
+                                </View>
+                                <View style={styles.totalTasksContainer}>
+                                    <Text style={styles.totalTasksValue}>{summary.totalCount}</Text>
+                                    <Text style={styles.totalTasksLabel}>Tarefas no Projeto</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <View style={styles.chartContainer}>
+                            <Text style={styles.sectionTitle}>Distribuição de Tarefas</Text>
+                            <PieChart
+                                data={pieChartData}
+                                width={Dimensions.get('window').width - 40}
+                                height={170}
+                                chartConfig={chartConfig}
+                                accessor={"population"}
+                                backgroundColor={"transparent"}
+                                paddingLeft={"15"}
+                                center={[10, 0]}
+                                absolute
+                            />
+                        </View>
+                        
+                        <View style={styles.chartContainer}>
+                             <Text style={styles.sectionTitle}>Tarefas Concluídas por Membro</Text>
+                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                <BarChart
+                                    data={barChartData}
+                                    width={barChartWidth}
+                                    height={250}
+                                    yAxisLabel=""
+                                    yAxisSuffix=""
+                                    chartConfig={chartConfig}
+                                    verticalLabelRotation={-25}
+                                    fromZero={true}
+                                    showValuesOnTopOfBars={true}
+                                    style={{
+                                        marginVertical: 8,
+                                        borderRadius: 16,
+                                        marginLeft: -30,
+                                    }}
+                                    withCustomBarColorFromData={true}
+                                />
+                             </ScrollView>
                         </View>
                         
                         <View style={styles.tasksSection}>
-                            <Text style={styles.sectionTitle}>Tarefas Recentes</Text>
+                            <Text style={styles.sectionTitle}>Detalhes das Tarefas</Text>
                             <View style={styles.taskHeaderRow}>
                                 <Text style={[styles.taskHeaderCol, styles.colTask]}>Tarefa</Text>
                                 <Text style={[styles.taskHeaderCol, styles.colProject]}>Projeto</Text>
@@ -156,18 +253,55 @@ const styles = StyleSheet.create({
     sectionTitle: { color: '#E0E0E0', fontSize: 18, fontWeight: 'bold', marginBottom: 20, },
     filterSection: { backgroundColor: '#2A2A2A', borderRadius: 15, padding: 20, marginBottom: 20, },
     filterRow: { flexDirection: 'row', justifyContent: 'space-between' },
-    kpiContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 20,},
-    kpiCard: { backgroundColor: '#2A2A2A', borderRadius: 15, padding: 15, width: '48%', marginBottom: 15, },
-    kpiTitle: { color: '#ffffffff', fontSize: 14, marginBottom: 4, },
-    kpiValue: { fontSize: 32, fontWeight: 'bold' },
-    tasksSection: {
-        marginTop: 30,
+    progressSection: {
         backgroundColor: '#2A2A2A',
         borderRadius: 15,
-        paddingTop: 20, // Padding vertical no container
+        padding: 20,
+        marginBottom: 20,
+    },
+    progressContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+    },
+    progressCircleContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    progressText: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+    },
+    totalTasksContainer: {
+        alignItems: 'center',
+    },
+    totalTasksValue: {
+        fontSize: 40,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+    },
+    totalTasksLabel: {
+        fontSize: 14,
+        color: '#A9A9A9',
+        marginTop: 4,
+    },
+    chartContainer: {
+        backgroundColor: '#2A2A2A',
+        borderRadius: 15,
+        paddingVertical: 20,
+        paddingHorizontal: 20, // Ajuste para o scrollview
+        marginBottom: 20,
+        alignContent: 'center',
+        alignItems: 'center'
+    },
+    tasksSection: {
+        backgroundColor: '#2A2A2A',
+        borderRadius: 15,
+        paddingTop: 20,
         paddingBottom: 10,
-        paddingLeft: 20,
-        paddingRight: 20
+        paddingHorizontal: 15,
+        paddingVertical: 15,
     },
     taskHeaderRow: {
         flexDirection: 'row',
@@ -175,35 +309,20 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#3C3C3C',
         marginBottom: 5,
-        paddingHorizontal: 15,
-                alignItems: 'flex-start',
- // Padding horizontal aqui
+        alignItems: 'flex-start',
     },
     taskHeaderCol: {
         color: '#A9A9A9',
-        fontSize: 7, // Reduzido
+        fontSize: 10,
         fontWeight: 'bold',
-        textTransform: 'uppercase', // Adicionado
+        textTransform: 'uppercase',
         paddingHorizontal: 4,
     },
-    // Flexbox para o header (deve ser igual ao do TaskReportRow)
-    colTask: {
-        flex: 2.8,
-    },
-    colProject: {
-        flex: 2,
-    },
-    colResponsible: {
-        flex: 2.5,
-    },
-    colStatus: {
-        flex: 2.2,
-    },
-    colDueDate: {
-        flex: 1.8,
-        textAlign: 'right',
-    },
-    // Estilos para o campo de projeto estático
+    colTask: { flex: 2.8 },
+    colProject: { flex: 2 },
+    colResponsible: { flex: 2.5 },
+    colStatus: { flex: 2.2 },
+    colDueDate: { flex: 1.8, textAlign: 'right' },
     staticPickerContainer: { width: '48%', marginBottom: 15 },
     staticPickerLabel: { color: '#A9A9A9', fontSize: 14, marginBottom: 8 },
     staticPickerButton: { justifyContent: 'center', backgroundColor: '#3C3C3C', borderRadius: 8, paddingHorizontal: 12, height: 45 },
