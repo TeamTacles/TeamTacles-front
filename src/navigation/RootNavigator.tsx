@@ -56,14 +56,11 @@ const RootNavigator = () => {
     );
   }
 
+  // Comentar a linha abaixo para testar o fluxo autenticado
   return (
-    //Comentar o código abaixo quando testar 
     <NavigationContainer>
-      <AppNavigator />
+      {signed ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
-    //<NavigationContainer>
-      //{signed ? <AppNavigator /> : <AuthNavigator />}
-    //</NavigationContainer>
   );
 };
 

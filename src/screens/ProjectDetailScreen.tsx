@@ -1,7 +1,7 @@
 // src/screens/ProjectDetailScreen.tsx
 
-import React, { useState, useMemo, useRef, ElementRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
+import React, { useState, useMemo, useRef, ElementRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -9,7 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../types/Navigation';
 import { Header } from '../components/Header';
-import { ProjectDetails, ProjectMember, ProjectTask } from '../services/projectService';
+import { ProjectDetails, ProjectMember, ProjectTask, projectService } from '../services/projectService';
 import { MemberListItem } from '../components/MemberListItem';
 import { EditMemberRoleModal, MemberData } from '../components/EditMemberRoleModal';
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
@@ -22,12 +22,6 @@ import { SelectTaskMembersModal } from '../components/SelectTaskMembersModal';
 
 type ProjectDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ProjectDetailRouteProp = RouteProp<RootStackParamList, 'ProjectDetail'>;
-
-const MOCK_PROJECT_DETAILS: ProjectDetails = {
-    id: 1,
-    title: 'Projeto TeamTacles',
-    description: 'Api de gerenciamento de projetos em equipe, desenvolvida para ser a aplicação final do curso de Análise e Desenvolvimento de Sistemas.',
-};
 
 const MOCK_MEMBERS: ProjectMember[] = [
     { userId: 1, username: 'Caio Dib', email: 'caio@email.com', projectRole: 'OWNER' },
@@ -47,8 +41,12 @@ const MOCK_INITIAL_TASKS: ProjectTask[] = [
 
 export const ProjectDetailScreen = () => {
     const navigation = useNavigation<ProjectDetailNavigationProp>();
+    const route = useRoute<ProjectDetailRouteProp>();
+    const { projectId } = route.params;
     const notificationRef = useRef<NotificationPopupRef>(null);
-    const [project, setProject] = useState<ProjectDetails | null>(MOCK_PROJECT_DETAILS);
+
+    const [project, setProject] = useState<ProjectDetails | null>(null);
+    const [loadingProject, setLoadingProject] = useState(true);
     const [tasks, setTasks] = useState<ProjectTask[]>(MOCK_INITIAL_TASKS);
     
     const [isEditModalVisible, setEditModalVisible] = useState(false);
@@ -99,6 +97,31 @@ export const ProjectDetailScreen = () => {
 
     const [members, setMembers] = useState<MemberData[]>(MOCK_MEMBERS.map(m => ({ name: m.username, email: m.email, role: m.projectRole })));
     const userWithAvatar = { initials: 'CD' };
+
+    // Carrega os dados do projeto via API
+    useEffect(() => {
+        const loadProjectData = async () => {
+            try {
+                setLoadingProject(true);
+                const projectData = await projectService.getProjectById(projectId);
+                setProject(projectData);
+            } catch (error) {
+                console.error('Erro ao carregar projeto:', error);
+                notificationRef.current?.show({
+                    type: 'error',
+                    message: 'Erro ao carregar o projeto. Tente novamente.'
+                });
+                // Volta para a tela anterior se falhar
+                setTimeout(() => {
+                    navigation.goBack();
+                }, 1500);
+            } finally {
+                setLoadingProject(false);
+            }
+        };
+
+        loadProjectData();
+    }, [projectId]);
 
     const handleMemberPress = (member: MemberData) => { 
         setSelectedMember(member);
@@ -171,10 +194,23 @@ export const ProjectDetailScreen = () => {
         }
     };
 
+    // Exibe loading enquanto carrega os dados do projeto
+    if (loadingProject) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <Header userProfile={userWithAvatar} onPressProfile={() => {}} notificationCount={7} onPressNotifications={() => {}} />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#EB5F1C" />
+                    <Text style={styles.loadingText}>Carregando projeto...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <Header userProfile={userWithAvatar} onPressProfile={() => {}} notificationCount={7} onPressNotifications={() => {}} />
-            
+
             <View style={styles.pageHeader}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
                     <Icon name="arrow-back-outline" size={30} color="#EB5F1C" />
@@ -356,4 +392,14 @@ const styles = StyleSheet.create({
     sortModalView: { backgroundColor: '#3C3C3C', borderRadius: 10, position: 'absolute', width: 150, elevation: 5, overflow: 'hidden' },
     sortOption: { paddingVertical: 12, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#555' },
     lastSortOption: { borderBottomWidth: 0 },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        marginTop: 10,
+    },
 });
