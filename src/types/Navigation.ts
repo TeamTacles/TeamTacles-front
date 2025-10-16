@@ -1,4 +1,4 @@
-import { TeamType } from '../components/TeamCard';
+import { TeamType } from './entities';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'; 
 export type RootStackParamList = {
     Login: undefined;

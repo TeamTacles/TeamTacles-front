@@ -1,8 +1,8 @@
 import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setOnUnauthorizedCallback } from '../services/api';
-import { login as loginService } from '../services/authService';
-import { LoginData } from '../types/AuthTypes';
+import { setOnUnauthorizedCallback } from '../api/api';
+import { login as loginService } from '../features/auth/services/authService';
+import { LoginData } from '../types/auth';
 
 interface AppContextType {
   signed: boolean;

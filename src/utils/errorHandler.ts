@@ -1,4 +1,4 @@
-import { ErrorCode } from '../types/ErrorCode';
+import { ErrorCode } from '../types/api';
 
 export const getErrorMessage = (error: any): string => {
   const errorCode = error.response?.data?.errorCode;

@@ -3,16 +3,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
-import { RootStackParamList } from "../types/Navigation";
-import { LoginScreen } from '../screens/LoginScreen';
-import { RegisterScreen } from '../screens/RegisterScreen';
+import { RootStackParamList } from "../types/navigation";
+import { LoginScreen } from '../features/auth/screens/LoginScreen';
+import { RegisterScreen } from '../features/auth/screens/RegisterScreen';
 import { MenuNavigator } from './MenuNavigator';
-import { EditProfileScreen } from '../screens/EditProfileScreen';
-import { TeamDetailScreen } from '../screens/TeamDetailScreen';
-import { ProjectDetailScreen } from '../screens/ProjectDetailScreen'; 
-import { ReportCenterScreen } from '../screens/ReportCenterScreen'; 
-import { TaskDetailScreen } from '../screens/TaskDetailScreen'; 
-import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen'; 
+import { EditProfileScreen } from '../features/user/screens/EditProfileScreen';
+import { TeamDetailScreen } from '../features/team/screens/TeamDetailScreen';
+import { ProjectDetailScreen } from '../features/project/screens/ProjectDetailScreen';
+import { ReportCenterScreen } from '../features/project/screens/ReportCenterScreen';
+import { TaskDetailScreen } from '../features/task/screens/TaskDetailScreen';
+import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen'; 
 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

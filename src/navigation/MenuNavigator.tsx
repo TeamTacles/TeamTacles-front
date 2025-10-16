@@ -1,13 +1,13 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import { ProjectScreen } from '../screens/ProjectScreen';
-import { TeamScreen } from '../screens/TeamScreen';
-import { ConfigurationScreen } from '../screens/ConfigurationScreen';
-import { TaskScreen } from '../screens/TaskScreen'; 
+import { ProjectScreen } from '../features/project/screens/ProjectScreen';
+import { TeamScreen } from '../features/team/screens/TeamScreen';
+import { ConfigurationScreen } from '../features/user/screens/ConfigurationScreen';
+import { TaskScreen } from '../features/task/screens/TaskScreen';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
-import { RootTabParamList } from '../types/Navigation';
+import { RootTabParamList } from '../types/navigation';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
