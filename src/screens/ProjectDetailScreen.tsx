@@ -19,6 +19,8 @@ import { ProjectTaskCard } from '../components/ProjectTaskCard';
 import { NewItemButton } from '../components/NewItemButton';
 import { NewTaskModal } from '../components/NewTaskModal';
 import { SelectTaskMembersModal } from '../components/SelectTaskMembersModal';
+import { InviteMemberModal } from '../components/InviteMemberModal';
+import { getInviteErrorMessage } from '../utils/errorHandler';
 
 type ProjectDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type ProjectDetailRouteProp = RouteProp<RootStackParamList, 'ProjectDetail'>;
@@ -53,6 +55,7 @@ export const ProjectDetailScreen = () => {
     const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
     const [isMembersListModalVisible, setMembersListModalVisible] = useState(false);
     const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
+    const [isInviteMemberModalVisible, setInviteMemberModalVisible] = useState(false);
     const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
     const [currentUserRole, setCurrentUserRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER'>('OWNER');
     
@@ -106,7 +109,6 @@ export const ProjectDetailScreen = () => {
                 const projectData = await projectService.getProjectById(projectId);
                 setProject(projectData);
             } catch (error) {
-                console.error('Erro ao carregar projeto:', error);
                 notificationRef.current?.show({
                     type: 'error',
                     message: 'Erro ao carregar o projeto. Tente novamente.'
@@ -130,10 +132,20 @@ export const ProjectDetailScreen = () => {
     const handleSaveMemberRole = (newRole: MemberData['role']) => { /* ... */ };
     const handleDeleteMember = () => { /* ... */ };
 
-    const handleSaveProjectDetails = (updatedData: { title: string; description: string }) => {
-        setProject(prev => prev ? { ...prev, ...updatedData } : null);
-        setEditModalVisible(false);
-        notificationRef.current?.show({ type: 'success', message: 'Projeto atualizado!' });
+    const handleSaveProjectDetails = async (updatedData: { title: string; description: string }) => {
+        if (!project) return;
+
+        try {
+            const updatedProject = await projectService.updateProject(project.id, updatedData);
+            setProject(updatedProject);
+            setEditModalVisible(false);
+            notificationRef.current?.show({ type: 'success', message: 'Projeto atualizado com sucesso!' });
+        } catch (error) {
+            notificationRef.current?.show({
+                type: 'error',
+                message: 'Erro ao atualizar o projeto. Tente novamente.'
+            });
+        }
     };
 
     const handleConfirmDeleteProject = () => {
@@ -191,6 +203,26 @@ export const ProjectDetailScreen = () => {
         setSelectMembersModalVisible(false);
         if (newTaskData) {
             handleFinalizeTaskCreation([]);
+        }
+    };
+
+    const handleInviteByEmail = async (email: string, role: 'ADMIN' | 'MEMBER') => {
+        if (!project) return;
+
+        try {
+            await projectService.inviteUserByEmail(project.id, { email, role });
+            setInviteMemberModalVisible(false);
+            notificationRef.current?.show({
+                type: 'success',
+                message: 'Convite enviado com sucesso!'
+            });
+            
+        } catch (error) {
+            const errorMessage = getInviteErrorMessage(error);
+            notificationRef.current?.show({
+                type: 'error',
+                message: errorMessage
+            });
         }
     };
 
@@ -266,7 +298,6 @@ export const ProjectDetailScreen = () => {
                 <NewItemButton onPress={() => setNewTaskModalVisible(true)} />
             </View>
             
-            {/* --- INÍCIO DA CORREÇÃO DO MODAL DE MEMBROS --- */}
             <Modal animationType="fade" transparent={true} visible={isMembersListModalVisible} onRequestClose={() => setMembersListModalVisible(false)}>
                 <View style={styles.modalCenteredView}>
                     <View style={styles.modalView}>
@@ -274,13 +305,25 @@ export const ProjectDetailScreen = () => {
                             <Icon name="close-outline" size={30} color="#fff" />
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Membros do Projeto</Text>
+
+                        <TouchableOpacity
+                            style={styles.inviteButton}
+                            onPress={() => {
+                                setMembersListModalVisible(false);
+                                setInviteMemberModalVisible(true);
+                            }}
+                        >
+                            <Icon name="person-add-outline" size={20} color="#fff" />
+                            <Text style={styles.inviteButtonText}>Convidar Membro</Text>
+                        </TouchableOpacity>
+
                         <FlatList
                             data={members}
                             keyExtractor={(item) => item.email}
                             renderItem={({ item }) => (
-                                <MemberListItem 
-                                    name={item.name} 
-                                    role={item.role} 
+                                <MemberListItem
+                                    name={item.name}
+                                    role={item.role}
                                     onPress={() => handleMemberPress(item)}
                                 />
                             )}
@@ -289,7 +332,6 @@ export const ProjectDetailScreen = () => {
                     </View>
                 </View>
             </Modal>
-            {/* --- FIM DA CORREÇÃO --- */}
             
             <Modal animationType="fade" transparent={true} visible={isSortModalVisible} onRequestClose={() => setSortModalVisible(false)}>
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setSortModalVisible(false)} activeOpacity={1}>
@@ -330,11 +372,18 @@ export const ProjectDetailScreen = () => {
                 onClose={() => setNewTaskModalVisible(false)} 
                 onNext={handleProceedToMemberSelection} 
             />
-            <SelectTaskMembersModal 
-                visible={isSelectMembersModalVisible} 
-                onClose={handleCloseSelectMembersModal} 
-                projectMembers={MOCK_MEMBERS} 
-                onSave={handleFinalizeTaskCreation} 
+            <SelectTaskMembersModal
+                visible={isSelectMembersModalVisible}
+                onClose={handleCloseSelectMembersModal}
+                projectMembers={MOCK_MEMBERS}
+                onSave={handleFinalizeTaskCreation}
+            />
+
+            <InviteMemberModal
+                visible={isInviteMemberModalVisible}
+                onClose={() => setInviteMemberModalVisible(false)}
+                onInviteByEmail={handleInviteByEmail}
+                inviteLink={null}
             />
 
             <NotificationPopup ref={notificationRef} />
@@ -401,5 +450,22 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         marginTop: 10,
+    },
+    inviteButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#EB5F1C',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 10,
+        marginBottom: 20,
+        marginHorizontal: 15,
+    },
+    inviteButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 8,
     },
 });

@@ -18,6 +18,8 @@ import { NewProjectModal } from "../components/NewProjectModal";
 import { AddMembersModal } from "../components/AddMembersModal";
 import { TeamType, Member } from "../components/TeamCard";
 import NotificationPopup, { NotificationPopupRef } from '../components/NotificationPopup';
+import { projectService } from "../services/projectService";
+import { getInviteErrorMessage } from "../utils/errorHandler";
 
 const polvo_pescando = require('../assets/polvo_pescando.png');
 
@@ -43,6 +45,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         hasMoreProjects
     } = useProjects(signed);
     const notificationRef = useRef<NotificationPopupRef>(null);
+    const modalNotificationRef = useRef<NotificationPopupRef>(null);
 
     const [search, setSearch] = useState('');
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
@@ -71,12 +74,14 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         }
         setIsCreatingProject(true);
         try {
-            // Chama a API  para criar o projeto
-            await addProject({
+            // Chama a API para criar o projeto
+            const createdProject = await addProject({
                 title: data.title,
                 description: data.description,
             });
 
+            // Armazena o projeto recém-criado com o ID para usar nos convites
+            setNewlyCreatedProject(createdProject);
             setNotificationQueue(prev => [`Projeto "${data.title}" criado!`, ...prev]);
             setNewProjectModalVisible(false);
             setAddMembersModalVisible(true);
@@ -88,15 +93,26 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         }
     };
 
-    const handleInviteMemberToProject = (email: string, role: any) => {
-        console.log(`Convidando ${email} para o projeto ID ${newlyCreatedProject?.id} com o cargo ${role}`);
-        // ALTERAÇÃO: Adiciona a notificação de convite à fila
-        setNotificationQueue(prev => [...prev, `Convite para ${email} enviado!`]);
+    const handleInviteMemberToProject = async (email: string, role: 'ADMIN' | 'MEMBER') => {
+        if (!newlyCreatedProject) {
+            modalNotificationRef.current?.show({ type: 'error', message: 'Projeto não encontrado.' });
+            return;
+        }
+
+        try {
+            await projectService.inviteUserByEmail(newlyCreatedProject.id, { email, role });
+            // Exibe notificação de sucesso imediatamente dentro do modal
+            modalNotificationRef.current?.show({ type: 'success', message: `Convite enviado com sucesso!` });
+        } catch (error) {
+            // Exibe erro imediatamente dentro do modal (usa modalNotificationRef)
+            const errorMessage = getInviteErrorMessage(error);
+            modalNotificationRef.current?.show({ type: 'error', message: errorMessage });
+        }
     };
 
     const handleImportTeamToProject = (teamId: string) => {
-        console.log(`Importando time ID ${teamId} para o projeto ID ${newlyCreatedProject?.id}`);
-        // ALTERAÇÃO: Adiciona a notificação de importação à fila
+        // TODO: Implementar importação de time quando o endpoint estiver disponível
+        // await projectService.importTeam(newlyCreatedProject.id, teamId);
         setNotificationQueue(prev => [...prev, 'Membros importados com sucesso!']);
     };
 
@@ -221,6 +237,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 onImportTeam={handleImportTeamToProject}
                 userTeams={userTeams}
                 inviteLink={newlyCreatedProject ? `/api/project/join?token=${newlyCreatedProject.id}`: null}
+                notificationRef={modalNotificationRef}
             />
             <NotificationPopup ref={notificationRef} />
         </SafeAreaView>

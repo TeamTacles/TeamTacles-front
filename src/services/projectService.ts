@@ -72,10 +72,35 @@ const createProject = async (projectData: CreateProjectRequest): Promise<Project
   return response.data;
 };
 
+// --- ATUALIZAÇÃO DE PROJETO ---
+
+export interface UpdateProjectRequest {
+  title: string;
+  description: string;
+}
+
+const updateProject = async (projectId: number, projectData: UpdateProjectRequest): Promise<ProjectDetails> => {
+  const response = await api.patch<ProjectDetails>(`/project/${projectId}`, projectData);
+  return response.data;
+};
+
+// --- CONVITE DE MEMBROS POR EMAIL ---
+
+export interface InviteByEmailRequest {
+  email: string;
+  role: 'ADMIN' | 'MEMBER';
+}
+
+const inviteUserByEmail = async (projectId: number, inviteData: InviteByEmailRequest): Promise<void> => {
+  await api.post(`/project/${projectId}/invite-email`, inviteData);
+};
+
 export const projectService = {
   getProjects,
   getProjectById,
   getProjectMembers,
   getProjectTasks,
   createProject,
+  updateProject,
+  inviteUserByEmail,
 };

@@ -52,8 +52,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 15,
         borderRadius: 10,
-        elevation: 10,
-        zIndex: 1000,
+        elevation: 999999,
+        zIndex: 999999,
     },
     message: {
         color: '#fff',

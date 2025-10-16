@@ -59,7 +59,6 @@ export function useProjects(isAuthenticated: boolean) {
       setCurrentPage(1); // Próxima página será 1
       setHasMoreProjects(!response.last);
     } catch (error) {
-      console.error('Erro ao atualizar projetos:', error);
       // Em caso de erro, reseta os estados
       setProjects([]);
       setCurrentPage(0);
@@ -91,13 +90,13 @@ export function useProjects(isAuthenticated: boolean) {
       setCurrentPage(prev => prev + 1);
       setHasMoreProjects(!response.last);
     } catch (error) {
-      console.error('Erro ao carregar mais projetos:', error);
+      // Silenciosamente falha - o usuário pode tentar novamente
     } finally {
       setLoadingProjects(false);
     }
   };
 
-  const addProject = async (projectData: CreateProjectRequest): Promise<void> => {
+  const addProject = async (projectData: CreateProjectRequest): Promise<Project> => {
     try {
       // Chama a API para criar o projeto
       const createdProject = await projectService.createProject(projectData);
@@ -107,11 +106,15 @@ export function useProjects(isAuthenticated: boolean) {
         id: createdProject.id,
         title: createdProject.title,
         description: createdProject.description,
+        projectRole: createdProject.projectRole,
         teamMembers: [{name: 'Você', initials: 'VC'}],
         createdAt: Date.now()
       };
 
       setProjects(currentProjects => [newProject, ...currentProjects]);
+
+      // Retorna o projeto criado para uso posterior (ex: convites)
+      return newProject;
     } catch (error) {
       // Propaga o erro para ser tratado no componente que chamou
       const errorMessage = getErrorMessage(error);

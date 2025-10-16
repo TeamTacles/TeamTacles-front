@@ -6,6 +6,7 @@ import { InputsField } from './InputsField';
 import { MainButton } from './MainButton';
 import { TeamType, Member } from './TeamCard';
 import { InfoPopup } from './InfoPopup';
+import NotificationPopup, { NotificationPopupRef } from './NotificationPopup';
 
 type ActiveTab = 'invite' | 'import';
 type MemberRole = 'ADMIN' | 'MEMBER';
@@ -17,9 +18,10 @@ interface AddMembersModalProps {
   onImportTeam: (teamId: string) => void;
   userTeams: TeamType[];
   inviteLink: string | null;
+  notificationRef?: React.RefObject<NotificationPopupRef>;
 }
 
-export const AddMembersModal: React.FC<AddMembersModalProps> = ({ visible, onClose, onInviteByEmail, onImportTeam, userTeams, inviteLink }) => {
+export const AddMembersModal: React.FC<AddMembersModalProps> = ({ visible, onClose, onInviteByEmail, onImportTeam, userTeams, inviteLink, notificationRef }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('invite');
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<MemberRole>('MEMBER');
@@ -33,7 +35,7 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({ visible, onClo
     }
     onInviteByEmail(email, selectedRole);
     setEmail('');
-    onClose(); // <-- ALTERAÇÃO: Fecha o modal após o convite
+    // Modal permanece aberto para permitir múltiplos convites
   };
   
   const handleImport = () => {
@@ -51,7 +53,7 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({ visible, onClo
         url: inviteLink,
       });
     } catch (error) {
-      console.error('Erro ao compartilhar o link', error);
+      // Silenciosamente falha - erro de compartilhamento não precisa notificar
     }
   };
 
@@ -155,6 +157,8 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({ visible, onClo
                 {activeTab === 'invite' ? renderInviteTab() : renderImportTab()}
               </View>
           </View>
+          {/* Renderiza NotificationPopup SOMENTE quando o modal está visível e a ref foi passada */}
+          {visible && notificationRef && <NotificationPopup ref={notificationRef} />}
         </View>
       </Modal>
       <InfoPopup
