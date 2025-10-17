@@ -19,9 +19,11 @@ interface AddMembersModalProps {
   userTeams: TeamType[];
   inviteLink: string | null;
   notificationRef?: React.RefObject<NotificationPopupRef | null>;
+  projectId?: number; // ID do projeto para chamadas à API
+  isInviting?: boolean; // Estado de loading durante o convite
 }
 
-export const AddMembersModal: React.FC<AddMembersModalProps> = ({ visible, onClose, onInviteByEmail, onImportTeam, userTeams, inviteLink, notificationRef }) => {
+export const AddMembersModal: React.FC<AddMembersModalProps> = ({ visible, onClose, onInviteByEmail, onImportTeam, userTeams, inviteLink, notificationRef, projectId, isInviting = false }) => {
   const [activeTab, setActiveTab] = useState<ActiveTab>('invite');
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<MemberRole>('MEMBER');
@@ -83,7 +85,11 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({ visible, onClo
             <Text style={styles.roleButtonText}>Administrador</Text>
           </TouchableOpacity>
       </View>
-      <MainButton title="Enviar Convite" onPress={handleInvite} />
+      <MainButton
+        title={isInviting ? "Enviando..." : "Enviar Convite"}
+        onPress={handleInvite}
+        disabled={isInviting}
+      />
       <View style={styles.divider} />
       <Text style={styles.label}>Ou compartilhe o link de convite</Text>
       <TouchableOpacity style={styles.linkContainer} onPress={onShareLink} disabled={!inviteLink}>

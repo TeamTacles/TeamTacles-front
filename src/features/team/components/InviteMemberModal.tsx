@@ -6,27 +6,25 @@ import { InputsField } from '../../../components/common/InputsField';
 import { MainButton } from '../../../components/common/MainButton';
 import { InfoPopup } from '../../../components/common/InfoPopup';
 import { teamService } from '../services/teamService';
+import { projectService } from '../../project/services/projectService';
 import { getInviteErrorMessage } from '../../../utils/errorHandler';
-// --- INÍCIO DA CORREÇÃO ---
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
-// --- FIM DA CORREÇÃO ---
 
 type MemberRole = 'ADMIN' | 'MEMBER';
 
 interface InviteMemberModalProps {
   visible: boolean;
-  teamId: number | string | null;
+  teamId?: number | string | null;
+  projectId?: number | string | null;
   onClose: () => void;
-  // --- INÍCIO DA CORREÇÃO: Adicionar a prop para a ref ---
-  notificationRef: React.RefObject<NotificationPopupRef | null>;
-  // --- FIM DA CORREÇÃO ---
+  notificationRef?: React.RefObject<NotificationPopupRef | null>;
+  inviteLink?: string | null;
 }
 
-export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, teamId, onClose, notificationRef }) => {
-  // --- INÍCIO DA CORREÇÃO: Remover o hook global ---
-  // const { showNotification } = useNotification(); // Removido
-  // --- FIM DA CORREÇÃO ---
-  
+export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, teamId, projectId, onClose, notificationRef, inviteLink }) => {
+  const localNotificationRef = useRef<NotificationPopupRef>(null);
+  const effectiveNotificationRef = notificationRef || localNotificationRef;
+
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<MemberRole>('MEMBER');
   const [infoPopup, setInfoPopup] = useState({ visible: false, message: '' });
@@ -39,39 +37,46 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, t
       setInfoPopup({ visible: true, message: "Por favor, insira um e-mail válido." });
       return;
     }
-    if (!teamId) return;
+    if (!teamId && !projectId) return;
 
     setIsInviting(true);
     try {
-      await teamService.inviteUserByEmail(teamId, { email, role: selectedRole });
-      // --- INÍCIO DA CORREÇÃO: Usar a ref do modal ---
-      notificationRef.current?.show({ type: 'success', message: `Convite enviado para ${email}!` });
-      // --- FIM DA CORREÇÃO ---
+      if (projectId) {
+        await projectService.inviteUserByEmail(Number(projectId), { email, role: selectedRole });
+      } else if (teamId) {
+        await teamService.inviteUserByEmail(teamId, { email, role: selectedRole });
+      }
+      effectiveNotificationRef.current?.show({ type: 'success', message: `Convite enviado para ${email}!` });
       setEmail('');
     } catch (error) {
-      // --- INÍCIO DA CORREÇÃO: Usar a ref do modal ---
-      notificationRef.current?.show({ type: 'error', message: getInviteErrorMessage(error) });
-      // --- FIM DA CORREÇÃO ---
+      effectiveNotificationRef.current?.show({ type: 'error', message: getInviteErrorMessage(error) });
     } finally {
       setIsInviting(false);
     }
   };
 
   const handleGenerateAndShareLink = async () => {
-    if (!teamId) return;
+    if (!teamId && !inviteLink) return;
 
     setIsGeneratingLink(true);
     try {
-      const response = await teamService.generateInviteLink(teamId);
-      await Share.share({
-        message: `Você foi convidado para uma equipe! Junte-se através do link: ${response.inviteLink}`,
-        url: response.inviteLink,
-      });
+      let linkToShare = inviteLink;
+
+      // Se não houver link pré-gerado, gera um novo (apenas para teams)
+      if (!linkToShare && teamId) {
+        const response = await teamService.generateInviteLink(teamId);
+        linkToShare = response.inviteLink;
+      }
+
+      if (linkToShare) {
+        await Share.share({
+          message: `Você foi convidado! Junte-se através do link: ${linkToShare}`,
+          url: linkToShare,
+        });
+      }
     } catch (error) {
       if (!(error instanceof Error && error.message.includes('Share Canceled'))) {
-        // --- INÍCIO DA CORREÇÃO: Usar a ref do modal ---
-        notificationRef.current?.show({ type: 'error', message: 'Não foi possível gerar o link de convite.' });
-        // --- FIM DA CORREÇÃO ---
+        effectiveNotificationRef.current?.show({ type: 'error', message: 'Não foi possível gerar o link de convite.' });
       }
     } finally {
       setIsGeneratingLink(false);
@@ -143,9 +148,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, t
                 )}
             </TouchableOpacity>
           </View>
-          {/* --- INÍCIO DA CORREÇÃO: Renderizar o popup dentro do modal --- */}
-          <NotificationPopup ref={notificationRef} />
-          {/* --- FIM DA CORREÇÃO --- */}
+          {visible && <NotificationPopup ref={effectiveNotificationRef} />}
         </View>
       </Modal>
 

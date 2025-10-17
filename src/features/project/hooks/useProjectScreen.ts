@@ -19,6 +19,7 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
   // Estados do fluxo de criação
   const [newlyCreatedProject, setNewlyCreatedProject] = useState<any | null>(null);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [isInvitingMember, setIsInvitingMember] = useState(false);
 
   // Fila de notificações
   const [notificationQueue, setNotificationQueue] = useState<string[]>([]);
@@ -66,6 +67,7 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
       return;
     }
 
+    setIsInvitingMember(true);
     try {
       await projectService.inviteUserByEmail(newlyCreatedProject.id, { email, role });
       // Exibe notificação de sucesso imediatamente dentro do modal
@@ -74,6 +76,8 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
       // Exibe erro imediatamente dentro do modal (usa modalNotificationRef)
       const errorMessage = getInviteErrorMessage(error);
       modalNotificationRef.current?.show({ type: 'error', message: errorMessage });
+    } finally {
+      setIsInvitingMember(false);
     }
   };
 
@@ -124,6 +128,7 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
     isAddMembersModalVisible,
     newlyCreatedProject,
     isCreatingProject,
+    isInvitingMember,
     notificationQueue,
 
     // Refs

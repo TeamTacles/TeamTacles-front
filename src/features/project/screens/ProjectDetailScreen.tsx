@@ -19,7 +19,6 @@ import { NewItemButton } from '../../../components/common/NewItemButton';
 import { NewTaskModal } from '../../task/components/NewTaskModal';
 import { SelectTaskMembersModal } from '../../task/components/SelectTaskMembersModal';
 import { InviteMemberModal } from '../../team/components/InviteMemberModal';
-import { getInviteErrorMessage } from '../../../utils/errorHandler';
 import { MOCK_MEMBERS, MOCK_INITIAL_TASKS } from '../../../data/mocks';
 import { useNotification } from '../../../contexts/NotificationContext';
 
@@ -192,25 +191,6 @@ export const ProjectDetailScreen = () => {
         }
     };
 
-    const handleInviteByEmail = async (email: string, role: 'ADMIN' | 'MEMBER') => {
-        if (!project) return;
-
-        try {
-            await projectService.inviteUserByEmail(project.id, { email, role });
-            setInviteMemberModalVisible(false);
-            showNotification({
-                type: 'success',
-                message: 'Convite enviado com sucesso!'
-            });
-
-        } catch (error) {
-            const errorMessage = getInviteErrorMessage(error);
-            showNotification({
-                type: 'error',
-                message: errorMessage
-            });
-        }
-    };
 
     // Exibe loading enquanto carrega os dados do projeto
     if (loadingProject) {
@@ -368,7 +348,7 @@ export const ProjectDetailScreen = () => {
             <InviteMemberModal
                 visible={isInviteMemberModalVisible}
                 onClose={() => setInviteMemberModalVisible(false)}
-                onInviteByEmail={handleInviteByEmail}
+                projectId={project?.id}
                 inviteLink={null}
             />
         </SafeAreaView>

@@ -46,6 +46,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         isAddMembersModalVisible,
         newlyCreatedProject,
         isCreatingProject,
+        isInvitingMember,
         notificationRef,
         modalNotificationRef,
         setNewProjectModalVisible,
@@ -163,6 +164,8 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 userTeams={userTeams}
                 inviteLink={newlyCreatedProject ? `/api/project/join?token=${newlyCreatedProject.id}`: null}
                 notificationRef={modalNotificationRef}
+                projectId={newlyCreatedProject?.id}
+                isInviting={isInvitingMember}
             />
             <NotificationPopup ref={notificationRef} />
         </SafeAreaView>
