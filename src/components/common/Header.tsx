@@ -1,3 +1,5 @@
+// src/components/common/Header.tsx
+
 import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity,StatusBar,ImageSourcePropType  } from 'react-native';
 
@@ -9,7 +11,7 @@ interface UserProfile {
 
 // Informações do Header, possuindo uma função para caso clicar no ícone seja pressionado. De forma similar, uma função para caso o ícone de notificação seja apertado, além de um atributo para indicar as notificações que restam a serem lidas
 interface HeaderProps {
-    userProfile: UserProfile;
+    userProfile: UserProfile | null;
     onPressProfile: () => void;
     notificationCount: number;
     onPressNotifications: () => void;
@@ -40,12 +42,12 @@ export const Header = ({ userProfile, onPressProfile, notificationCount = 0, onP
                 </View>
                 )}
             </TouchableOpacity>
-            <TouchableOpacity onPress={onPressProfile} style={styles.actionButton}>
-                {userProfile.avatarSource ? (
+            <TouchableOpacity onPress={onPressProfile} style={styles.actionButton} disabled={!userProfile}>
+                {userProfile?.avatarSource ? (
                     <Image source={userProfile.avatarSource} style={styles.avatar} />
                 ) : (
                     <View style={[styles.avatar, styles.initialsContainer]}>
-                        <Text style={styles.initialsText}>{userProfile.initials}</Text>
+                        <Text style={styles.initialsText}>{userProfile?.initials ?? ''}</Text>
                     </View>
                 )}            
               </TouchableOpacity>

@@ -2,8 +2,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { teamService } from '../services/teamService';
 import { getErrorMessage } from '../../../utils/errorHandler';
-import { Team } from '../../../types/entities';
+import { Team, Member } from '../../../types/entities';
 import { Filters } from '../../task/components/FilterModal';
+import { getInitialsFromName } from '../../../utils/stringUtils';
 
 export function useTeams(isAuthenticated: boolean) {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -30,7 +31,11 @@ export function useTeams(isAuthenticated: boolean) {
         ...team,
         id: team.id,
         title: team.name,
-        members: [], 
+        // Transforma a lista de nomes em objetos de membros com iniciais
+        members: team.memberNames.map(name => ({
+          name: name,
+          initials: getInitialsFromName(name)
+        })), 
         createdAt: new Date(), 
       }));
 

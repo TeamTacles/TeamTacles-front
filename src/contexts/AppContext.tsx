@@ -3,10 +3,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setOnUnauthorizedCallback } from '../api/api';
 import { login as loginService } from '../features/auth/services/authService';
 import { LoginData } from '../types/auth';
+import { userService } from '../features/user/services/userService';
+import { getInitialsFromName } from '../utils/stringUtils';
+
+// Interface para o objeto do usuário
+interface User {
+  name: string;
+  initials: string;
+}
 
 interface AppContextType {
   signed: boolean;
   loading: boolean;
+  user: User | null; // Adiciona o usuário ao tipo do contexto
   signIn(credentials: LoginData): Promise<void>;
   signOut(): void;
 }
@@ -15,21 +24,37 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null); // Estado para os dados do usuário
   const [loading, setLoading] = useState(true);
+
+  // Função para carregar os dados do usuário da API
+  const loadUserData = async () => {
+    try {
+      const userData = await userService.getCurrentUser();
+      setUser({
+        name: userData.username,
+        initials: getInitialsFromName(userData.username)
+      });
+    } catch (error) {
+      // Se falhar (ex: token inválido), desloga o usuário
+      console.error("Falha ao carregar dados do usuário, deslogando.", error);
+      signOut();
+    }
+  };
 
   useEffect(() => {
     async function loadStorageData() {
       const storedToken = await AsyncStorage.getItem('@TeamTacles:token');
       if (storedToken) {
         setToken(storedToken);
+        await loadUserData(); // Carrega os dados do usuário se o token existir
       }
       setLoading(false);
     }
     loadStorageData();
 
-    // Configura o callback para quando o token expirar (401)
     setOnUnauthorizedCallback(() => {
-      setToken(null);
+      signOut(); // Usa a função signOut para limpar tudo
     });
   }, []);
 
@@ -39,11 +64,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     setToken(newToken);
     await AsyncStorage.setItem('@TeamTacles:token', newToken);
+    await loadUserData(); // Carrega os dados do usuário após o login
   }
 
   async function signOut() {
     await AsyncStorage.clear();
     setToken(null);
+    setUser(null); // Limpa o estado do usuário ao deslogar
   }
 
   return (
@@ -51,6 +78,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       value={{
         signed: !!token,
         loading,
+        user, // Disponibiliza o usuário no contexto
         signIn,
         signOut,
       }}

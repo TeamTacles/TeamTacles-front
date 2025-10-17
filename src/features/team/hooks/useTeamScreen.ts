@@ -3,36 +3,24 @@ import { useState, useEffect, useRef } from 'react';
 import { TeamType } from '../../../types/entities';
 import { teamService, CreateTeamRequest } from '../services/teamService';
 import { getErrorMessage } from '../../../utils/errorHandler';
-// --- INÍCIO DA CORREÇÃO ---
 import { NotificationPopupRef } from '../../../components/common/NotificationPopup';
-// --- FIM DA CORREÇÃO ---
+import { useAppContext } from '../../../contexts/AppContext'; // Importa o useAppContext
 
 export function useTeamScreen() {
-  // --- INÍCIO DA CORREÇÃO: Remover o useNotification e criar a ref ---
   const modalNotificationRef = useRef<NotificationPopupRef>(null);
-  // --- FIM DA CORREÇÃO ---
-  
-  // Estados dos modais
+  const { user } = useAppContext(); // Pega o usuário do contexto
+
   const [isNewTeamModalVisible, setNewTeamModalVisible] = useState(false);
   const [isInviteModalVisible, setInviteModalVisible] = useState(false);
-
-  // Estados do fluxo de criação
   const [newlyCreatedTeam, setNewlyCreatedTeam] = useState<TeamType | null>(null);
   const [isCreatingTeam, setIsCreatingTeam] = useState(false);
-
-  // Estado para InfoPopup (validação de formulário)
   const [infoPopup, setInfoPopup] = useState({ visible: false, title: '', message: '' });
 
-  const userWithAvatar = { initials: 'CD', name: 'Caio Dib' };
-
-  // Efeito para mostrar a notificação após o modal de convite estar visível
   useEffect(() => {
     if (isInviteModalVisible && newlyCreatedTeam) {
         setTimeout(() => {
             const teamTitle = newlyCreatedTeam.title || newlyCreatedTeam.name || 'Equipe';
-            // --- INÍCIO DA CORREÇÃO: Usar a ref do modal ---
             modalNotificationRef.current?.show({ type: 'success', message: `Equipe "${teamTitle}" criada com sucesso!` });
-            // --- FIM DA CORREÇÃO ---
         }, 300);
     }
   }, [isInviteModalVisible, newlyCreatedTeam]);
@@ -42,6 +30,11 @@ export function useTeamScreen() {
     data: { title: string; description: string },
     setTeams: React.Dispatch<React.SetStateAction<TeamType[]>>
   ) => {
+    // Verifica se os dados do usuário foram carregados
+    if (!user) {
+      setInfoPopup({ visible: true, title: 'Erro', message: 'Dados do usuário não carregados. Tente novamente.' });
+      return;
+    }
     if (!data.title.trim()) {
       setInfoPopup({ visible: true, title: 'Atenção', message: 'O título da equipe é obrigatório.' });
       return;
@@ -60,9 +53,13 @@ export function useTeamScreen() {
         id: createdTeamFromApi.id,
         title: createdTeamFromApi.name,
         description: createdTeamFromApi.description,
-        members: [{ name: userWithAvatar.name, initials: userWithAvatar.initials }],
+        // Usa os dados dinâmicos do usuário do contexto
+        members: [{ name: user.name, initials: user.initials }],
         createdAt: new Date(),
         teamRole: 'OWNER',
+        memberCount: 1,
+        // Usa os dados dinâmicos do usuário do contexto
+        memberNames: [user.name],
       };
 
       setTeams(currentTeams => [newTeam, ...currentTeams]);
@@ -90,10 +87,7 @@ export function useTeamScreen() {
     newlyCreatedTeam,
     isCreatingTeam,
     infoPopup,
-    userWithAvatar,
-    // --- INÍCIO DA CORREÇÃO: Exportar a ref ---
     modalNotificationRef,
-    // --- FIM DA CORREÇÃO ---
     setNewTeamModalVisible,
     setInfoPopup,
     handleCreateTeamAndProceed,

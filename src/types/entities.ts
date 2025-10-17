@@ -56,6 +56,8 @@ export interface Team {
   teamRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
   members: Member[];
   createdAt: Date | number; // Aceita ambos para compatibilidade
+  memberCount: number; // NOVO CAMPO
+  memberNames: string[]; // NOVO CAMPO
 }
 
 /**

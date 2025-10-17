@@ -25,7 +25,7 @@ type TeamScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const TeamScreen = () => {
     const navigation = useNavigation<TeamScreenNavigationProp>();
-    const { signed } = useAppContext();
+    const { signed, user } = useAppContext(); // Pega o usuário do contexto
     const [search, setSearch] = useState('');
 
     const {
@@ -47,10 +47,7 @@ export const TeamScreen = () => {
         newlyCreatedTeam,
         isCreatingTeam,
         infoPopup,
-        userWithAvatar,
-        // --- INÍCIO DA CORREÇÃO: Obter a ref do hook ---
         modalNotificationRef,
-        // --- FIM DA CORREÇÃO ---
         setNewTeamModalVisible,
         setInfoPopup,
         handleCreateTeamAndProceed,
@@ -90,7 +87,7 @@ export const TeamScreen = () => {
 
     return (
         <SafeAreaView style={styles.safeAreaView} edges={['top', 'left', 'right']}>
-            <Header userProfile={userWithAvatar} onPressProfile={handleProfilePress} notificationCount={7} onPressNotifications={handleNotificationsPress} />
+            <Header userProfile={user} onPressProfile={handleProfilePress} notificationCount={7} onPressNotifications={handleNotificationsPress} />
             <View style={styles.searchContainer}>
                 <View style={styles.searchBarWrapper}>
                     <SearchBar 
