@@ -9,6 +9,11 @@ interface ConfirmationModalProps {
   onClose: () => void;
   onConfirm: () => void;
   confirmText?: string;
+  // --- INÍCIO DA CORREÇÃO: Novas props ---
+  isConfirming?: boolean;
+  confirmingText?: string;
+  disableClose?: boolean;
+  // --- FIM DA CORREÇÃO ---
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ 
@@ -17,22 +22,45 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     message, 
     onClose, 
     onConfirm,
-    confirmText = "Confirmar"
+    confirmText = "Confirmar",
+    // --- INÍCIO DA CORREÇÃO: Desestruturar novas props ---
+    isConfirming = false,
+    confirmingText = "Confirmando...",
+    disableClose = false
+    // --- FIM DA CORREÇÃO ---
 }) => {
   return (
     <Modal
       animationType="fade"
       transparent={true}
       visible={visible}
-      onRequestClose={onClose}
+      // --- INÍCIO DA CORREÇÃO: Impedir fechamento ---
+      onRequestClose={disableClose ? () => {} : onClose}
+      // --- FIM DA CORREÇÃO ---
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           <Text style={styles.modalTitle}>{title}</Text>
           <Text style={styles.modalText}>{message}</Text>
           <View style={styles.buttonContainer}>
-            <MainButton title={confirmText} onPress={onConfirm} style={styles.confirmButton}/>
-            <MainButton title="Cancelar" onPress={onClose} style={styles.cancelButton} textStyle={styles.cancelButtonText}/>
+            {/* --- INÍCIO DA CORREÇÃO: Lógica do botão de confirmação --- */}
+            <MainButton 
+              title={isConfirming ? confirmingText : confirmText} 
+              onPress={onConfirm} 
+              style={styles.confirmButton}
+              disabled={isConfirming}
+            />
+            {/* --- FIM DA CORREÇÃO --- */}
+
+            {/* --- INÍCIO DA CORREÇÃO: Lógica do botão de cancelar --- */}
+            <MainButton 
+              title="Cancelar" 
+              onPress={onClose} 
+              style={styles.cancelButton} 
+              textStyle={styles.cancelButtonText}
+              disabled={disableClose || isConfirming}
+            />
+            {/* --- FIM DA CORREÇÃO --- */}
           </View>
         </View>
       </View>

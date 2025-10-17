@@ -1,22 +1,21 @@
 // src/components/EditTeamModal.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TeamType } from '../../../types/entities';
-import { ConfirmationModal } from '../../../components/common/ConfirmationModal'; // Importe o ConfirmationModal
 
 interface EditTeamModalProps {
   visible: boolean;
   team: TeamType | null;
   onClose: () => void;
   onSave: (updatedData: { title: string; description: string }) => void;
-  onDelete: () => void; // Adicionada a função para deletar
+  onDelete: () => void;
+  isOwner: boolean; // Prop para saber se o usuário é o dono
 }
 
-export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onClose, onSave, onDelete }) => {
+export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onClose, onSave, onDelete, isOwner }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
 
@@ -59,12 +58,16 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onC
                       <MainButton title="Salvar Alterações" onPress={handleSave} />
                     </View>
 
-                    {/* Seção para deletar a equipe */}
-                    <View style={styles.divider} />
-                    <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
-                        <Icon name="trash-outline" size={20} color="#ff4545" />
-                        <Text style={styles.deleteButtonText}>Excluir Equipe</Text>
-                    </TouchableOpacity>
+                    {/* Botão de deletar só aparece para o Dono */}
+                    {isOwner && (
+                        <>
+                            <View style={styles.divider} />
+                            <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
+                                <Icon name="trash-outline" size={20} color="#ff4545" />
+                                <Text style={styles.deleteButtonText}>Excluir Equipe</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
                 </View>
             </View>
         </Modal>

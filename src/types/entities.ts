@@ -10,6 +10,16 @@ export interface Member {
 }
 
 /**
+ * Representa um membro com detalhes completos para a tela de detalhes
+ */
+export interface TeamMemberDetail {
+  userId: number;
+  username: string;
+  email: string;
+  teamRole: 'OWNER' | 'ADMIN' | 'MEMBER';
+}
+
+/**
  * Representa um projeto baseado em UserProjectResponseDTO e ProjectResponseDTO
  */
 export interface Project {

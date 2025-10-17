@@ -1,54 +1,95 @@
-import React, { useState } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Share } from 'react-native';
+// src/features/team/components/InviteMemberModal.tsx
+import React, { useState, useRef } from 'react';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { InputsField } from '../../../components/common/InputsField';
 import { MainButton } from '../../../components/common/MainButton';
 import { InfoPopup } from '../../../components/common/InfoPopup';
+import { teamService } from '../services/teamService';
+import { getInviteErrorMessage } from '../../../utils/errorHandler';
+// --- INÍCIO DA CORREÇÃO ---
+import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
+// --- FIM DA CORREÇÃO ---
 
 type MemberRole = 'ADMIN' | 'MEMBER';
 
 interface InviteMemberModalProps {
   visible: boolean;
+  teamId: number | string | null;
   onClose: () => void;
-  onInviteByEmail: (email: string, role: MemberRole) => void;
-  inviteLink: string | null;
+  // --- INÍCIO DA CORREÇÃO: Adicionar a prop para a ref ---
+  notificationRef: React.RefObject<NotificationPopupRef | null>;
+  // --- FIM DA CORREÇÃO ---
 }
 
-export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, onClose, onInviteByEmail, inviteLink }) => {
+export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, teamId, onClose, notificationRef }) => {
+  // --- INÍCIO DA CORREÇÃO: Remover o hook global ---
+  // const { showNotification } = useNotification(); // Removido
+  // --- FIM DA CORREÇÃO ---
+  
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<MemberRole>('MEMBER');
-  const [infoPopupVisible, setInfoPopupVisible] = useState(false);
-  const [infoPopupMessage, setInfoPopupMessage] = useState('');
+  const [infoPopup, setInfoPopup] = useState({ visible: false, message: '' });
 
-  const handleInvite = () => {
-    if (!email || !email.includes('@')) {
-      setInfoPopupMessage("Por favor, insira um endereço de e-mail válido para continuar.");
-      setInfoPopupVisible(true);
+  const [isInviting, setIsInviting] = useState(false);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+
+  const handleInviteByEmail = async () => {
+    if (!email.includes('@')) {
+      setInfoPopup({ visible: true, message: "Por favor, insira um e-mail válido." });
       return;
     }
-    onInviteByEmail(email, selectedRole);
-    setEmail('');
-    onClose(); 
-  };
+    if (!teamId) return;
 
-  const onShareLink = async () => {
-    if (!inviteLink) return;
+    setIsInviting(true);
     try {
-      await Share.share({
-        message: `Você foi convidado para uma equipe! Junte-se através do link: ${inviteLink}`,
-        url: inviteLink,
-      });
+      await teamService.inviteUserByEmail(teamId, { email, role: selectedRole });
+      // --- INÍCIO DA CORREÇÃO: Usar a ref do modal ---
+      notificationRef.current?.show({ type: 'success', message: `Convite enviado para ${email}!` });
+      // --- FIM DA CORREÇÃO ---
+      setEmail('');
     } catch (error) {
-      console.error('Erro ao compartilhar o link', error);
+      // --- INÍCIO DA CORREÇÃO: Usar a ref do modal ---
+      notificationRef.current?.show({ type: 'error', message: getInviteErrorMessage(error) });
+      // --- FIM DA CORREÇÃO ---
+    } finally {
+      setIsInviting(false);
     }
   };
+
+  const handleGenerateAndShareLink = async () => {
+    if (!teamId) return;
+
+    setIsGeneratingLink(true);
+    try {
+      const response = await teamService.generateInviteLink(teamId);
+      await Share.share({
+        message: `Você foi convidado para uma equipe! Junte-se através do link: ${response.inviteLink}`,
+        url: response.inviteLink,
+      });
+    } catch (error) {
+      if (!(error instanceof Error && error.message.includes('Share Canceled'))) {
+        // --- INÍCIO DA CORREÇÃO: Usar a ref do modal ---
+        notificationRef.current?.show({ type: 'error', message: 'Não foi possível gerar o link de convite.' });
+        // --- FIM DA CORREÇÃO ---
+      }
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const handleClose = () => {
+      setEmail('');
+      setSelectedRole('MEMBER');
+      onClose();
+  }
 
   return (
     <>
-      <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
+      <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={handleClose}>
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
                 <Icon name="close-outline" size={30} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>Convidar Membros</Text>
@@ -78,29 +119,47 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, o
                 </TouchableOpacity>
             </View>
             
-            <MainButton title="Enviar Convite" onPress={handleInvite} />
+            <MainButton 
+              title={isInviting ? "Enviando..." : "Enviar Convite"} 
+              onPress={handleInviteByEmail}
+              disabled={isInviting}
+            />
 
             <View style={styles.divider} />
 
             <Text style={styles.label}>Ou compartilhe o link de convite</Text>
-            <TouchableOpacity style={styles.linkContainer} onPress={onShareLink} disabled={!inviteLink}>
-                <Text style={styles.linkText} numberOfLines={1}>{inviteLink || 'Gerando link...'}</Text>
-                <Icon name="share-social-outline" size={24} color="#EB5F1C" />
+            <TouchableOpacity 
+              style={styles.linkContainer} 
+              onPress={handleGenerateAndShareLink} 
+              disabled={isGeneratingLink}
+            >
+                {isGeneratingLink ? (
+                  <ActivityIndicator color="#EB5F1C" />
+                ) : (
+                  <>
+                    <Text style={styles.linkText} numberOfLines={1}>Gerar e compartilhar link</Text>
+                    <Icon name="share-social-outline" size={24} color="#EB5F1C" />
+                  </>
+                )}
             </TouchableOpacity>
           </View>
+          {/* --- INÍCIO DA CORREÇÃO: Renderizar o popup dentro do modal --- */}
+          <NotificationPopup ref={notificationRef} />
+          {/* --- FIM DA CORREÇÃO --- */}
         </View>
       </Modal>
 
       <InfoPopup
-        visible={infoPopupVisible}
+        visible={infoPopup.visible}
         title="⚠️ Atenção"
-        message={infoPopupMessage}
-        onClose={() => setInfoPopupVisible(false)}
+        message={infoPopup.message}
+        onClose={() => setInfoPopup({ visible: false, message: '' })}
       />
     </>
   );
 };
 
+// ESTILOS CONTINUAM OS MESMOS
 const styles = StyleSheet.create({
     centeredView: { 
         flex: 1, 
@@ -147,7 +206,7 @@ const styles = StyleSheet.create({
     linkContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         backgroundColor: '#3C3C3C',
         borderRadius: 8,
         paddingVertical: 12,
