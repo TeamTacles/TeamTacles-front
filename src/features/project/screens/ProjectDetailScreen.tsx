@@ -11,6 +11,7 @@ import { RootStackParamList } from '../../../types/navigation';
 import { Header } from '../../../components/common/Header';
 import { ProjectDetails, ProjectMember, ProjectTask, projectService } from '../services/projectService';
 import { MemberListItem } from '../../team/components/MemberListItem';
+import { useProjectMembers } from '../hooks/useProjectMembers';
 import { EditMemberRoleModal, MemberData } from '../../team/components/EditMemberRoleModal';
 import { EditProjectModal } from '../components/EditProjectModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
@@ -83,7 +84,7 @@ export const ProjectDetailScreen = () => {
         });
     };
 
-    const [members, setMembers] = useState<MemberData[]>(MOCK_MEMBERS.map(m => ({ name: m.username, email: m.email, role: m.projectRole })));
+    const { members, loadingMembers, refreshingMembers, handleRefresh, handleLoadMore } = useProjectMembers(projectId);
     const userWithAvatar = { initials: 'CD' };
 
     // Carrega os dados do projeto via API
@@ -110,8 +111,12 @@ export const ProjectDetailScreen = () => {
         loadProjectData();
     }, [projectId]);
 
-    const handleMemberPress = (member: MemberData) => { 
-        setSelectedMember(member);
+    const handleMemberPress = (member: ProjectMember) => {
+        setSelectedMember({
+            name: member.username,
+            email: member.email,
+            role: member.projectRole
+        });
         setEditMemberModalVisible(true);
     };
     const handleSaveMemberRole = (newRole: MemberData['role']) => { /* ... */ };
@@ -285,14 +290,19 @@ export const ProjectDetailScreen = () => {
 
                         <FlatList
                             data={members}
-                            keyExtractor={(item) => item.email}
+                            keyExtractor={(item) => item.userId.toString()}
                             renderItem={({ item }) => (
                                 <MemberListItem
-                                    name={item.name}
-                                    role={item.role}
+                                    name={item.username}
+                                    role={item.projectRole}
                                     onPress={() => handleMemberPress(item)}
                                 />
                             )}
+                            onRefresh={handleRefresh}
+                            refreshing={refreshingMembers}
+                            onEndReached={handleLoadMore}
+                            onEndReachedThreshold={0.5}
+                            ListFooterComponent={loadingMembers && !refreshingMembers ? <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" /> : null}
                             ItemSeparatorComponent={() => <View style={styles.separatorLine} />}
                         />
                     </View>

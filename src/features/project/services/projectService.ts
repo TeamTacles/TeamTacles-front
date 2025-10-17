@@ -48,9 +48,9 @@ const getProjectById = async (projectId: number): Promise<ProjectDetails> => {
   return response.data;
 };
 
-// Busca os membros do projeto
-const getProjectMembers = async (projectId: number): Promise<PagedResponse<ProjectMember>> => {
-  const response = await api.get<PagedResponse<ProjectMember>>(`/project/${projectId}/members`);
+// Busca os membros do projeto (com paginação)
+const getProjectMembers = async (projectId: number, page = 0, size = 20): Promise<PagedResponse<ProjectMember>> => {
+  const response = await api.get<PagedResponse<ProjectMember>>(`/project/${projectId}/members?page=${page}&size=${size}`);
   return response.data;
 };
 
