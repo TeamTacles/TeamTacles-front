@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { projectService, ProjectMember } from '../services/projectService';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { MOCK_MEMBERS } from '../../../data/mocks';
 
 export function useProjectMembers(projectId: number) {
   const { showNotification } = useNotification();
@@ -29,13 +28,10 @@ export function useProjectMembers(projectId: number) {
       const response = await projectService.getProjectMembers(projectId, page, 5);
       const membersFromApi = response.content;
 
-      // Combina os membros da API com os membros mockados para testes de paginação
-      const combinedMembers = [...membersFromApi, ...MOCK_MEMBERS];
-
       if (isRefreshing) {
-        setMembers(combinedMembers);
+        setMembers(membersFromApi);
       } else {
-        setMembers(prev => [...prev, ...combinedMembers]);
+        setMembers(prev => [...prev, ...membersFromApi]);
       }
       setHasMore(!response.last);
       setCurrentPage(page + 1);

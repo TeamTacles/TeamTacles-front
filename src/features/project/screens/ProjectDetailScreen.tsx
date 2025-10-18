@@ -258,6 +258,7 @@ export const ProjectDetailScreen = () => {
                                         <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" />
                                     ) : null
                                 }
+                                ListEmptyComponent={() => <Text style={styles.emptyText}>Nenhum membro encontrado.</Text>}
                                 ItemSeparatorComponent={() => <View style={styles.separatorLine} />}
                             />
                         </View>
@@ -400,7 +401,7 @@ const styles = StyleSheet.create({
     modalView: { width: '90%', maxHeight: '70%', backgroundColor: '#2A2A2A', borderRadius: 20, paddingTop: 25, paddingBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
     modalCloseButton: { position: 'absolute', top: 10, right: 10, padding: 5, zIndex: 1 },
     modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20, textAlign: 'center', paddingHorizontal: 25 },
-    membersListContainer: { flex: 1, paddingHorizontal: 10 },
+    membersListContainer: { flexGrow: 1, flexShrink: 1, paddingHorizontal: 10, minHeight: 100 },
     separatorLine: { height: 1, backgroundColor: '#3C3C3C', marginHorizontal: 15 },
     sortModalView: { backgroundColor: '#3C3C3C', borderRadius: 10, position: 'absolute', width: 150, elevation: 5, overflow: 'hidden' },
     sortOption: { paddingVertical: 12, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#555' },
