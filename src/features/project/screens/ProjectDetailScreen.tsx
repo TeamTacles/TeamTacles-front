@@ -44,6 +44,8 @@ export const ProjectDetailScreen = () => {
         setEditMemberModalVisible,
         isInviteMemberModalVisible,
         setInviteMemberModalVisible,
+        isConfirmRemoveMemberVisible,
+        setConfirmRemoveMemberVisible,
         selectedMember,
         handleRefresh,
         handleLoadMore,
@@ -51,6 +53,7 @@ export const ProjectDetailScreen = () => {
         handleDeleteProject,
         handleSelectMember,
         handleUpdateMemberRole,
+        handleRemoveMember,
     } = useProjectDetail();
 
     // Estados locais apenas para UI e tasks (ainda mock)
@@ -293,7 +296,7 @@ export const ProjectDetailScreen = () => {
                 currentUserRole={currentUserRole || 'MEMBER'}
                 onClose={() => setEditMemberModalVisible(false)}
                 onSave={handleUpdateMemberRole}
-                onDelete={() => {}}
+                onDelete={() => setConfirmRemoveMemberVisible(true)}
             />
 
             <EditProjectModal
@@ -311,6 +314,15 @@ export const ProjectDetailScreen = () => {
                 onClose={() => setConfirmDeleteVisible(false)}
                 onConfirm={handleDeleteProject}
                 confirmText="Excluir"
+            />
+
+            <ConfirmationModal
+                visible={isConfirmRemoveMemberVisible}
+                title="Remover Membro"
+                message={`Você tem certeza que deseja remover ${selectedMember?.username} do projeto?`}
+                onClose={() => setConfirmRemoveMemberVisible(false)}
+                onConfirm={handleRemoveMember}
+                confirmText="Remover"
             />
 
             <NewTaskModal

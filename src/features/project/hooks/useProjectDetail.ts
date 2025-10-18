@@ -13,7 +13,7 @@ type ProjectDetailRouteProp = RouteProp<RootStackParamList, 'ProjectDetail'>;
 export function useProjectDetail() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<ProjectDetailRouteProp>();
-  const { projectId } = route.params;
+  const { projectId, projectRole } = route.params;
   const { showNotification } = useNotification();
 
   // States
@@ -25,10 +25,11 @@ export function useProjectDetail() {
   const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
   const [isInviteMemberModalVisible, setInviteMemberModalVisible] = useState(false);
+  const [isConfirmRemoveMemberVisible, setConfirmRemoveMemberVisible] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ userId: number; username: string; email: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' } | null>(null);
 
   // Usar o hook de membros
-  const { members, loadingMembers, refreshingMembers, handleRefresh, handleLoadMore } = useProjectMembers(projectId);
+  const { members, setMembers, loadingMembers, refreshingMembers, handleRefresh, handleLoadMore } = useProjectMembers(projectId);
 
   // Carrega os dados do projeto
   useEffect(() => {
@@ -105,6 +106,20 @@ export function useProjectDetail() {
     }
   };
 
+  const handleRemoveMember = async () => {
+    if (!selectedMember) return;
+    try {
+      await projectService.removeMember(projectId, selectedMember.userId);
+      setMembers(prev => prev.filter(m => m.userId !== selectedMember.userId));
+      setConfirmRemoveMemberVisible(false);
+      setEditMemberModalVisible(false);
+      showNotification({ type: 'success', message: 'Membro removido com sucesso.' });
+    } catch (error) {
+      setConfirmRemoveMemberVisible(false);
+      showNotification({ type: 'error', message: getErrorMessage(error) });
+    }
+  };
+
   return {
     navigation,
     project,
@@ -112,7 +127,7 @@ export function useProjectDetail() {
     members,
     loadingMembers,
     refreshingMembers,
-    currentUserRole: project?.projectRole,
+    currentUserRole: projectRole,
     isEditModalVisible,
     setEditModalVisible,
     isConfirmDeleteVisible,
@@ -121,6 +136,8 @@ export function useProjectDetail() {
     setEditMemberModalVisible,
     isInviteMemberModalVisible,
     setInviteMemberModalVisible,
+    isConfirmRemoveMemberVisible,
+    setConfirmRemoveMemberVisible,
     selectedMember,
     handleRefresh,
     handleLoadMore,
@@ -128,5 +145,6 @@ export function useProjectDetail() {
     handleDeleteProject,
     handleSelectMember,
     handleUpdateMemberRole,
+    handleRemoveMember,
   };
 }

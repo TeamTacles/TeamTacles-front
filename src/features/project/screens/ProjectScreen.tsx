@@ -103,7 +103,11 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 renderItem={({ item }) =>
                     <ProjectCard
                         project={item}
-                        onPress={() => navigation.navigate('ProjectDetail', { projectId: item.id, projectTitle: item.title })}
+                        onPress={() => navigation.navigate('ProjectDetail', {
+                            projectId: item.id,
+                            projectTitle: item.title,
+                            projectRole: item.projectRole || 'MEMBER'
+                        })}
                     />
                 }
                 contentContainerStyle={styles.listContainer}

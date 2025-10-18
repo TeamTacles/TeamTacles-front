@@ -63,6 +63,7 @@ export function useProjectMembers(projectId: number) {
 
   return {
     members,
+    setMembers,
     loadingMembers,
     refreshingMembers,
     handleRefresh,

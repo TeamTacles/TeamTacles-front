@@ -3,13 +3,13 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
-    ForgotPassword: undefined; 
+    ForgotPassword: undefined;
     Menu: undefined;
     ProjectForm: undefined;
     TaskForm: undefined;
     EditProfile: undefined;
     TeamDetail: { team: TeamType };
-    ProjectDetail: { projectId: number; projectTitle: string };
+    ProjectDetail: { projectId: number; projectTitle: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' };
     ReportCenter: { projectId: number };
     TaskDetail: { projectId: number; taskId: number };
 };

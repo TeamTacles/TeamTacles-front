@@ -106,6 +106,12 @@ const updateMemberRole = async (projectId: number, userId: number, data: UpdateM
   return response.data;
 };
 
+// --- REMOÇÃO DE MEMBRO ---
+
+const removeMember = async (projectId: number, userId: number): Promise<void> => {
+  await api.delete(`/project/${projectId}/member/${userId}`);
+};
+
 export const projectService = {
   getProjects,
   getProjectById,
@@ -115,4 +121,5 @@ export const projectService = {
   updateProject,
   inviteUserByEmail,
   updateMemberRole,
+  removeMember,
 };
