@@ -1,18 +1,17 @@
 // src/screens/ProjectDetailScreen.tsx
 
-import React, { useState, useMemo, useRef, ElementRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert, ActivityIndicator } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import React, { useState, useMemo, useRef, ElementRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../../types/navigation';
 import { Header } from '../../../components/common/Header';
-import { ProjectDetails, ProjectMember, ProjectTask, projectService } from '../services/projectService';
+import { ProjectTask } from '../services/projectService';
 import { MemberListItem } from '../../team/components/MemberListItem';
-import { useProjectMembers } from '../hooks/useProjectMembers';
-import { EditMemberRoleModal, MemberData } from '../../team/components/EditMemberRoleModal';
+import { useProjectDetail } from '../hooks/useProjectDetail';
+import { EditMemberRoleModal } from '../../team/components/EditMemberRoleModal';
 import { EditProjectModal } from '../components/EditProjectModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { ProjectTaskCard } from '../../task/components/ProjectTaskCard';
@@ -24,27 +23,40 @@ import { MOCK_MEMBERS, MOCK_INITIAL_TASKS } from '../../../data/mocks';
 import { useNotification } from '../../../contexts/NotificationContext';
 
 type ProjectDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type ProjectDetailRouteProp = RouteProp<RootStackParamList, 'ProjectDetail'>;
-
 
 export const ProjectDetailScreen = () => {
-    const navigation = useNavigation<ProjectDetailNavigationProp>();
-    const route = useRoute<ProjectDetailRouteProp>();
-    const { projectId } = route.params;
     const { showNotification } = useNotification();
 
-    const [project, setProject] = useState<ProjectDetails | null>(null);
-    const [loadingProject, setLoadingProject] = useState(true);
+    // Hook com toda a lógica de negócio
+    const {
+        navigation,
+        project,
+        loadingProject,
+        members,
+        loadingMembers,
+        refreshingMembers,
+        currentUserRole,
+        isEditModalVisible,
+        setEditModalVisible,
+        isConfirmDeleteVisible,
+        setConfirmDeleteVisible,
+        isEditMemberModalVisible,
+        setEditMemberModalVisible,
+        isInviteMemberModalVisible,
+        setInviteMemberModalVisible,
+        selectedMember,
+        handleRefresh,
+        handleLoadMore,
+        handleUpdateProject,
+        handleDeleteProject,
+        handleSelectMember,
+        handleUpdateMemberRole,
+    } = useProjectDetail();
+
+    // Estados locais apenas para UI e tasks (ainda mock)
     const [tasks, setTasks] = useState<ProjectTask[]>(MOCK_INITIAL_TASKS);
-    
-    const [isEditModalVisible, setEditModalVisible] = useState(false);
-    const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
     const [isMembersListModalVisible, setMembersListModalVisible] = useState(false);
-    const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
-    const [isInviteMemberModalVisible, setInviteMemberModalVisible] = useState(false);
-    const [selectedMember, setSelectedMember] = useState<MemberData | null>(null);
-    const [currentUserRole, setCurrentUserRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER'>('OWNER');
-    
+
     const [isNewTaskModalVisible, setNewTaskModalVisible] = useState(false);
     const [isSelectMembersModalVisible, setSelectMembersModalVisible] = useState(false);
     const [newTaskData, setNewTaskData] = useState<{ title: string; description: string; dueDate: Date } | null>(null);
@@ -62,7 +74,7 @@ export const ProjectDetailScreen = () => {
         { label: 'Concluído', value: 'DONE', color: '#3CB371' },
         { label: 'Em atraso', value: 'OVERDUE', color: '#ff4545' },
     ];
-    
+
     const sortedTasks = useMemo(() => {
         let currentTasks = [...tasks];
         if (sortOption === 'DEFAULT') return currentTasks;
@@ -71,7 +83,7 @@ export const ProjectDetailScreen = () => {
         }
         return currentTasks.filter(task => task.status === sortOption);
     }, [sortOption, tasks]);
-    
+
     const handleSort = (option: SortOption) => {
         setSortOption(option);
         setSortModalVisible(false);
@@ -84,70 +96,7 @@ export const ProjectDetailScreen = () => {
         });
     };
 
-    const { members, loadingMembers, refreshingMembers, handleRefresh, handleLoadMore } = useProjectMembers(projectId);
     const userWithAvatar = { initials: 'CD' };
-
-    // Carrega os dados do projeto via API
-    useEffect(() => {
-        const loadProjectData = async () => {
-            try {
-                setLoadingProject(true);
-                const projectData = await projectService.getProjectById(projectId);
-                setProject(projectData);
-            } catch (error) {
-                showNotification({
-                    type: 'error',
-                    message: 'Erro ao carregar o projeto. Tente novamente.'
-                });
-                // Volta para a tela anterior se falhar
-                setTimeout(() => {
-                    navigation.goBack();
-                }, 1500);
-            } finally {
-                setLoadingProject(false);
-            }
-        };
-
-        loadProjectData();
-    }, [projectId]);
-
-    const handleMemberPress = (member: ProjectMember) => {
-        setSelectedMember({
-            name: member.username,
-            email: member.email,
-            role: member.projectRole
-        });
-        setEditMemberModalVisible(true);
-    };
-    const handleSaveMemberRole = (newRole: MemberData['role']) => { /* ... */ };
-    const handleDeleteMember = () => { /* ... */ };
-
-    const handleSaveProjectDetails = async (updatedData: { title: string; description: string }) => {
-        if (!project) return;
-
-        try {
-            const updatedProject = await projectService.updateProject(project.id, updatedData);
-            setProject(updatedProject);
-            setEditModalVisible(false);
-            showNotification({ type: 'success', message: 'Projeto atualizado com sucesso!' });
-        } catch (error) {
-            showNotification({
-                type: 'error',
-                message: 'Erro ao atualizar o projeto. Tente novamente.'
-            });
-        }
-    };
-
-    const handleConfirmDeleteProject = () => {
-        setConfirmDeleteVisible(false);
-        setEditModalVisible(false);
-        
-        navigation.goBack();
-
-        setTimeout(() => {
-            showNotification({ type: 'success', message: 'Projeto excluído com sucesso!' });
-        }, 500);
-    };
 
     const handleProceedToMemberSelection = (data: { title: string; description: string; dueDate: Date }) => {
         setNewTaskData(data);
@@ -188,14 +137,13 @@ export const ProjectDetailScreen = () => {
         setNewTaskData(null);
         showNotification({ type: 'success', message: 'Tarefa criada com sucesso!' });
     };
-    
+
     const handleCloseSelectMembersModal = () => {
         setSelectMembersModalVisible(false);
         if (newTaskData) {
             handleFinalizeTaskCreation([]);
         }
     };
-
 
     // Exibe loading enquanto carrega os dados do projeto
     if (loadingProject) {
@@ -225,12 +173,14 @@ export const ProjectDetailScreen = () => {
                     <Icon name="pencil-outline" size={24} color="#FFFFFF" />
                 </TouchableOpacity>
             </View>
-            
+
             <View style={styles.staticContent}>
                 <View style={styles.projectDetails}>
                     <Text style={styles.projectTitle} numberOfLines={1}>{project?.title}</Text>
                     <Text style={styles.projectDescription}>{project?.description}</Text>
                 </View>
+
+                {/* Barra de Informações com Botões */}
                 <View style={styles.infoBar}>
                     <TouchableOpacity style={styles.infoButton} onPress={() => project && navigation.navigate('ReportCenter', { projectId: project.id })}>
                         <Icon name="document-text-outline" size={20} color="#ffffffff" />
@@ -241,6 +191,7 @@ export const ProjectDetailScreen = () => {
                         <Text style={styles.infoTitle}>Membros</Text>
                     </TouchableOpacity>
                 </View>
+
                 <View style={styles.tasksHeader}>
                     <Text style={styles.tasksTitle}>Tarefas</Text>
                     <TouchableOpacity ref={sortButtonRef} style={styles.orderButton} onPress={openSortMenu}>
@@ -255,7 +206,7 @@ export const ProjectDetailScreen = () => {
                     data={sortedTasks}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
-                        <ProjectTaskCard 
+                        <ProjectTaskCard
                             task={item}
                             onPress={() => project && navigation.navigate('TaskDetail', { projectId: project.id, taskId: item.id })}
                         />
@@ -264,11 +215,12 @@ export const ProjectDetailScreen = () => {
                     ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma tarefa encontrada.</Text>}
                 />
             </View>
-            
+
             <View style={styles.addButtonContainer}>
                 <NewItemButton onPress={() => setNewTaskModalVisible(true)} />
             </View>
-            
+
+            {/* Modal de Lista de Membros */}
             <Modal animationType="fade" transparent={true} visible={isMembersListModalVisible} onRequestClose={() => setMembersListModalVisible(false)}>
                 <View style={styles.modalCenteredView}>
                     <View style={styles.modalView}>
@@ -295,7 +247,10 @@ export const ProjectDetailScreen = () => {
                                 <MemberListItem
                                     name={item.username}
                                     role={item.projectRole}
-                                    onPress={() => handleMemberPress(item)}
+                                    onPress={() => {
+                                        setMembersListModalVisible(false);
+                                        handleSelectMember(item);
+                                    }}
                                 />
                             )}
                             onRefresh={handleRefresh}
@@ -308,7 +263,8 @@ export const ProjectDetailScreen = () => {
                     </View>
                 </View>
             </Modal>
-            
+
+            {/* Modal de Ordenação de Tarefas */}
             <Modal animationType="fade" transparent={true} visible={isSortModalVisible} onRequestClose={() => setSortModalVisible(false)}>
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setSortModalVisible(false)} activeOpacity={1}>
                     <View style={[styles.sortModalView, { top: sortMenuPosition.top, right: sortMenuPosition.right }]}>
@@ -324,30 +280,40 @@ export const ProjectDetailScreen = () => {
                     </View>
                 </TouchableOpacity>
             </Modal>
-            <EditMemberRoleModal visible={isEditMemberModalVisible} member={selectedMember} currentUserRole={currentUserRole} onClose={() => setEditMemberModalVisible(false)} onSave={handleSaveMemberRole} onDelete={handleDeleteMember} />
-            
+
+            {/* Modais de Edição */}
+            <EditMemberRoleModal
+                visible={isEditMemberModalVisible}
+                member={selectedMember ? { name: selectedMember.username, email: selectedMember.email, role: selectedMember.projectRole } : null}
+                currentUserRole={currentUserRole || 'MEMBER'}
+                onClose={() => setEditMemberModalVisible(false)}
+                onSave={handleUpdateMemberRole}
+                onDelete={() => {}}
+            />
+
             <EditProjectModal
                 visible={isEditModalVisible}
                 project={project}
                 onClose={() => setEditModalVisible(false)}
-                onSave={handleSaveProjectDetails}
+                onSave={handleUpdateProject}
                 onDelete={() => setConfirmDeleteVisible(true)}
             />
-            
+
             <ConfirmationModal
                 visible={isConfirmDeleteVisible}
                 title="Excluir Projeto"
                 message={`Você tem certeza que deseja excluir o projeto "${project?.title}"? Esta ação não pode ser desfeita.`}
                 onClose={() => setConfirmDeleteVisible(false)}
-                onConfirm={handleConfirmDeleteProject}
+                onConfirm={handleDeleteProject}
                 confirmText="Excluir"
             />
-            
-            <NewTaskModal 
-                visible={isNewTaskModalVisible} 
-                onClose={() => setNewTaskModalVisible(false)} 
-                onNext={handleProceedToMemberSelection} 
+
+            <NewTaskModal
+                visible={isNewTaskModalVisible}
+                onClose={() => setNewTaskModalVisible(false)}
+                onNext={handleProceedToMemberSelection}
             />
+
             <SelectTaskMembersModal
                 visible={isSelectMembersModalVisible}
                 onClose={handleCloseSelectMembersModal}
@@ -389,23 +355,23 @@ const styles = StyleSheet.create({
     tasksTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
     orderButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#3C3C3C', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
     orderButtonText: { color: '#fff', marginRight: 5 },
-    
+
     listWrapper: {
         flex: 1,
     },
-    listContainer: { 
+    listContainer: {
         paddingHorizontal: 15,
         paddingBottom: 80,
     },
     emptyText: { color: '#A9A9A9', textAlign: 'center', marginTop: 50 },
-    
-    addButtonContainer: { 
-        position: 'absolute', 
-        right: 25, 
+
+    addButtonContainer: {
+        position: 'absolute',
+        right: 25,
         bottom: 70,
         zIndex: 1,
     },
-    
+
     modalCenteredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.7)' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
     modalView: { width: '90%', maxHeight: '70%', backgroundColor: '#2A2A2A', borderRadius: 20, paddingVertical: 25, paddingHorizontal: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },

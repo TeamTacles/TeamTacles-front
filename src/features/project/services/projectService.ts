@@ -95,6 +95,17 @@ const inviteUserByEmail = async (projectId: number, inviteData: InviteByEmailReq
   await api.post(`/project/${projectId}/invite-email`, inviteData);
 };
 
+// --- ATUALIZAÇÃO DE ROLE DE MEMBRO ---
+
+export interface UpdateMemberRoleRequest {
+  newRole: 'OWNER' | 'ADMIN' | 'MEMBER';
+}
+
+const updateMemberRole = async (projectId: number, userId: number, data: UpdateMemberRoleRequest): Promise<ProjectMember> => {
+  const response = await api.patch<ProjectMember>(`/project/${projectId}/member/${userId}/role`, data);
+  return response.data;
+};
+
 export const projectService = {
   getProjects,
   getProjectById,
@@ -103,4 +114,5 @@ export const projectService = {
   createProject,
   updateProject,
   inviteUserByEmail,
+  updateMemberRole,
 };
