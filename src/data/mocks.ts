@@ -75,10 +75,31 @@ export const MOCK_USER_TEAMS: Team[] = [
  * Membros mocados para os detalhes do projeto
  */
 export const MOCK_MEMBERS: ProjectMember[] = [
-    { userId: 1, username: 'Caio Dib', email: 'caio@email.com', projectRole: 'OWNER' },
-    { userId: 2, username: 'Pedro L.', email: 'pedro@email.com', projectRole: 'ADMIN' },
-    { userId: 3, username: 'João S.', email: 'joao@email.com', projectRole: 'MEMBER' },
-    { userId: 4, username: 'Ana M.', email: 'ana@email.com', projectRole: 'MEMBER' },
+    { userId: 1001, username: 'Mock 1', email: 'mock1@email.com', projectRole: 'MEMBER' },
+    { userId: 1002, username: 'Mock 2', email: 'mock2@email.com', projectRole: 'MEMBER' },
+    { userId: 1003, username: 'Mock 3', email: 'mock3@email.com', projectRole: 'MEMBER' },
+    { userId: 1004, username: 'Mock 4', email: 'mock4@email.com', projectRole: 'MEMBER' },
+    { userId: 1005, username: 'Mock 5', email: 'mock5@email.com', projectRole: 'MEMBER' },
+    { userId: 1006, username: 'Mock 6', email: 'mock6@email.com', projectRole: 'MEMBER' },
+    { userId: 1007, username: 'Mock 7', email: 'mock7@email.com', projectRole: 'MEMBER' },
+    { userId: 1008, username: 'Mock 8', email: 'mock8@email.com', projectRole: 'MEMBER' },
+    { userId: 1009, username: 'Mock 9', email: 'mock9@email.com', projectRole: 'MEMBER' },
+    { userId: 1010, username: 'Mock 10', email: 'mock10@email.com', projectRole: 'MEMBER' },
+    { userId: 1011, username: 'Mock 11', email: 'mock11@email.com', projectRole: 'MEMBER' },
+    { userId: 1012, username: 'Mock 12', email: 'mock12@email.com', projectRole: 'MEMBER' },
+    { userId: 1013, username: 'Mock 13', email: 'mock13@email.com', projectRole: 'MEMBER' },
+    { userId: 1014, username: 'Mock 14', email: 'mock14@email.com', projectRole: 'MEMBER' },
+    { userId: 1015, username: 'Mock 15', email: 'mock15@email.com', projectRole: 'MEMBER' },
+    { userId: 1016, username: 'Mock 16', email: 'mock16@email.com', projectRole: 'MEMBER' },
+    { userId: 1017, username: 'Mock 17', email: 'mock17@email.com', projectRole: 'MEMBER' },
+    { userId: 1018, username: 'Mock 18', email: 'mock18@email.com', projectRole: 'MEMBER' },
+    { userId: 1019, username: 'Mock 19', email: 'mock19@email.com', projectRole: 'MEMBER' },
+    { userId: 1020, username: 'Mock 20', email: 'mock20@email.com', projectRole: 'MEMBER' },
+    { userId: 1021, username: 'Mock 21', email: 'mock21@email.com', projectRole: 'MEMBER' },
+    { userId: 1022, username: 'Mock 22', email: 'mock22@email.com', projectRole: 'MEMBER' },
+    { userId: 1023, username: 'Mock 23', email: 'mock23@email.com', projectRole: 'MEMBER' },
+    { userId: 1024, username: 'Mock 24', email: 'mock24@email.com', projectRole: 'MEMBER' },
+    { userId: 1025, username: 'Mock 25', email: 'mock25@email.com', projectRole: 'MEMBER' },
 ];
 
 /**

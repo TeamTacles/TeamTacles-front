@@ -232,42 +232,43 @@ export const ProjectDetailScreen = () => {
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Membros do Projeto</Text>
 
-                        <FlatList
-                            data={members}
-                            keyExtractor={(item) => item.userId.toString()}
-                            renderItem={({ item }) => (
-                                <MemberListItem
-                                    name={item.username}
-                                    role={item.projectRole}
-                                    onPress={() => {
-                                        setMembersListModalVisible(false);
-                                        handleSelectMember(item);
-                                    }}
-                                />
-                            )}
-                            onRefresh={handleRefresh}
-                            refreshing={refreshingMembers}
-                            onEndReached={handleLoadMore}
-                            onEndReachedThreshold={0.5}
-                            ListFooterComponent={
-                                <>
-                                    {loadingMembers && !refreshingMembers && (
-                                        <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" />
-                                    )}
-                                    <TouchableOpacity
-                                        style={styles.inviteButton}
+                        <View style={styles.membersListContainer}>
+                            <FlatList
+                                data={members}
+                                keyExtractor={(item) => item.userId.toString()}
+                                renderItem={({ item }) => (
+                                    <MemberListItem
+                                        name={item.username}
+                                        role={item.projectRole}
                                         onPress={() => {
                                             setMembersListModalVisible(false);
-                                            setInviteMemberModalVisible(true);
+                                            handleSelectMember(item);
                                         }}
-                                    >
-                                        <Icon name="person-add-outline" size={20} color="#fff" />
-                                        <Text style={styles.inviteButtonText}>Convidar Membro</Text>
-                                    </TouchableOpacity>
-                                </>
-                            }
-                            ItemSeparatorComponent={() => <View style={styles.separatorLine} />}
-                        />
+                                    />
+                                )}
+                                onRefresh={handleRefresh}
+                                refreshing={refreshingMembers}
+                                onEndReached={handleLoadMore}
+                                onEndReachedThreshold={0.5}
+                                ListFooterComponent={
+                                    loadingMembers && !refreshingMembers ? (
+                                        <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" />
+                                    ) : null
+                                }
+                                ItemSeparatorComponent={() => <View style={styles.separatorLine} />}
+                            />
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.inviteButton}
+                            onPress={() => {
+                                setMembersListModalVisible(false);
+                                setInviteMemberModalVisible(true);
+                            }}
+                        >
+                            <Icon name="person-add-outline" size={20} color="#fff" />
+                            <Text style={styles.inviteButtonText}>Convidar Membro</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
@@ -391,9 +392,10 @@ const styles = StyleSheet.create({
 
     modalCenteredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.7)' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)' },
-    modalView: { width: '90%', maxHeight: '70%', backgroundColor: '#2A2A2A', borderRadius: 20, paddingVertical: 25, paddingHorizontal: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
+    modalView: { width: '90%', maxHeight: '70%', backgroundColor: '#2A2A2A', borderRadius: 20, paddingTop: 25, paddingBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
     modalCloseButton: { position: 'absolute', top: 10, right: 10, padding: 5, zIndex: 1 },
     modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20, textAlign: 'center', paddingHorizontal: 25 },
+    membersListContainer: { flex: 1, paddingHorizontal: 10 },
     separatorLine: { height: 1, backgroundColor: '#3C3C3C', marginHorizontal: 15 },
     sortModalView: { backgroundColor: '#3C3C3C', borderRadius: 10, position: 'absolute', width: 150, elevation: 5, overflow: 'hidden' },
     sortOption: { paddingVertical: 12, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: '#555' },
@@ -416,8 +418,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 10,
-        marginTop: 20,
-        marginBottom: 10,
+        marginTop: 15,
         marginHorizontal: 15,
     },
     inviteButtonText: {
