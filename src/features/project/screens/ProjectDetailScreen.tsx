@@ -36,6 +36,8 @@ export const ProjectDetailScreen = () => {
         loadingMembers,
         refreshingMembers,
         currentUserRole,
+        isOwner,
+        isAdmin,
         isEditModalVisible,
         setEditModalVisible,
         isConfirmDeleteVisible,
@@ -244,6 +246,7 @@ export const ProjectDetailScreen = () => {
                                             setMembersListModalVisible(false);
                                             handleSelectMember(item);
                                         }}
+                                        disabled={!isAdmin}
                                     />
                                 )}
                                 onRefresh={handleRefresh}
@@ -259,16 +262,18 @@ export const ProjectDetailScreen = () => {
                             />
                         </View>
 
-                        <TouchableOpacity
-                            style={styles.inviteButton}
-                            onPress={() => {
-                                setMembersListModalVisible(false);
-                                setInviteMemberModalVisible(true);
-                            }}
-                        >
-                            <Icon name="person-add-outline" size={20} color="#fff" />
-                            <Text style={styles.inviteButtonText}>Convidar Membro</Text>
-                        </TouchableOpacity>
+                        {isAdmin && (
+                            <TouchableOpacity
+                                style={styles.inviteButton}
+                                onPress={() => {
+                                    setMembersListModalVisible(false);
+                                    setInviteMemberModalVisible(true);
+                                }}
+                            >
+                                <Icon name="person-add-outline" size={20} color="#fff" />
+                                <Text style={styles.inviteButtonText}>Convidar Membro</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
             </Modal>

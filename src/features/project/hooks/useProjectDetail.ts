@@ -28,6 +28,11 @@ export function useProjectDetail() {
   const [isConfirmRemoveMemberVisible, setConfirmRemoveMemberVisible] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ userId: number; username: string; email: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' } | null>(null);
 
+  // --- LÓGICA DE PERMISSÃO ---
+  const currentUserRole = projectRole;
+  const isOwner = currentUserRole === 'OWNER';
+  const isAdmin = currentUserRole === 'ADMIN' || isOwner;
+
   // Usar o hook de membros
   const { members, setMembers, loadingMembers, refreshingMembers, handleRefresh, handleLoadMore } = useProjectMembers(projectId);
 
@@ -84,6 +89,7 @@ export function useProjectDetail() {
 
   // --- Member Actions ---
   const handleSelectMember = (member: { userId: number; username: string; email: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' }) => {
+    if (!isAdmin) return;
     setSelectedMember(member);
     setEditMemberModalVisible(true);
   };
@@ -127,7 +133,9 @@ export function useProjectDetail() {
     members,
     loadingMembers,
     refreshingMembers,
-    currentUserRole: projectRole,
+    currentUserRole,
+    isOwner,
+    isAdmin,
     isEditModalVisible,
     setEditModalVisible,
     isConfirmDeleteVisible,
