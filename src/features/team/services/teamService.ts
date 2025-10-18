@@ -63,7 +63,6 @@ const generateInviteLink = async (teamId: number | string): Promise<InviteLinkRe
   return response.data;
 };
 
-// --- NOVAS FUNÇÕES ---
 const getTeamById = async (teamId: number | string): Promise<Team> => {
     const response = await api.get<Team>(`/team/${teamId}`);
     return response.data;
@@ -92,6 +91,11 @@ const removeMember = async (teamId: number | string, userId: number): Promise<vo
     await api.delete(`/team/${teamId}/member/${userId}`);
 };
 
+// --- ADICIONAR NOVA FUNÇÃO ---
+const leaveTeam = async (teamId: number | string): Promise<void> => {
+    await api.delete(`/team/${teamId}/leave`);
+};
+
 export const teamService = {
   getTeams,
   createTeam,
@@ -103,4 +107,5 @@ export const teamService = {
   deleteTeam,
   updateMemberRole,
   removeMember,
+  leaveTeam, // Adicionar a nova função
 };
