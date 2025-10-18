@@ -229,17 +229,6 @@ export const ProjectDetailScreen = () => {
                         </TouchableOpacity>
                         <Text style={styles.modalTitle}>Membros do Projeto</Text>
 
-                        <TouchableOpacity
-                            style={styles.inviteButton}
-                            onPress={() => {
-                                setMembersListModalVisible(false);
-                                setInviteMemberModalVisible(true);
-                            }}
-                        >
-                            <Icon name="person-add-outline" size={20} color="#fff" />
-                            <Text style={styles.inviteButtonText}>Convidar Membro</Text>
-                        </TouchableOpacity>
-
                         <FlatList
                             data={members}
                             keyExtractor={(item) => item.userId.toString()}
@@ -257,7 +246,23 @@ export const ProjectDetailScreen = () => {
                             refreshing={refreshingMembers}
                             onEndReached={handleLoadMore}
                             onEndReachedThreshold={0.5}
-                            ListFooterComponent={loadingMembers && !refreshingMembers ? <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" /> : null}
+                            ListFooterComponent={
+                                <>
+                                    {loadingMembers && !refreshingMembers && (
+                                        <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" />
+                                    )}
+                                    <TouchableOpacity
+                                        style={styles.inviteButton}
+                                        onPress={() => {
+                                            setMembersListModalVisible(false);
+                                            setInviteMemberModalVisible(true);
+                                        }}
+                                    >
+                                        <Icon name="person-add-outline" size={20} color="#fff" />
+                                        <Text style={styles.inviteButtonText}>Convidar Membro</Text>
+                                    </TouchableOpacity>
+                                </>
+                            }
                             ItemSeparatorComponent={() => <View style={styles.separatorLine} />}
                         />
                     </View>
@@ -399,7 +404,8 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 20,
         borderRadius: 10,
-        marginBottom: 20,
+        marginTop: 20,
+        marginBottom: 10,
         marginHorizontal: 15,
     },
     inviteButtonText: {
