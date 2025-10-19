@@ -31,12 +31,13 @@ export function useTeams(isAuthenticated: boolean) {
         ...team,
         id: team.id,
         title: team.name,
-        // Transforma a lista de nomes em objetos de membros com iniciais
+        description: team.description,
+        memberCount: team.memberCount, 
         members: team.memberNames.map(name => ({
-          name: name,
-          initials: getInitialsFromName(name)
-        })), 
-        createdAt: new Date(), 
+          name,
+          initials: getInitialsFromName(name),
+        })),
+        createdAt: new Date(),
       }));
 
       if (isRefreshing) {

@@ -120,7 +120,6 @@ export const TeamDetailScreen = () => {
                 // Indicador no final da lista apenas para "carregar mais"
                 ListFooterComponent={loading && !refreshing ? <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" /> : null}
                 contentContainerStyle={styles.scrollContainer}
-                ItemSeparatorComponent={() => <View style={styles.separator} />} // Adicionar separador visual
             />
 
             {/* --- Modais --- */}
