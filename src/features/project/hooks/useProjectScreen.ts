@@ -1,11 +1,11 @@
-// src/hooks/screen/useProjectScreen.ts
-// Hook customizado para gerenciar o estado e lógica da tela de projetos
-
+// src/features/project/hooks/useProjectScreen.ts
 import { useState, useRef } from 'react';
 import { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import { projectService } from '../services/projectService';
-import { getInviteErrorMessage } from '../../../utils/errorHandler';
-import { TeamType } from '../../../types/entities';
+import { getInviteErrorMessage, getErrorMessage } from '../../../utils/errorHandler';
+import { isAxiosError } from 'axios'; // Importar isAxiosError
+import { ErrorCode } from '../../../types/api'; // Importar ErrorCode
+import { TeamType } from '../../../types/entities'; // Mantido caso use em algum lugar
 
 interface UseProjectScreenProps {
   addProject: (projectData: { title: string; description: string }) => Promise<any>;
@@ -20,20 +20,22 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
   const [newlyCreatedProject, setNewlyCreatedProject] = useState<any | null>(null);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
   const [isInvitingMember, setIsInvitingMember] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
-  // Fila de notificações
-  const [notificationQueue, setNotificationQueue] = useState<string[]>([]);
+  // Estado para o InfoPopup de erro
+  const [infoPopup, setInfoPopup] = useState({ visible: false, title: '', message: '' });
 
   // Refs para notificações
-  const notificationRef = useRef<NotificationPopupRef>(null);
-  const modalNotificationRef = useRef<NotificationPopupRef | null>(null);
+  const notificationRef = useRef<NotificationPopupRef>(null); // Para erros gerais
+  const modalNotificationRef = useRef<NotificationPopupRef | null>(null); // Para sucesso/erros dentro dos modais de membros
 
   /**
    * Cria um projeto e procede para o modal de adicionar membros
    */
   const handleCreateProjectAndProceed = async (data: { title: string; description: string }) => {
     if (!data.title.trim()) {
-      notificationRef.current?.show({ type: 'error', message: 'O título do projeto é obrigatório.' });
+      // Usar InfoPopup para validação de título obrigatório
+      setInfoPopup({ visible: true, title: 'Atenção', message: 'O título do projeto é obrigatório.' });
       return;
     }
 
@@ -45,14 +47,32 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
         description: data.description,
       });
 
-      // Armazena o projeto recém-criado com o ID para usar nos convites
+      // Armazena o projeto recém-criado
       setNewlyCreatedProject(createdProject);
-      setNotificationQueue(prev => [`Projeto "${data.title}" criado!`, ...prev]);
-      setNewProjectModalVisible(false);
-      setAddMembersModalVisible(true);
+      setNewProjectModalVisible(false); // Fecha modal de criação
+      setAddMembersModalVisible(true); // Abre modal de adicionar membros
+
+      // Mostra notificação de sucesso sobre o modal de membros
+      setTimeout(() => {
+        modalNotificationRef.current?.show({ type: 'success', message: `Projeto "${data.title}" criado!` });
+      }, 300);
+
     } catch (error: any) {
-      const errorMessage = error.message || 'Não foi possível criar o projeto.';
-      notificationRef.current?.show({ type: 'error', message: errorMessage });
+       const errorMessage = getErrorMessage(error);
+       // --- ALTERAÇÃO: Usar InfoPopup para erro de nome duplicado ---
+       // Verifica se o erro é Axios e se o código é de recurso existente (genérico ou específico)
+       const isDuplicateError = isAxiosError(error) &&
+            (error.response?.data?.errorCode === ErrorCode.PROJECT_TITLE_ALREADY_EXISTS ||
+             error.response?.data?.errorCode === ErrorCode.RESOURCE_ALREADY_EXISTS); // Checa ambos os códigos
+
+       if (isDuplicateError) {
+           // Mostra o InfoPopup para erro de nome duplicado
+           setInfoPopup({ visible: true, title: 'Erro ao Criar', message: errorMessage });
+       } else {
+           // Para outros erros, usa a notificação flutuante na tela principal
+           notificationRef.current?.show({ type: 'error', message: errorMessage });
+       }
+       // --- FIM DA ALTERAÇÃO ---
     } finally {
       setIsCreatingProject(false);
     }
@@ -70,10 +90,8 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
     setIsInvitingMember(true);
     try {
       await projectService.inviteUserByEmail(newlyCreatedProject.id, { email, role });
-      // Exibe notificação de sucesso imediatamente dentro do modal
       modalNotificationRef.current?.show({ type: 'success', message: `Convite enviado com sucesso!` });
     } catch (error) {
-      // Exibe erro imediatamente dentro do modal (usa modalNotificationRef)
       const errorMessage = getInviteErrorMessage(error);
       modalNotificationRef.current?.show({ type: 'error', message: errorMessage });
     } finally {
@@ -84,41 +102,33 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
   /**
    * Importa membros de um time para o projeto
    */
-  const handleImportTeamToProject = (teamId: string) => {
-    // TODO: Implementar importação de time quando o endpoint estiver disponível
-    // await projectService.importTeam(newlyCreatedProject.id, teamId);
-    setNotificationQueue(prev => [...prev, 'Membros importados com sucesso!']);
-  };
+  const handleImportTeamToProject = async (teamId: string) => {
+    if (!newlyCreatedProject) {
+        modalNotificationRef.current?.show({ type: 'error', message: 'Projeto não encontrado.' });
+        return;
+    }
+    if (!teamId) {
+        modalNotificationRef.current?.show({ type: 'error', message: 'ID do time inválido.' });
+        return;
+    }
 
-  /**
-   * Processa a fila de notificações sequencialmente
-   */
-  const processNotificationQueue = () => {
-    if (notificationQueue.length === 0) return;
-
-    // Pega a primeira mensagem da fila
-    const message = notificationQueue[0];
-    notificationRef.current?.show({ type: 'success', message });
-
-    // Remove a mensagem que acabou de ser exibida
-    const newQueue = notificationQueue.slice(1);
-    setNotificationQueue(newQueue);
-
-    // Se ainda houver mensagens, chama a função novamente após 3 segundos
-    if (newQueue.length > 0) {
-      setTimeout(processNotificationQueue, 3000); // 3s de intervalo para a próxima
+    setIsImporting(true);
+    try {
+      await projectService.importTeamMembers(newlyCreatedProject.id, teamId);
+      modalNotificationRef.current?.show({ type: 'success', message: 'Membros importados com sucesso!' });
+    } catch (error) {
+       const errorMessage = getErrorMessage(error);
+       modalNotificationRef.current?.show({ type: 'error', message: `Erro ao importar: ${errorMessage}` });
+    } finally {
+       setIsImporting(false);
     }
   };
 
   /**
-   * Fecha o modal de adicionar membros e processa a fila de notificações
+   * Fecha o modal de adicionar membros e limpa o estado
    */
   const handleCloseAddMembersModal = () => {
     setAddMembersModalVisible(false);
-    // Inicia o processamento da fila SÓ QUANDO o modal for fechado
-    if (notificationQueue.length > 0) {
-      setTimeout(processNotificationQueue, 500); // Um pequeno atraso inicial para a animação de fechar o modal
-    }
     setNewlyCreatedProject(null);
   };
 
@@ -129,14 +139,16 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
     newlyCreatedProject,
     isCreatingProject,
     isInvitingMember,
-    notificationQueue,
+    isImporting,
+    infoPopup, // Exportar estado do InfoPopup
 
     // Refs
-    notificationRef,
-    modalNotificationRef,
+    notificationRef, // Para erros gerais da tela
+    modalNotificationRef, // Para modais de membros
 
     // Funções
     setNewProjectModalVisible,
+    setInfoPopup, // Exportar setter do InfoPopup
     handleCreateProjectAndProceed,
     handleInviteMemberToProject,
     handleImportTeamToProject,

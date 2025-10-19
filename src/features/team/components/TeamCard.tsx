@@ -36,7 +36,9 @@ export const TeamCard = ({ team, onPress }: TeamCardProps) => {
                 <View style={styles.footer}>
                     <View style={styles.memberInfo}>
                         <Icon name="people-outline" size={16} color="#A9A9A9" />
-                        <Text style={styles.memberText}>{memberCount} participante{memberCount !== 1 ? 's' : ''}</Text>
+                        {/* --- INÍCIO DA CORREÇÃO --- */}
+                        <Text style={styles.memberText}>{`${memberCount} participante${memberCount !== 1 ? 's' : ''}`}</Text>
+                        {/* --- FIM DA CORREÇÃO --- */}
                     </View>
                     <View style={styles.teamContainer}>
                         {/* 3. Use 'member.initials' para os avatares */}

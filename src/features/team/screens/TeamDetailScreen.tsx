@@ -45,7 +45,8 @@ export const TeamDetailScreen = () => {
 
     // Usar dados do usuário do contexto para o Header, se disponíveis
     const userProfileForHeader = user ? { initials: user.initials } : { initials: '?' };
-
+    const handleProfilePress = () => navigation.navigate('EditProfile');
+    
     // *** INDICADOR DE LOADING INICIAL ***
     if (initialLoading) {
       return (
@@ -62,7 +63,7 @@ export const TeamDetailScreen = () => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-            <Header userProfile={userProfileForHeader} onPressProfile={() => {}} notificationCount={0} onPressNotifications={() => {}} />
+            <Header userProfile={userProfileForHeader} onPressProfile={handleProfilePress} notificationCount={0} onPressNotifications={() => {}} />
 
             <View style={styles.pageHeader}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>

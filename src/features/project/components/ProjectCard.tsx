@@ -1,19 +1,20 @@
+// src/features/project/components/ProjectCard.tsx
 import React from "react";
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseCard } from "../../../components/common/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
-import TimeAgo from "../../../components/TimeAgo";
-// Importe a interface 'Project' diretamente do AppContext
-import { Project } from "../../../types/entities"; 
+// Remover a importação do TimeAgo, pois não será mais usado aqui
+// import TimeAgo from "../../../components/TimeAgo";
+import { Project, Member } from "../../../types/entities"; // Importar Member
 
 type ProjectCardProps = {
-    project: Project; // Use a interface correta
+    project: Project;
     onPress: () => void;
 }
 
 export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
-    // Agora usando 'createdAt', que existe na interface 'Project'
-    const { title, description, createdAt, teamMembers } = project;
+    // Remover createdAt da desestruturação se não for mais usado em outro lugar
+    const { title, description, teamMembers, taskCount } = project;
 
     return (
         <BaseCard onPress={onPress}>
@@ -24,17 +25,29 @@ export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
                 </View>
 
                 <View style={styles.footer}>
-                    <View style={styles.updateInfo}>
-                        <Icon name="time-outline" size={14} color="#A9A9A9" />
-                        {/* Passando 'createdAt' para o TimeAgo */}
-                        <Text style={styles.updateText}>Atualizado <TimeAgo timestamp={createdAt} /></Text>
+                    <View style={styles.infoItem}>
+                        <Icon name="reader-outline" size={14} color="#A9A9A9" />
+                        <Text style={styles.footerText}>{taskCount} Tarefa{taskCount !== 1 ? 's' : ''}</Text>
                     </View>
+
+                    {/* --- INÍCIO DA ALTERAÇÃO: Remover a seção "Atualizado..." --- */}
+                    {/* <View style={styles.infoItem}>
+                        <Icon name="time-outline" size={14} color="#A9A9A9" />
+                        <Text style={styles.footerText}>Atualizado <TimeAgo timestamp={createdAt} /></Text>
+                    </View> */}
+                    {/* --- FIM DA ALTERAÇÃO --- */}
+
                     <View style={styles.teamContainer}>
-                        {teamMembers.map((member: any, index: number) => (
-                            <View key={index} style={[styles.avatar, { right: index * 15 }]}>
+                        {teamMembers.slice(0, 3).map((member: Member, index: number) => (
+                            <View key={`${member.name}-${index}`} style={[styles.avatar, { right: index * 15 }]}>
                                 <Text style={styles.avatarText}>{member.initials}</Text>
                             </View>
                         ))}
+                         {teamMembers.length > 3 && (
+                            <View style={[styles.avatar, styles.moreAvatar, { right: 3 * 15 }]}>
+                                <Text style={styles.avatarText}>+{teamMembers.length - 3}</Text>
+                            </View>
+                         )}
                     </View>
                 </View>
             </View>
@@ -42,14 +55,13 @@ export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
     );
 };
 
-// Estilos (permanecem os mesmos)
 const styles = StyleSheet.create({
     contentContainer: {
         flex: 1,
-        padding: 15, // Aumentei o padding para melhor espaçamento
+        padding: 15,
     },
     textContainer: {
-        marginBottom: 20,
+        marginBottom: 20, // Aumentar margem para compensar remoção do 'Atualizado'
     },
     title: {
         color: '#EB5F1C',
@@ -60,26 +72,29 @@ const styles = StyleSheet.create({
     description: {
         color: '#FFFFFF',
         fontSize: 14,
-        lineHeight: 20, // Adicionado para melhor legibilidade
+        lineHeight: 20,
     },
     footer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'space-between', // Manter space-between
         alignItems: 'center',
+        // Remover marginTop se não for necessário após remover 'Atualizado'
     },
-    updateInfo: {
+    infoItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        // Adicionar um marginRight para separar 'Tarefas' dos avatares, se necessário
+        marginRight: 10, // Exemplo
     },
-    updateText: {
+    footerText: {
         color: '#A9A9A9',
         fontSize: 12,
         marginLeft: 5,
     },
     teamContainer: {
         flexDirection: 'row-reverse',
-        paddingLeft: 30, 
-        paddingRight: 10 
+        alignItems: 'center',
+        // Não precisa mais de paddingLeft se o space-between funcionar bem
     },
     avatar: {
         width: 30,
@@ -91,6 +106,9 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderColor: '#2A2A2A',
         position: 'relative',
+    },
+     moreAvatar: {
+        backgroundColor: '#3C3C3C',
     },
     avatarText: {
         color: '#FFFFFF',

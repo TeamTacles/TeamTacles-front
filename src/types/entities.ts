@@ -29,6 +29,7 @@ export interface Project {
   projectRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
   teamMembers: Member[];
   createdAt: number;
+  taskCount: number; // <-- Adicionado
 }
 
 /**

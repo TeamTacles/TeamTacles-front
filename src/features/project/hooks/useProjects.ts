@@ -1,111 +1,139 @@
-import { useState, useEffect } from 'react';
-import { projectService, CreateProjectRequest } from '../services/projectService';
+// src/features/project/hooks/useProjects.ts
+import { useState, useEffect, useCallback } from 'react';
+import { projectService, CreateProjectRequest, ProjectDetails } from '../services/projectService'; // Importar ProjectDetails
 import { getErrorMessage } from '../../../utils/errorHandler';
-import { Project } from '../../../types/entities';
+import { Project, Member } from '../../../types/entities'; // Importar Member
+import { Filters } from '../../task/components/FilterModal';
+import { getInitialsFromName } from '../../../utils/stringUtils';
+import { useAppContext } from '../../../contexts/AppContext'; // Importar useAppContext
+
+// Interface auxiliar que representa a resposta da API (UserProjectResponseDTO)
+interface ProjectApiResponse extends ProjectDetails {
+  taskCount: number;
+  memberNames: string[];
+}
 
 export function useProjects(isAuthenticated: boolean) {
+  // --- INÍCIO DA ALTERAÇÃO ---
+  const { user } = useAppContext(); // Obter o usuário do contexto
+  // --- FIM DA ALTERAÇÃO ---
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMoreProjects, setHasMoreProjects] = useState(true);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [refreshingProjects, setRefreshingProjects] = useState(false);
+  const [filters, setFilters] = useState<Filters>({});
+  const [titleFilter, setTitleFilter] = useState('');
 
-  // Carrega os projetos automaticamente quando o usuário estiver autenticado
+  const fetchProjects = useCallback(async (page: number, currentFilters: Filters, currentTitle: string) => {
+    const isRefreshing = page === 0;
+    if (isRefreshing) {
+      setRefreshingProjects(true);
+    } else {
+      setLoadingProjects(true);
+    }
+
+    try {
+      const response = await projectService.getProjects(page, 20, currentFilters, currentTitle);
+      const projectsFromApiRaw = response.content as unknown as ProjectApiResponse[];
+
+      const projectsFromApi: Project[] = projectsFromApiRaw.map(project => ({
+        id: project.id,
+        title: project.title,
+        description: project.description,
+        projectRole: project.projectRole,
+        teamMembers: project.memberNames.map(name => ({
+             name: name,
+             initials: getInitialsFromName(name)
+        })),
+        createdAt: Date.now(),
+        taskCount: project.taskCount,
+      }));
+
+
+      if (isRefreshing) {
+        setProjects(projectsFromApi);
+      } else {
+        setProjects(prev => [...prev, ...projectsFromApi]);
+      }
+
+      setCurrentPage(page + 1);
+      setHasMoreProjects(!response.last);
+    } catch (error) {
+      console.error("Erro ao buscar projetos:", getErrorMessage(error));
+      if (isRefreshing) {
+        setProjects([]);
+        setCurrentPage(0);
+        setHasMoreProjects(false);
+      }
+    } finally {
+      if (isRefreshing) {
+        setRefreshingProjects(false);
+      } else {
+        setLoadingProjects(false);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
-      // Carrega a primeira página ao fazer login
-      refreshProjects();
+      fetchProjects(0, filters, titleFilter);
     } else {
-      // Limpa os projetos quando faz logout
       setProjects([]);
       setCurrentPage(0);
       setHasMoreProjects(true);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, filters, titleFilter, fetchProjects]);
 
-  // Pull-to-refresh: Recarrega projetos do zero
-  const refreshProjects = async (): Promise<void> => {
-    try {
-      setRefreshingProjects(true);
-      const response = await projectService.getProjects(0, 20);
+  const refreshProjects = useCallback(() => {
+    fetchProjects(0, filters, titleFilter);
+  }, [fetchProjects, filters, titleFilter]);
 
-      // Converte os projetos da API para o formato do front-end
-      const projectsFromApi: Project[] = response.content.map(project => ({
-        id: project.id,
-        title: project.title,
-        description: project.description,
-        projectRole: project.projectRole,
-        teamMembers: [{name: 'Você', initials: 'VC'}],
-        createdAt: Date.now()
-      }));
-
-      // Atualiza todos os estados
-      setProjects(projectsFromApi);
-      setCurrentPage(1); // Próxima página será 1
-      setHasMoreProjects(!response.last);
-    } catch (error) {
-      // Em caso de erro, reseta os estados
-      setProjects([]);
-      setCurrentPage(0);
-      setHasMoreProjects(false);
-    } finally {
-      setRefreshingProjects(false);
+  const loadMoreProjects = useCallback(() => {
+    if (hasMoreProjects && !loadingProjects && !refreshingProjects) {
+      fetchProjects(currentPage, filters, titleFilter);
     }
-  };
-
-  // Infinite scroll: Carrega mais projetos
-  const loadMoreProjects = async (): Promise<void> => {
-    if (!hasMoreProjects || loadingProjects) return;
-
-    setLoadingProjects(true);
-    try {
-      const response = await projectService.getProjects(currentPage, 20);
-
-      const newProjects: Project[] = response.content.map(project => ({
-        id: project.id,
-        title: project.title,
-        description: project.description,
-        projectRole: project.projectRole,
-        teamMembers: [{name: 'Você', initials: 'VC'}],
-        createdAt: Date.now()
-      }));
-
-      // Adiciona novos projetos aos existentes (não substitui!)
-      setProjects(prev => [...prev, ...newProjects]);
-      setCurrentPage(prev => prev + 1);
-      setHasMoreProjects(!response.last);
-    } catch (error) {
-      // Silenciosamente falha - o usuário pode tentar novamente
-    } finally {
-      setLoadingProjects(false);
-    }
-  };
+  }, [hasMoreProjects, loadingProjects, refreshingProjects, currentPage, filters, titleFilter, fetchProjects]);
 
   const addProject = async (projectData: CreateProjectRequest): Promise<Project> => {
     try {
-      // Chama a API para criar o projeto
       const createdProject = await projectService.createProject(projectData);
 
-      // Adiciona o projeto criado à lista local
+      // --- INÍCIO DA ALTERAÇÃO: Usar dados do usuário do contexto ---
       const newProject: Project = {
         id: createdProject.id,
         title: createdProject.title,
         description: createdProject.description,
         projectRole: createdProject.projectRole,
-        teamMembers: [{name: 'Você', initials: 'VC'}],
-        createdAt: Date.now()
+        // Usar dados do usuário logado (com fallback)
+        teamMembers: [{ name: user?.name ?? 'Usuário', initials: user?.initials ?? '?' }],
+        createdAt: Date.now(),
+        taskCount: 0
       };
-
+      // --- FIM DA ALTERAÇÃO ---
       setProjects(currentProjects => [newProject, ...currentProjects]);
-
-      // Retorna o projeto criado para uso posterior (ex: convites)
       return newProject;
     } catch (error) {
-      // Propaga o erro para ser tratado no componente que chamou
       const errorMessage = getErrorMessage(error);
       throw new Error(errorMessage);
     }
   };
+
+  const applyFilters = useCallback((newFilters: Filters) => {
+    setFilters(newFilters);
+    setCurrentPage(0);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setFilters({});
+    setTitleFilter('');
+    setCurrentPage(0);
+  }, []);
+
+  const searchByTitle = useCallback((title: string) => {
+    setTitleFilter(title);
+    setCurrentPage(0);
+  }, []);
 
   return {
     projects,
@@ -115,5 +143,9 @@ export function useProjects(isAuthenticated: boolean) {
     addProject,
     loadMoreProjects,
     refreshProjects,
+    applyFilters,
+    clearFilters,
+    searchByTitle,
+    filters,
   };
 }

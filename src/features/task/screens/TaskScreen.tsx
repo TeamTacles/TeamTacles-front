@@ -1,26 +1,28 @@
-// src/screens/TaskScreen.tsx
+// src/features/task/screens/TaskScreen.tsx
 
-import { useState, useMemo } from "react";
+import React, { useState, useCallback, useEffect } from "react"; // Adicionar React e useEffect
 import { Header } from "../../../components/common/Header";
-import { View, StyleSheet, Alert, FlatList } from "react-native";
+import { View, StyleSheet, FlatList, ActivityIndicator } from "react-native"; // Remover Alert
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../../../components/common/SearchBar";
-import { NewItemButton } from "../../../components/common/NewItemButton";
-import { CompositeScreenProps } from '@react-navigation/native';
+// Remover NewItemButton, pois tarefas são criadas no contexto do projeto
+// import { NewItemButton } from "../../../components/common/NewItemButton";
+import { CompositeScreenProps, useFocusEffect } from '@react-navigation/native'; // Adicionar useFocusEffect
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, RootTabParamList } from "../../../types/navigation";
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { EmptyState } from '../../../components/common/EmptyState';
 import { useAppContext } from "../../../contexts/AppContext";
-import { useProjects } from "../../project/hooks/useProjects";
-import { Task } from "../../../types/entities";
+import { Task } from "../../../types/entities"; // Usar tipo Task
 import { TaskCard } from "../components/TaskCard";
 import { FilterModal, Filters } from "../components/FilterModal";
 import { FilterButton } from "../components/FilterButton";
-import { MOCK_TASKS } from "../../../data/mocks";
+import { useTasks } from "../hooks/useTasks"; // Importar o novo hook useTasks
+
+// Remover MOCK_TASKS
+// import { MOCK_TASKS } from "../../../data/mocks";
 
 const polvo_tasks = require('../../../assets/polvo_tasks.png');
-
 
 type TaskScreenNavigationProp = CompositeScreenProps<
   BottomTabScreenProps<RootTabParamList, 'Tarefas'>,
@@ -28,119 +30,181 @@ type TaskScreenNavigationProp = CompositeScreenProps<
 >;
 
 export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
-    // Agora usamos um estado local inicializado com os dados mocados
-    const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
-    const { signed } = useAppContext();
-    const { projects } = useProjects(signed); 
-    
+    const { signed, user } = useAppContext(); // Obter usuário do contexto
+
+    // Usar o hook useTasks para gerenciar os dados das tarefas
+    const {
+        tasks,
+        loadingTasks,
+        refreshingTasks,
+        hasMoreTasks,
+        loadMoreTasks,
+        refreshTasks,
+        applyFilters,
+        clearFilters,
+        searchByTitle,
+    } = useTasks(signed);
+
     const [search, setSearch] = useState('');
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
-    const [filters, setFilters] = useState<Filters>({});
+    // Remover estado local de filtros, pois é gerenciado pelo hook useTasks
+    // const [filters, setFilters] = useState<Filters>({});
 
-    const userWithAvatar = { initials: 'CD' };
+    // Usar dados do usuário do contexto para o Header
+    const userProfileForHeader = user ? { initials: user.initials } : { initials: '?' };
 
-    const handleProfilePress = () => Alert.alert("Perfil Clicado!");
-    const handleNotificationsPress = () => Alert.alert("Notificações Clicadas!");
+    const handleProfilePress = () => navigation.navigate('EditProfile');
+    const handleNotificationsPress = () => { /* Lógica futura para notificações */ };
 
-    const handleNewTask = () => {
-        if (projects.length === 0) {
-            Alert.alert("Nenhum Projeto Encontrado", "Você precisa criar um projeto antes de poder adicionar uma tarefa.");
-            return;
-        }
-        navigation.navigate('TaskForm');
-    };
+    // Remover handleNewTask, pois o botão foi removido
+    // const handleNewTask = () => { ... };
 
+    // Handler para aplicar filtros (chama a função do hook)
     const handleApplyFilters = (newFilters: Filters) => {
-        setFilters(newFilters);
+        applyFilters(newFilters);
         setFilterModalVisible(false);
     };
 
+    // Handler para limpar filtros (chama a função do hook)
     const handleClearFilters = () => {
-        setFilters({});
+        clearFilters();
+        setSearch(''); // Limpa também a busca
         setFilterModalVisible(false);
     };
-    
-    const filteredTasks = useMemo(() => {
-        return tasks
-            .filter(t => t.title.toLowerCase().includes(search.toLowerCase()))
-            .filter(t => {
-                if (filters.status && t.status !== filters.status) return false;
 
-                const taskDate = new Date(t.createdAt);
-                if (filters.createdAtAfter && taskDate < filters.createdAtAfter) return false;
-                if (filters.createdAtBefore && taskDate > filters.createdAtBefore) return false;
-                
-                return true;
-            });
-    }, [search, tasks, filters]);
+    // Debounce para a busca (similar a ProjectScreen/TeamScreen)
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        searchByTitle(search);
+      }, 500); // Aguarda 500ms após o usuário parar de digitar
+
+      return () => {
+        clearTimeout(handler); // Limpa o timeout se o usuário digitar novamente
+      };
+    }, [search, searchByTitle]);
+
+    // Recarrega as tarefas quando a tela recebe foco
+    useFocusEffect(
+      useCallback(() => {
+        if (signed) {
+          refreshTasks(); // Chama a função de refresh do hook
+        }
+      }, [signed, refreshTasks]) // Adiciona refreshTasks às dependências
+    );
+
+    // Handler para carregar mais tarefas (infinite scroll)
+    const handleEndReached = useCallback(() => {
+        // Verifica se há mais tarefas, se não está carregando/refrescando e se já há tarefas na lista
+        if (hasMoreTasks && !loadingTasks && !refreshingTasks && tasks.length > 0) {
+            loadMoreTasks(); // Chama a função do hook
+        }
+    }, [hasMoreTasks, loadingTasks, refreshingTasks, tasks.length, loadMoreTasks]); // Adiciona dependências corretas
+
+    // O useMemo para filteredTasks não é mais necessário, pois o hook useTasks já retorna as tarefas filtradas
 
     return (
         <SafeAreaView style={styles.safeAreaView} edges={['top', 'left', 'right']}>
             <Header
-                userProfile={userWithAvatar}
+                userProfile={userProfileForHeader} // Passa o perfil do usuário do contexto
                 onPressProfile={handleProfilePress}
-                notificationCount={7}
+                notificationCount={0} // Manter como 0 por enquanto
                 onPressNotifications={handleNotificationsPress}
             />
             <View style={styles.searchContainer}>
                 <View style={styles.searchBarWrapper}>
-                    <SearchBar title="Suas tarefas" placeholder="Pesquisar Tarefas" onChangeText={setSearch} />
+                    <SearchBar
+                        title="Suas tarefas"
+                        placeholder="Pesquisar Tarefas"
+                        onChangeText={setSearch}
+                        value={search} // Controla o valor da barra de busca
+                    />
                 </View>
                 <FilterButton style={styles.filterButtonPosition} onPress={() => setFilterModalVisible(true)} />
             </View>
             <FlatList
-                data={filteredTasks}
+                data={tasks} // Usa as tarefas diretamente do hook useTasks
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                     <TaskCard
                         task={item}
+                        // Navega para TaskDetail, passando projectId e taskId
                         onPress={() => navigation.navigate('TaskDetail', { projectId: item.projectId, taskId: item.id })}
                     />
                 )}
                 contentContainerStyle={styles.listContainer}
                 ListEmptyComponent={
-                    <EmptyState
-                        imageSource={polvo_tasks}
-                        title="Nenhuma tarefa por aqui!"
-                        subtitle="Crie tarefas dentro de um projeto."
-                    />
+                    // Mostra EmptyState apenas se não estiver carregando e não houver tarefas
+                    (loadingTasks || refreshingTasks) ? null : (
+                        <EmptyState
+                            imageSource={polvo_tasks}
+                            title="Nenhuma tarefa por aqui!"
+                            subtitle="Crie tarefas dentro de um projeto ou verifique seus filtros."
+                        />
+                    )
                 }
+                // Configurações para pull-to-refresh e infinite scroll
+                onRefresh={refreshTasks} // Handler para pull-to-refresh
+                refreshing={refreshingTasks} // Estado de loading do refresh
+                onEndReached={handleEndReached} // Handler para chegar ao fim da lista
+                onEndReachedThreshold={0.5} // Define quão perto do fim aciona onEndReached
+                ListFooterComponent={() => {
+                    // Mostra indicador de loading no final da lista se estiver carregando mais itens
+                    if (loadingTasks && !refreshingTasks) {
+                        return (
+                            <View style={styles.loadingFooter}>
+                                <ActivityIndicator size="large" color="#EB5F1C" />
+                            </View>
+                        );
+                    }
+                    return null;
+                }}
             />
+            {/* Remover o botão de adicionar nova tarefa */}
+            {/* <View style={styles.addButtonContainer}><NewItemButton onPress={handleNewTask} /></View> */}
+
             <FilterModal
                 visible={isFilterModalVisible}
-                filterType="tasks"
+                filterType="tasks" // Define o tipo de filtro para tarefas
                 onClose={() => setFilterModalVisible(false)}
-                onApply={handleApplyFilters}
-                onClear={handleClearFilters}
+                onApply={handleApplyFilters} // Usa o handler atualizado
+                onClear={handleClearFilters} // Usa o handler atualizado
             />
         </SafeAreaView>
     );
 };
 
+// Ajustar estilos se necessário (manter a maioria dos estilos existentes)
 const styles = StyleSheet.create({
-    safeAreaView: { 
-        flex: 1, 
-        backgroundColor: '#191919' 
+    safeAreaView: {
+        flex: 1,
+        backgroundColor: '#191919'
     },
-    searchContainer: { 
-        flexDirection: 'row', 
-        alignItems: 'flex-start', 
-        paddingRight: 15 
+    searchContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingRight: 15
     },
-    searchBarWrapper: { 
-        flex: 1 
+    searchBarWrapper: {
+        flex: 1
     },
-    filterButtonPosition: { 
-        marginTop: 75 
+    filterButtonPosition: {
+        marginTop: 75 // Ajuste conforme necessário para alinhar com a SearchBar
     },
-    listContainer: { 
-        flexGrow: 1, 
-        paddingHorizontal: 15, 
-        paddingBottom: 80 
+    listContainer: {
+        flexGrow: 1,
+        paddingHorizontal: 15,
+        paddingBottom: 20 // Reduzir padding se o botão de adicionar foi removido
     },
-    addButtonContainer: { 
-        position: 'absolute', 
-        right: 25, 
-        bottom: 25 
+    // Remover addButtonContainer se o botão foi removido
+    /*
+    addButtonContainer: {
+        position: 'absolute',
+        right: 25,
+        bottom: 25
+    },
+    */
+    loadingFooter: { // Estilo para o indicador de loading no final da lista
+        padding: 20,
+        alignItems: 'center',
     },
 });

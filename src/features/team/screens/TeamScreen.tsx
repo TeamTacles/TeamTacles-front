@@ -74,7 +74,7 @@ export const TeamScreen = () => {
       };
     }, [search, searchByName]);
 
-    const handleProfilePress = () => navigation.navigate('EditProfile');
+    const handleProfilePress = () => navigation.navigate('EditProfile'); 
     const handleNotificationsPress = () => { /* Lógica para notificações */ };
     const handleNewTeam = () => setNewTeamModalVisible(true);
     const handleApplyFilters = (newFilters: Filters) => { applyFilters(newFilters); setFilterModalVisible(false); };
@@ -87,7 +87,7 @@ export const TeamScreen = () => {
 
     return (
         <SafeAreaView style={styles.safeAreaView} edges={['top', 'left', 'right']}>
-            <Header userProfile={user} onPressProfile={handleProfilePress} notificationCount={7} onPressNotifications={handleNotificationsPress} />
+            <Header userProfile={user} onPressProfile={handleProfilePress} notificationCount={0} onPressNotifications={handleNotificationsPress} />
             <View style={styles.searchContainer}>
                 <View style={styles.searchBarWrapper}>
                     <SearchBar 

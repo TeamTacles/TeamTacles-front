@@ -1,6 +1,9 @@
 // src/features/project/services/projectService.ts
 import api from '../../../api/api';
 import { PagedResponse } from '../../../types/api';
+// --- INÍCIO DA ALTERAÇÃO ---
+import { Filters } from '../../task/components/FilterModal'; // Importar tipo Filters
+// --- FIM DA ALTERAÇÃO ---
 
 // --- TIPOS (Baseados nos seus DTOs em Java) ---
 
@@ -34,13 +37,39 @@ export interface ProjectTask {
   }[];
 }
 
+// Resposta do Link de Convite
+export interface InviteLinkResponse {
+    inviteLink: string;
+    expiresAt: string; // Ou Date, dependendo de como você quer tratar
+}
+
+
 // --- FUNÇÕES DE API ---
 
-// Busca todos os projetos do usuário autenticado (paginado)
-const getProjects = async (page = 0, size = 20): Promise<PagedResponse<ProjectDetails>> => {
-  const response = await api.get<PagedResponse<ProjectDetails>>(`/project?page=${page}&size=${size}`);
+// --- INÍCIO DA ALTERAÇÃO ---
+const formatDateForApi = (date: Date | undefined): string | undefined => {
+  if (!date) return undefined;
+  // Formato YYYY-MM-DD
+  return date.toISOString().split('T')[0];
+};
+
+// Busca todos os projetos do usuário autenticado (paginado e filtrado)
+const getProjects = async (page = 0, size = 20, filters: Filters = {}, title: string = ''): Promise<PagedResponse<ProjectDetails>> => {
+  const params = new URLSearchParams({ page: page.toString(), size: size.toString() });
+  if (title) params.append('title', title); // Adiciona filtro de título se houver
+
+  // Adiciona filtros de data se existirem
+  const createdAtAfter = formatDateForApi(filters.createdAtAfter);
+  if (createdAtAfter) params.append('createdAtAfter', createdAtAfter);
+
+  const createdAtBefore = formatDateForApi(filters.createdAtBefore);
+  if (createdAtBefore) params.append('createdAtBefore', createdAtBefore);
+
+  // Faz a requisição com os parâmetros
+  const response = await api.get<PagedResponse<ProjectDetails>>(`/project?${params.toString()}`);
   return response.data;
 };
+// --- FIM DA ALTERAÇÃO ---
 
 // Busca os detalhes do projeto
 const getProjectById = async (projectId: number): Promise<ProjectDetails> => {
@@ -112,6 +141,18 @@ const removeMember = async (projectId: number, userId: number): Promise<void> =>
   await api.delete(`/project/${projectId}/member/${userId}`);
 };
 
+// --- IMPORTAR MEMBROS DO TIME ---
+const importTeamMembers = async (projectId: number, teamId: number | string): Promise<void> => {
+    await api.post(`/project/${projectId}/import-team/${teamId}`);
+};
+
+// --- GERAR LINK DE CONVITE ---
+const generateInviteLink = async (projectId: number): Promise<InviteLinkResponse> => {
+    const response = await api.post<InviteLinkResponse>(`/project/${projectId}/invite-link`);
+    return response.data;
+};
+
+
 export const projectService = {
   getProjects,
   getProjectById,
@@ -122,4 +163,6 @@ export const projectService = {
   inviteUserByEmail,
   updateMemberRole,
   removeMember,
+  importTeamMembers,
+  generateInviteLink,
 };
