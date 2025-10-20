@@ -21,6 +21,7 @@ import { SelectTaskMembersModal } from '../../task/components/SelectTaskMembersM
 import { InviteMemberModal } from '../../team/components/InviteMemberModal';
 import { MOCK_MEMBERS, MOCK_INITIAL_TASKS } from '../../../data/mocks';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { useTaskCreation } from '../../task/hooks/useTaskCreation';
 
 type ProjectDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -66,9 +67,21 @@ export const ProjectDetailScreen = () => {
     const [tasks, setTasks] = useState<ProjectTask[]>(MOCK_INITIAL_TASKS);
     const [isMembersListModalVisible, setMembersListModalVisible] = useState(false);
 
-    const [isNewTaskModalVisible, setNewTaskModalVisible] = useState(false);
-    const [isSelectMembersModalVisible, setSelectMembersModalVisible] = useState(false);
-    const [newTaskData, setNewTaskData] = useState<{ title: string; description: string; dueDate: Date } | null>(null);
+    // Hook de criação de task (extrai toda lógica de task creation)
+    const {
+        isNewTaskModalVisible,
+        setNewTaskModalVisible,
+        isSelectMembersModalVisible,
+        isCreatingTask,
+        handleProceedToMemberSelection,
+        handleFinalizeTaskCreation,
+        handleCloseSelectMembersModal
+    } = useTaskCreation({
+        projectId: project?.id,
+        onTaskCreated: (newTask) => {
+            setTasks(prev => [newTask, ...prev]);
+        }
+    });
 
     const [isSortModalVisible, setSortModalVisible] = useState(false);
     type SortOption = 'DEFAULT' | 'IN_PROGRESS' | 'TO_DO' | 'DONE' | 'OVERDUE';
@@ -106,53 +119,6 @@ export const ProjectDetailScreen = () => {
     };
 
     const userWithAvatar = { initials: 'CD' };
-
-    const handleProceedToMemberSelection = (data: { title: string; description: string; dueDate: Date }) => {
-        setNewTaskData(data);
-        setNewTaskModalVisible(false);
-        setSelectMembersModalVisible(true);
-    };
-
-    const handleFinalizeTaskCreation = (selectedMemberIds: number[]) => {
-        if (!newTaskData) return;
-
-        const currentUser = MOCK_MEMBERS.find(m => m.projectRole === 'OWNER');
-        if (!currentUser) {
-            showNotification({ type: 'error', message: 'Usuário criador não encontrado.' });
-            return;
-        }
-
-        const otherMembers = MOCK_MEMBERS.filter(member => selectedMemberIds.includes(member.userId));
-        const assignmentsMap = new Map<number, { userId: number; username: string }>();
-        assignmentsMap.set(currentUser.userId, { userId: currentUser.userId, username: currentUser.username });
-        otherMembers.forEach(member => {
-            assignmentsMap.set(member.userId, { userId: member.userId, username: member.username });
-        });
-
-        const finalAssignments = Array.from(assignmentsMap.values());
-
-        const newTask: ProjectTask = {
-            id: Date.now(),
-            title: newTaskData.title,
-            description: newTaskData.description,
-            status: 'TO_DO',
-            dueDate: newTaskData.dueDate.toISOString(),
-            ownerId: currentUser.userId,
-            assignments: finalAssignments,
-        };
-
-        setTasks(prevTasks => [newTask, ...prevTasks]);
-        setSelectMembersModalVisible(false);
-        setNewTaskData(null);
-        showNotification({ type: 'success', message: 'Tarefa criada com sucesso!' });
-    };
-
-    const handleCloseSelectMembersModal = () => {
-        setSelectMembersModalVisible(false);
-        if (newTaskData) {
-            handleFinalizeTaskCreation([]);
-        }
-    };
 
     // Exibe loading enquanto carrega os dados do projeto
     if (loadingProject) {

@@ -1,11 +1,12 @@
 // src/components/NewTaskModal.tsx
-import React, { useState } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Pressable } from 'react-native';
+import React from 'react';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, Pressable } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import { InfoPopup } from '../../../components/common/InfoPopup'; // 1. Importar o InfoPopup
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { InfoPopup } from '../../../components/common/InfoPopup';
+import { useNewTaskForm } from '../hooks/useNewTaskForm';
 
 interface NewTaskModalProps {
   visible: boolean;
@@ -14,43 +15,31 @@ interface NewTaskModalProps {
 }
 
 export const NewTaskModal: React.FC<NewTaskModalProps> = ({ visible, onClose, onNext }) => {
-    const [title, setTitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [dueDate, setDueDate] = useState(new Date());
-    const [showPicker, setShowPicker] = useState(false);
-
-    // 2. Adicionar estado para controlar o popup
-    const [isInfoPopupVisible, setInfoPopupVisible] = useState(false);
-    const [infoPopupMessage, setInfoPopupMessage] = useState('');
-
-
-    const handleNext = () => {
-        // 3. Substituir o alert() pelo InfoPopup
-        if (!title.trim()) {
-            setInfoPopupMessage('O título da tarefa é obrigatório.');
-            setInfoPopupVisible(true);
-            return;
-        }
-        onNext({ title, description, dueDate });
-    };
+    const {
+        title,
+        setTitle,
+        description,
+        setDescription,
+        dueDate,
+        dueTime,
+        showDatePicker,
+        setShowDatePicker,
+        showTimePicker,
+        setShowTimePicker,
+        isInfoPopupVisible,
+        setInfoPopupVisible,
+        infoPopupMessage,
+        handleNext,
+        resetForm,
+        handleDateChange,
+        handleTimeChange,
+        formatDate,
+        formatTime
+    } = useNewTaskForm();
 
     const handleClose = () => {
-        setTitle('');
-        setDescription('');
-        setDueDate(new Date());
+        resetForm();
         onClose();
-    }
-
-    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        const currentDate = selectedDate || dueDate;
-        setShowPicker(Platform.OS === 'ios');
-        if (event.type === 'set') {
-            setDueDate(currentDate);
-        }
-    };
-    
-    const formatDate = (date: Date) => {
-        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
     };
 
     return (
@@ -79,22 +68,40 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ visible, onClose, on
                                 numberOfLines={4}
                                 maxLength={500}
                             />
-                            <Pressable onPress={() => setShowPicker(true)}>
+                            <Pressable onPress={() => setShowDatePicker(true)}>
                                 <View pointerEvents="none">
                                     <InputsField
-                                        label="Prazo *"
+                                        label="Data do Prazo *"
                                         value={formatDate(dueDate)}
                                     />
                                 </View>
                             </Pressable>
 
-                            {showPicker && (
+                            {showDatePicker && (
                                 <DateTimePicker
                                     mode="date"
                                     display="default"
                                     value={dueDate}
-                                    onChange={onDateChange}
+                                    onChange={handleDateChange}
                                     minimumDate={new Date()}
+                                />
+                            )}
+
+                            <Pressable onPress={() => setShowTimePicker(true)}>
+                                <View pointerEvents="none">
+                                    <InputsField
+                                        label="Hora do Prazo *"
+                                        value={formatTime(dueTime)}
+                                    />
+                                </View>
+                            </Pressable>
+
+                            {showTimePicker && (
+                                <DateTimePicker
+                                    mode="time"
+                                    display="default"
+                                    value={dueTime}
+                                    onChange={handleTimeChange}
                                 />
                             )}
 
@@ -102,14 +109,13 @@ export const NewTaskModal: React.FC<NewTaskModalProps> = ({ visible, onClose, on
                         <View style={styles.buttonContainer}>
                           <MainButton
                             title="Avançar"
-                            onPress={handleNext}
+                            onPress={() => handleNext(onNext)}
                           />
                         </View>
                     </View>
                 </View>
             </Modal>
-            
-            {/* 4. Adicionar o componente InfoPopup */}
+
             <InfoPopup
                 visible={isInfoPopupVisible}
                 title="Atenção"
