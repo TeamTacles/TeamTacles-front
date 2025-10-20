@@ -199,13 +199,10 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
                 data={userTeams}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                    // Chama handleSelectTeam ao clicar em um time
                     <TouchableOpacity style={styles.teamItem} onPress={() => handleSelectTeam(item)}>
                         <View>
                             <Text style={styles.teamTitle}>{item.title || item.name}</Text>
-                            {/* --- INÍCIO DA CORREÇÃO --- */}
                             <Text style={styles.teamMemberCount}>{`${item.memberCount ?? item.members?.length ?? 0} membro(s)`}</Text>
-                            {/* --- FIM DA CORREÇÃO --- */}
                         </View>
                         <Icon name="chevron-forward-outline" size={20} color="#fff" />
                     </TouchableOpacity>
@@ -242,10 +239,9 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
                         renderItem={({item}) => (
                             <View style={styles.memberItemContainer}>
                                 <View style={styles.memberAvatar}>
-                                    {/* Gera iniciais a partir do username */}
-                                    <Text style={styles.memberAvatarText}>{getInitialsFromName(item.username)}</Text> {/* */}
+                                    <Text style={styles.memberAvatarText}>{getInitialsFromName(item.username)}</Text>
                                 </View>
-                                <Text style={styles.memberItem}>{item.username}</Text> {/* Exibe o username */}
+                                <Text style={styles.memberItem}>{item.username}</Text>
                             </View>
                         )}
                         ListEmptyComponent={<Text style={styles.emptyListText}>Esta equipe não possui membros.</Text>}
