@@ -5,8 +5,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { InputsField } from '../../../components/common/InputsField';
 import { MainButton } from '../../../components/common/MainButton';
 import { InfoPopup } from '../../../components/common/InfoPopup';
-import { teamService } from '../services/teamService';
-import { projectService } from '../../project/services/projectService';
+import { teamService } from '../services/teamService'; // Mantido para convite de time
+import { projectService } from '../../project/services/projectService'; // Importado para convite de projeto
 import { getInviteErrorMessage } from '../../../utils/errorHandler';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 
@@ -15,13 +15,19 @@ type MemberRole = 'ADMIN' | 'MEMBER';
 interface InviteMemberModalProps {
   visible: boolean;
   teamId?: number | string | null;
-  projectId?: number | string | null;
+  projectId?: number | string | null; // Adicionado projectId
   onClose: () => void;
   notificationRef?: React.RefObject<NotificationPopupRef | null>;
-  inviteLink?: string | null;
+  // inviteLink removido, pois será gerado sob demanda para projetos
 }
 
-export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, teamId, projectId, onClose, notificationRef, inviteLink }) => {
+export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
+    visible,
+    teamId,
+    projectId, // Recebe projectId
+    onClose,
+    notificationRef
+}) => {
   const localNotificationRef = useRef<NotificationPopupRef>(null);
   const effectiveNotificationRef = notificationRef || localNotificationRef;
 
@@ -32,19 +38,23 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, t
   const [isInviting, setIsInviting] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
+  // Determina o tipo de recurso (Projeto ou Time)
+  const resourceType = projectId ? 'project' : 'team';
+  const resourceId = projectId || teamId;
+
   const handleInviteByEmail = async () => {
     if (!email.includes('@')) {
       setInfoPopup({ visible: true, message: "Por favor, insira um e-mail válido." });
       return;
     }
-    if (!teamId && !projectId) return;
+    if (!resourceId) return;
 
     setIsInviting(true);
     try {
-      if (projectId) {
-        await projectService.inviteUserByEmail(Number(projectId), { email, role: selectedRole });
-      } else if (teamId) {
-        await teamService.inviteUserByEmail(teamId, { email, role: selectedRole });
+      if (resourceType === 'project') {
+        await projectService.inviteUserByEmail(Number(resourceId), { email, role: selectedRole });
+      } else if (resourceType === 'team') {
+        await teamService.inviteUserByEmail(resourceId, { email, role: selectedRole });
       }
       effectiveNotificationRef.current?.show({ type: 'success', message: `Convite enviado para ${email}!` });
       setEmail('');
@@ -56,26 +66,36 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, t
   };
 
   const handleGenerateAndShareLink = async () => {
-    if (!teamId && !inviteLink) return;
+    if (!resourceId) {
+        effectiveNotificationRef.current?.show({ type: 'error', message: `ID do ${resourceType === 'project' ? 'projeto' : 'time'} não encontrado.` });
+        return;
+    }
 
     setIsGeneratingLink(true);
     try {
-      let linkToShare = inviteLink;
+      let linkToShare = '';
+      let entityName = resourceType === 'project' ? 'projeto' : 'time'; // Nome para a mensagem
 
-      // Se não houver link pré-gerado, gera um novo (apenas para teams)
-      if (!linkToShare && teamId) {
-        const response = await teamService.generateInviteLink(teamId);
+      if (resourceType === 'project') {
+        const response = await projectService.generateInviteLink(Number(resourceId));
+        linkToShare = response.inviteLink;
+      } else if (resourceType === 'team') {
+        const response = await teamService.generateInviteLink(resourceId);
         linkToShare = response.inviteLink;
       }
 
       if (linkToShare) {
         await Share.share({
-          message: `Você foi convidado! Junte-se através do link: ${linkToShare}`,
-          url: linkToShare,
+          message: `Você foi convidado para um ${entityName}! Junte-se através do link: ${linkToShare}`,
+          url: linkToShare, // Opcional, mas bom ter para algumas plataformas
         });
+      } else {
+        throw new Error("Link não recebido da API.");
       }
     } catch (error) {
+      // Ignora erro se o usuário cancelou o compartilhamento
       if (!(error instanceof Error && error.message.includes('Share Canceled'))) {
+        console.error(`Erro ao gerar/compartilhar link do ${resourceType}:`, error);
         effectiveNotificationRef.current?.show({ type: 'error', message: 'Não foi possível gerar o link de convite.' });
       }
     } finally {
@@ -107,36 +127,36 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, t
                 keyboardType="email-address"
                 autoCapitalize="none"
             />
-            
+
             <Text style={styles.label}>Cargo:</Text>
             <View style={styles.roleSelectorContainer}>
-                <TouchableOpacity 
-                style={[styles.roleButton, selectedRole === 'MEMBER' && styles.roleButtonSelected]} 
+                <TouchableOpacity
+                style={[styles.roleButton, selectedRole === 'MEMBER' && styles.roleButtonSelected]}
                 onPress={() => setSelectedRole('MEMBER')}
                 >
                 <Text style={styles.roleButtonText}>Membro</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                 style={[styles.roleButton, selectedRole === 'ADMIN' && styles.roleButtonSelected]}
                 onPress={() => setSelectedRole('ADMIN')}
                 >
                 <Text style={styles.roleButtonText}>Administrador</Text>
                 </TouchableOpacity>
             </View>
-            
-            <MainButton 
-              title={isInviting ? "Enviando..." : "Enviar Convite"} 
+
+            <MainButton
+              title={isInviting ? "Enviando..." : "Enviar Convite"}
               onPress={handleInviteByEmail}
-              disabled={isInviting}
+              disabled={isInviting || isGeneratingLink} // Desabilita também ao gerar link
             />
 
             <View style={styles.divider} />
 
             <Text style={styles.label}>Ou compartilhe o link de convite</Text>
-            <TouchableOpacity 
-              style={styles.linkContainer} 
-              onPress={handleGenerateAndShareLink} 
-              disabled={isGeneratingLink}
+            <TouchableOpacity
+              style={styles.linkContainer}
+              onPress={handleGenerateAndShareLink}
+              disabled={isGeneratingLink || isInviting} // Desabilita também ao convidar por email
             >
                 {isGeneratingLink ? (
                   <ActivityIndicator color="#EB5F1C" />
@@ -162,37 +182,36 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ visible, t
   );
 };
 
-// ESTILOS CONTINUAM OS MESMOS
 const styles = StyleSheet.create({
-    centeredView: { 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        backgroundColor: 'rgba(0, 0, 0, 0.7)' 
+    centeredView: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)'
     },
-    modalView: { 
-        width: '90%', 
-        backgroundColor: '#2A2A2A', 
-        borderRadius: 20, 
-        padding: 25, 
-        shadowColor: '#000', 
-        shadowOffset: { width: 0, height: 2 }, 
-        shadowOpacity: 0.25, 
-        shadowRadius: 4, 
-        elevation: 5 
+    modalView: {
+        width: '90%',
+        backgroundColor: '#2A2A2A',
+        borderRadius: 20,
+        padding: 25,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
     },
-    closeButton: { 
-        position: 'absolute', 
-        top: 10, 
-        right: 10, 
-        padding: 5 
+    closeButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        padding: 5
     },
-    modalTitle: { 
-        fontSize: 22, 
-        fontWeight: 'bold', 
-        color: '#FFFFFF', 
-        marginBottom: 20, 
-        textAlign: 'center' 
+    modalTitle: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#FFFFFF',
+        marginBottom: 20,
+        textAlign: 'center'
     },
     divider: {
         height: 1,
@@ -209,7 +228,7 @@ const styles = StyleSheet.create({
     linkContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-between', // Alinha texto à esquerda, ícone à direita
         backgroundColor: '#3C3C3C',
         borderRadius: 8,
         paddingVertical: 12,
@@ -218,8 +237,8 @@ const styles = StyleSheet.create({
     linkText: {
         color: '#A9A9A9',
         fontSize: 14,
-        flex: 1,
-        marginRight: 10,
+        flex: 1, // Permite que o texto ocupe espaço disponível
+        marginRight: 10, // Espaço antes do ícone
     },
     roleSelectorContainer: {
       flexDirection: 'row',

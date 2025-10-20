@@ -12,7 +12,7 @@ export interface ProjectDetails {
   id: number;
   title: string;
   description: string;
-  projectRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
+  projectRole?: 'OWNER' | 'ADMIN' | 'MEMBER'; // Mantido opcional por segurança
 }
 
 // Baseado em ProjectMemberResponseDTO.java
@@ -23,19 +23,23 @@ export interface ProjectMember {
   projectRole: 'OWNER' | 'ADMIN' | 'MEMBER';
 }
 
-// Baseado em TaskResponseDTO.java
+// Baseado em TaskResponseDTO.java (ajustado para corresponder ao backend)
 export interface ProjectTask {
   id: number;
   title: string;
   description: string;
-  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE'; // Renomeado de taskStatus para status
   dueDate: string; // A API retorna OffsetDateTime, que chegará como string
   ownerId: number;
   assignments: {
     userId: number;
     username: string;
+    // taskRole?: 'OWNER' | 'ASSIGNEE'; // O backend pode não retornar taskRole aqui, verificar
   }[];
+  projectId: number; // Adicionado projectId se a API retornar
+  createdAt?: string; // Adicionado createdAt se a API retornar
 }
+
 
 // Resposta do Link de Convite
 export interface InviteLinkResponse {
@@ -83,11 +87,12 @@ const getProjectMembers = async (projectId: number, page = 0, size = 20): Promis
   return response.data;
 };
 
-// Busca as tarefas do projeto
-const getProjectTasks = async (projectId: number): Promise<PagedResponse<ProjectTask>> => {
-  const response = await api.get<PagedResponse<ProjectTask>>(`/project/${projectId}/tasks`);
+// Busca as tarefas do projeto (COM PAGINAÇÃO)
+const getProjectTasks = async (projectId: number, page = 0, size = 10): Promise<PagedResponse<ProjectTask>> => {
+  const response = await api.get<PagedResponse<ProjectTask>>(`/project/${projectId}/tasks?page=${page}&size=${size}`); // Adiciona paginação
   return response.data;
 };
+
 
 // --- CRIAÇÃO DE PROJETO ---
 

@@ -1,8 +1,8 @@
 // src/features/project/hooks/useProjectDetail.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { projectService, ProjectDetails, UpdateProjectRequest } from '../services/projectService';
+import { projectService, ProjectDetails, ProjectTask, UpdateProjectRequest } from '../services/projectService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { RootStackParamList } from '../../../types/navigation';
@@ -16,12 +16,17 @@ export function useProjectDetail() {
   const { projectId, projectRole } = route.params;
   const { showNotification } = useNotification();
 
-  // States
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Modal States
+  const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
+  const [loadingTasks, setLoadingTasks] = useState(false);
+  const [refreshingTasks, setRefreshingTasks] = useState(false);
+  const [initialLoadingTasks, setInitialLoadingTasks] = useState(true);
+  const [currentPageTasks, setCurrentPageTasks] = useState(0);
+  const [hasMoreTasks, setHasMoreTasks] = useState(true);
+
   const [isEditModalVisible, setEditModalVisible] = useState(false);
   const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
@@ -30,38 +35,104 @@ export function useProjectDetail() {
   const [isConfirmLeaveVisible, setConfirmLeaveVisible] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ userId: number; username: string; email: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' } | null>(null);
 
-  // --- LÓGICA DE PERMISSÃO ---
   const currentUserRole = projectRole;
   const isOwner = currentUserRole === 'OWNER';
   const isAdmin = currentUserRole === 'ADMIN' || isOwner;
 
-  // Usar o hook de membros
-  const { members, setMembers, loadingMembers, refreshingMembers, handleRefresh, handleLoadMore } = useProjectMembers(projectId);
+  const { members, setMembers, loadingMembers, refreshingMembers, handleRefresh: handleRefreshMembers, handleLoadMore: handleLoadMoreMembers, initialLoading: initialLoadingMembers } = useProjectMembers(projectId);
 
-  // Carrega os dados do projeto
+  const isFetchingTasks = useRef(false);
+
+  const fetchTasks = useCallback(async (page: number, isInitialLoad = false, isRefresh = false) => {
+    if (isFetchingTasks.current) return;
+    if (!hasMoreTasks && !isInitialLoad && !isRefresh) return;
+
+    isFetchingTasks.current = true;
+
+    if (isInitialLoad) {
+      setInitialLoadingTasks(true);
+    } else if (isRefresh) {
+      setRefreshingTasks(true);
+    } else {
+      setLoadingTasks(true);
+    }
+
+    try {
+      const pageToFetch = isInitialLoad || isRefresh ? 0 : page;
+      const response = await projectService.getProjectTasks(projectId, pageToFetch, 10);
+      const tasksFromApi = response.content;
+
+      setProjectTasks(prev => {
+        const currentTasks = (isInitialLoad || isRefresh) ? [] : prev;
+        const existingIds = new Set(currentTasks.map(t => t.id));
+        const newTasks = tasksFromApi.filter(t => !existingIds.has(t.id));
+        return [...currentTasks, ...newTasks];
+      });
+
+      setHasMoreTasks(!response.last);
+      setCurrentPageTasks(pageToFetch + 1);
+
+    } catch (error) {
+      showNotification({ type: 'error', message: 'Erro ao carregar tarefas.' });
+       if(isInitialLoad || isRefresh){
+           setProjectTasks([]);
+           setCurrentPageTasks(0);
+           setHasMoreTasks(true);
+       }
+    } finally {
+      if (isInitialLoad) {
+        setInitialLoadingTasks(false);
+      } else if (isRefresh) {
+        setRefreshingTasks(false);
+      } else {
+        setLoadingTasks(false);
+      }
+      isFetchingTasks.current = false;
+    }
+  }, [projectId, hasMoreTasks, showNotification]);
+
+  const handleRefreshTasks = useCallback(() => {
+      fetchTasks(0, false, true);
+  }, [fetchTasks]);
+
+  const handleLoadMoreTasks = useCallback(() => {
+      if (hasMoreTasks && !loadingTasks && !refreshingTasks && !initialLoadingTasks && !isFetchingTasks.current) {
+          fetchTasks(currentPageTasks);
+      }
+  }, [hasMoreTasks, loadingTasks, refreshingTasks, initialLoadingTasks, currentPageTasks, fetchTasks]);
+
   useEffect(() => {
-    const loadProjectData = async () => {
+    let isMounted = true;
+
+    const loadInitialData = async () => {
       try {
         setLoadingProject(true);
         const projectData = await projectService.getProjectById(projectId);
-        setProject(projectData);
+        if (isMounted) {
+          setProject(projectData);
+        }
       } catch (error) {
-        showNotification({
-          type: 'error',
-          message: 'Erro ao carregar o projeto. Tente novamente.'
-        });
-        setTimeout(() => {
-          navigation.goBack();
-        }, 1500);
+         if (isMounted) {
+            showNotification({
+                type: 'error',
+                message: 'Erro ao carregar o projeto. Tente novamente.'
+            });
+            setTimeout(() => {
+                if (isMounted) navigation.goBack();
+            }, 1500);
+         }
       } finally {
-        setLoadingProject(false);
+        if (isMounted) setLoadingProject(false);
       }
     };
 
-    loadProjectData();
-  }, [projectId, navigation, showNotification]);
+    loadInitialData();
+    fetchTasks(0, true);
 
-  // --- Project Actions ---
+    return () => { isMounted = false; };
+
+  }, [projectId, navigation, showNotification, fetchTasks]);
+
   const handleUpdateProject = async (data: { title: string; description: string }) => {
     if (!project) return;
 
@@ -98,7 +169,6 @@ export function useProjectDetail() {
     }
   };
 
-  // --- Member Actions ---
   const handleSelectMember = (member: { userId: number; username: string; email: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' }) => {
     if (!isAdmin) return;
     setSelectedMember(member);
@@ -110,13 +180,8 @@ export function useProjectDetail() {
 
     try {
       await projectService.updateMemberRole(projectId, selectedMember.userId, { newRole });
-
-      // Atualiza apenas após o modal fechar
       setEditMemberModalVisible(false);
-
-      // Recarrega a lista de membros para pegar dados atualizados
-      handleRefresh();
-
+      handleRefreshMembers();
       showNotification({ type: 'success', message: 'Cargo atualizado com sucesso!' });
     } catch (error) {
       showNotification({ type: 'error', message: getErrorMessage(error) });
@@ -137,15 +202,14 @@ export function useProjectDetail() {
     }
   };
 
-  // --- Leave Project Action ---
   const handleLeaveProject = async () => {
     if (!project) return;
 
-    setIsDeleting(true); // Reutilizar estado de loading
-    setConfirmLeaveVisible(false); // Fechar modal de confirmação
+    setIsDeleting(true);
+    setConfirmLeaveVisible(false);
     try {
       await projectService.leaveProject(project.id);
-      navigation.goBack(); // Voltar para a tela anterior
+      navigation.goBack();
       setTimeout(() => {
         showNotification({ type: 'success', message: `Você saiu do projeto "${project.title}"` });
       }, 500);
@@ -156,6 +220,10 @@ export function useProjectDetail() {
     }
   };
 
+  const addTaskLocally = (newTask: ProjectTask) => {
+    setProjectTasks(prev => [newTask, ...prev]);
+  };
+
   return {
     navigation,
     project,
@@ -164,6 +232,16 @@ export function useProjectDetail() {
     members,
     loadingMembers,
     refreshingMembers,
+    initialLoadingMembers,
+    handleRefreshMembers,
+    handleLoadMoreMembers,
+    projectTasks,
+    loadingTasks,
+    refreshingTasks,
+    initialLoadingTasks,
+    handleRefreshTasks,
+    handleLoadMoreTasks,
+    addTaskLocally,
     currentUserRole,
     isOwner,
     isAdmin,
@@ -180,8 +258,6 @@ export function useProjectDetail() {
     isConfirmLeaveVisible,
     setConfirmLeaveVisible,
     selectedMember,
-    handleRefresh,
-    handleLoadMore,
     handleUpdateProject,
     handleDeleteProject,
     handleSelectMember,

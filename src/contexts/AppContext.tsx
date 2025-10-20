@@ -8,6 +8,7 @@ import { getInitialsFromName } from '../utils/stringUtils';
 
 // Interface para o objeto do usuário
 interface User {
+  id: number; // <<< LINHA ADICIONADA
   name: string;
   initials: string;
 }
@@ -30,8 +31,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Função para carregar os dados do usuário da API
   const loadUserData = async () => {
     try {
+      // Supondo que userService.getCurrentUser() retorna { id, username, email }
       const userData = await userService.getCurrentUser();
       setUser({
+        id: userData.id, // <<< LINHA ADICIONADA: Armazena o ID
         name: userData.username,
         initials: getInitialsFromName(userData.username)
       });

@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../../types/navigation';
 import { Header } from '../../../components/common/Header';
-import { ProjectTask } from '../services/projectService';
+import { ProjectTask, ProjectMember } from '../services/projectService';
 import { MemberListItem } from '../../team/components/MemberListItem';
 import { useProjectDetail } from '../hooks/useProjectDetail';
 import { EditMemberRoleModal } from '../../team/components/EditMemberRoleModal';
@@ -19,16 +19,16 @@ import { NewItemButton } from '../../../components/common/NewItemButton';
 import { NewTaskModal } from '../../task/components/NewTaskModal';
 import { SelectTaskMembersModal } from '../../task/components/SelectTaskMembersModal';
 import { InviteMemberModal } from '../../team/components/InviteMemberModal';
-import { MOCK_MEMBERS, MOCK_INITIAL_TASKS } from '../../../data/mocks';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useTaskCreation } from '../../task/hooks/useTaskCreation';
+import { useAppContext } from '../../../contexts/AppContext';
 
 type ProjectDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const ProjectDetailScreen = () => {
     const { showNotification } = useNotification();
+    const { user } = useAppContext();
 
-    // Hook com toda a lógica de negócio
     const {
         navigation,
         project,
@@ -37,6 +37,16 @@ export const ProjectDetailScreen = () => {
         members,
         loadingMembers,
         refreshingMembers,
+        initialLoadingMembers,
+        handleRefreshMembers,
+        handleLoadMoreMembers,
+        projectTasks,
+        loadingTasks,
+        refreshingTasks,
+        initialLoadingTasks,
+        handleRefreshTasks,
+        handleLoadMoreTasks,
+        addTaskLocally,
         currentUserRole,
         isOwner,
         isAdmin,
@@ -53,8 +63,6 @@ export const ProjectDetailScreen = () => {
         isConfirmLeaveVisible,
         setConfirmLeaveVisible,
         selectedMember,
-        handleRefresh,
-        handleLoadMore,
         handleUpdateProject,
         handleDeleteProject,
         handleSelectMember,
@@ -63,11 +71,8 @@ export const ProjectDetailScreen = () => {
         handleLeaveProject,
     } = useProjectDetail();
 
-    // Estados locais apenas para UI e tasks (ainda mock)
-    const [tasks, setTasks] = useState<ProjectTask[]>(MOCK_INITIAL_TASKS);
     const [isMembersListModalVisible, setMembersListModalVisible] = useState(false);
 
-    // Hook de criação de task (extrai toda lógica de task creation)
     const {
         isNewTaskModalVisible,
         setNewTaskModalVisible,
@@ -78,9 +83,7 @@ export const ProjectDetailScreen = () => {
         handleCloseSelectMembersModal
     } = useTaskCreation({
         projectId: project?.id,
-        onTaskCreated: (newTask) => {
-            setTasks(prev => [newTask, ...prev]);
-        }
+        onTaskCreated: addTaskLocally
     });
 
     const [isSortModalVisible, setSortModalVisible] = useState(false);
@@ -98,13 +101,13 @@ export const ProjectDetailScreen = () => {
     ];
 
     const sortedTasks = useMemo(() => {
-        let currentTasks = [...tasks];
+        let currentTasks = [...projectTasks];
         if (sortOption === 'DEFAULT') return currentTasks;
         if (sortOption === 'OVERDUE') {
             return currentTasks.filter(task => new Date(task.dueDate) < new Date() && task.status !== 'DONE');
         }
         return currentTasks.filter(task => task.status === sortOption);
-    }, [sortOption, tasks]);
+    }, [sortOption, projectTasks]);
 
     const handleSort = (option: SortOption) => {
         setSortOption(option);
@@ -118,13 +121,13 @@ export const ProjectDetailScreen = () => {
         });
     };
 
-    const userWithAvatar = { initials: 'CD' };
+    const userProfileForHeader = user ? { initials: user.initials } : { initials: '?' };
+    const handleProfilePress = () => navigation.navigate('EditProfile');
 
-    // Exibe loading enquanto carrega os dados do projeto
     if (loadingProject) {
         return (
             <SafeAreaView style={styles.container}>
-                <Header userProfile={userWithAvatar} onPressProfile={() => {}} notificationCount={7} onPressNotifications={() => {}} />
+                <Header userProfile={userProfileForHeader} onPressProfile={handleProfilePress} notificationCount={0} onPressNotifications={() => {}} />
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#EB5F1C" />
                     <Text style={styles.loadingText}>Carregando projeto...</Text>
@@ -133,9 +136,11 @@ export const ProjectDetailScreen = () => {
         );
     }
 
+    const initialDataLoading = initialLoadingMembers || initialLoadingTasks;
+
     return (
         <SafeAreaView style={styles.container}>
-            <Header userProfile={userWithAvatar} onPressProfile={() => {}} notificationCount={7} onPressNotifications={() => {}} />
+            <Header userProfile={userProfileForHeader} onPressProfile={handleProfilePress} notificationCount={0} onPressNotifications={() => {}} />
 
             <View style={styles.pageHeader}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -145,15 +150,12 @@ export const ProjectDetailScreen = () => {
                     <Text style={styles.titleHeaderText}>Detalhes do Projeto</Text>
                 </View>
 
-                {/* --- ÍCONES DE AÇÃO --- */}
                 <View style={styles.actionIconsContainer}>
-                    {/* Ícone de Editar: Apenas para o Dono */}
                     {isOwner && (
                         <TouchableOpacity onPress={() => setEditModalVisible(true)} style={styles.actionIcon}>
                             <Icon name="pencil-outline" size={24} color="#FFFFFF" />
                         </TouchableOpacity>
                     )}
-                    {/* Ícone de Sair: Para todos */}
                     <TouchableOpacity onPress={() => setConfirmLeaveVisible(true)} style={styles.actionIcon}>
                         <Icon name="log-out-outline" size={24} color="#ff4545" />
                     </TouchableOpacity>
@@ -166,7 +168,6 @@ export const ProjectDetailScreen = () => {
                     <Text style={styles.projectDescription}>{project?.description}</Text>
                 </View>
 
-                {/* Barra de Informações com Botões */}
                 <View style={styles.infoBar}>
                     <TouchableOpacity style={styles.infoButton} onPress={() => project && navigation.navigate('ReportCenter', { projectId: project.id })}>
                         <Icon name="document-text-outline" size={20} color="#ffffffff" />
@@ -174,7 +175,7 @@ export const ProjectDetailScreen = () => {
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.infoButton} onPress={() => setMembersListModalVisible(true)}>
                         <Icon name="people-outline" size={20} color="#ffffffff" />
-                        <Text style={styles.infoTitle}>Membros</Text>
+                        <Text style={styles.infoTitle}>Membros ({members.length})</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -187,26 +188,38 @@ export const ProjectDetailScreen = () => {
                 </View>
             </View>
 
-            <View style={styles.listWrapper}>
-                <FlatList
-                    data={sortedTasks}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <ProjectTaskCard
-                            task={item}
-                            onPress={() => project && navigation.navigate('TaskDetail', { projectId: project.id, taskId: item.id })}
-                        />
-                    )}
-                    contentContainerStyle={styles.listContainer}
-                    ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma tarefa encontrada.</Text>}
-                />
-            </View>
+            {initialDataLoading ? (
+                 <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#EB5F1C" />
+                    <Text style={styles.loadingText}>Carregando dados...</Text>
+                 </View>
+            ) : (
+                <View style={styles.listWrapper}>
+                    <FlatList
+                        data={sortedTasks}
+                        keyExtractor={(item) => item.id.toString()}
+                        renderItem={({ item }) => (
+                            <ProjectTaskCard
+                                task={item}
+                                onPress={() => project && navigation.navigate('TaskDetail', { projectId: project.id, taskId: item.id, projectRole: currentUserRole})}
+                            />
+                        )}
+                        contentContainerStyle={styles.listContainer}
+                        ListEmptyComponent={<Text style={styles.emptyText}>Nenhuma tarefa encontrada para este projeto.</Text>}
+                        onRefresh={handleRefreshTasks}
+                        refreshing={refreshingTasks}
+                        onEndReached={handleLoadMoreTasks}
+                        onEndReachedThreshold={0.5}
+                        ListFooterComponent={loadingTasks && !refreshingTasks ? <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" /> : null}
+                    />
+                </View>
+            )}
+
 
             <View style={styles.addButtonContainer}>
                 <NewItemButton onPress={() => setNewTaskModalVisible(true)} />
             </View>
 
-            {/* Modal de Lista de Membros */}
             <Modal animationType="fade" transparent={true} visible={isMembersListModalVisible} onRequestClose={() => setMembersListModalVisible(false)}>
                 <View style={styles.modalCenteredView}>
                     <View style={styles.modalView}>
@@ -216,32 +229,32 @@ export const ProjectDetailScreen = () => {
                         <Text style={styles.modalTitle}>Membros do Projeto</Text>
 
                         <View style={styles.membersListContainer}>
-                            <FlatList
-                                data={members}
-                                keyExtractor={(item) => item.userId.toString()}
-                                renderItem={({ item }) => (
-                                    <MemberListItem
-                                        name={item.username}
-                                        role={item.projectRole}
-                                        onPress={() => {
-                                            setMembersListModalVisible(false);
-                                            handleSelectMember(item);
-                                        }}
-                                        disabled={!isAdmin}
-                                    />
-                                )}
-                                onRefresh={handleRefresh}
-                                refreshing={refreshingMembers}
-                                onEndReached={handleLoadMore}
-                                onEndReachedThreshold={0.5}
-                                ListFooterComponent={
-                                    loadingMembers && !refreshingMembers ? (
-                                        <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" />
-                                    ) : null
-                                }
-                                ListEmptyComponent={() => <Text style={styles.emptyText}>Nenhum membro encontrado.</Text>}
-                                ItemSeparatorComponent={() => <View style={styles.separatorLine} />}
-                            />
+                            {initialLoadingMembers ? (
+                                <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" />
+                            ) : (
+                                <FlatList
+                                    data={members}
+                                    keyExtractor={(item) => item.userId.toString()}
+                                    renderItem={({ item }) => (
+                                        <MemberListItem
+                                            name={item.username}
+                                            role={item.projectRole}
+                                            onPress={() => {
+                                                setMembersListModalVisible(false);
+                                                handleSelectMember(item);
+                                            }}
+                                            disabled={!isAdmin}
+                                        />
+                                    )}
+                                    onRefresh={handleRefreshMembers}
+                                    refreshing={refreshingMembers}
+                                    onEndReached={handleLoadMoreMembers}
+                                    onEndReachedThreshold={0.5}
+                                    ListFooterComponent={loadingMembers && !refreshingMembers ? <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" /> : null}
+                                    ListEmptyComponent={() => <Text style={styles.emptyText}>Nenhum membro encontrado neste projeto.</Text>}
+                                    ItemSeparatorComponent={() => <View style={styles.separatorLine} />}
+                                />
+                            )}
                         </View>
 
                         {isAdmin && (
@@ -260,7 +273,6 @@ export const ProjectDetailScreen = () => {
                 </View>
             </Modal>
 
-            {/* Modal de Ordenação de Tarefas */}
             <Modal animationType="fade" transparent={true} visible={isSortModalVisible} onRequestClose={() => setSortModalVisible(false)}>
                 <TouchableOpacity style={styles.modalOverlay} onPress={() => setSortModalVisible(false)} activeOpacity={1}>
                     <View style={[styles.sortModalView, { top: sortMenuPosition.top, right: sortMenuPosition.right }]}>
@@ -277,7 +289,6 @@ export const ProjectDetailScreen = () => {
                 </TouchableOpacity>
             </Modal>
 
-            {/* Modais de Edição */}
             <EditMemberRoleModal
                 visible={isEditMemberModalVisible}
                 member={selectedMember ? { name: selectedMember.username, email: selectedMember.email, role: selectedMember.projectRole } : null}
@@ -339,7 +350,7 @@ export const ProjectDetailScreen = () => {
             <SelectTaskMembersModal
                 visible={isSelectMembersModalVisible}
                 onClose={handleCloseSelectMembersModal}
-                projectMembers={MOCK_MEMBERS}
+                projectMembers={members.filter(pm => !projectTasks.some(t => t.assignments.some(a => a.userId === pm.userId)))}
                 onSave={handleFinalizeTaskCreation}
             />
 
@@ -347,7 +358,6 @@ export const ProjectDetailScreen = () => {
                 visible={isInviteMemberModalVisible}
                 onClose={() => setInviteMemberModalVisible(false)}
                 projectId={project?.id}
-                inviteLink={null}
             />
         </SafeAreaView>
     );
@@ -362,7 +372,7 @@ const styles = StyleSheet.create({
     },
     projectHeaderText: { flex: 1 },
     actionIconsContainer: { flexDirection: 'row', alignItems: 'center', gap: 15 },
-    actionIcon: { padding: 5 },
+    actionIcon: { padding: 0},
     projectTitle: { color: '#EB5F1C', fontSize: 24, fontWeight: 'bold' },
     projectDetails: {
         gap: 10,

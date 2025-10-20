@@ -1,73 +1,87 @@
 // src/features/project/hooks/useProjectMembers.ts
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { projectService, ProjectMember } from '../services/projectService';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { MOCK_MEMBERS } from '../../../data/mocks';
 
 export function useProjectMembers(projectId: number) {
   const { showNotification } = useNotification();
 
-  // States
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [refreshingMembers, setRefreshingMembers] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const isFetching = useRef(false);
 
-  const fetchMembers = useCallback(async (page: number) => {
-    if (loadingMembers || (page > 0 && refreshingMembers)) return;
-    if (!hasMore && page > 0) return;
-    const isRefreshing = page === 0;
+  const fetchMembers = useCallback(async (page: number, isInitialLoad = false, isRefresh = false) => {
+    if (isFetching.current) return;
+    if (!hasMore && !isInitialLoad && !isRefresh) return;
 
-    if (isRefreshing) {
-      setRefreshingMembers(true);
+    isFetching.current = true;
+
+    if (isInitialLoad) {
+        setInitialLoading(true);
+    } else if (isRefresh) {
+        setRefreshingMembers(true);
     } else {
-      setLoadingMembers(true);
+        setLoadingMembers(true);
     }
 
     try {
-      const response = await projectService.getProjectMembers(projectId, page, 5);
+      const pageToFetch = isInitialLoad || isRefresh ? 0 : page;
+      const response = await projectService.getProjectMembers(projectId, pageToFetch, 10);
       const membersFromApi = response.content;
-      const combinedMembers = [...membersFromApi, ...MOCK_MEMBERS];
 
-      if (isRefreshing) {
-        setMembers(combinedMembers);
-      } else {
-        setMembers(prev => [...prev, ...combinedMembers]);
-      }
+      setMembers(prev => {
+          const currentMembers = (isInitialLoad || isRefresh) ? [] : prev;
+          const existingIds = new Set(currentMembers.map(m => m.userId));
+          const newMembers = membersFromApi.filter(m => !existingIds.has(m.userId));
+          return [...currentMembers, ...newMembers];
+      });
+
       setHasMore(!response.last);
-      setCurrentPage(page + 1);
+      setCurrentPage(pageToFetch + 1);
+
     } catch (error) {
       showNotification({ type: 'error', message: 'Erro ao carregar membros.' });
+       if(isInitialLoad || isRefresh){
+           setMembers([]);
+           setCurrentPage(0);
+           setHasMore(true);
+       }
     } finally {
-      if (isRefreshing) {
-        setRefreshingMembers(false);
-      } else {
-        setLoadingMembers(false);
-      }
+       if (isInitialLoad) {
+           setInitialLoading(false);
+       } else if (isRefresh) {
+           setRefreshingMembers(false);
+       } else {
+           setLoadingMembers(false);
+       }
+       isFetching.current = false;
     }
-  }, [projectId, hasMore, loadingMembers, refreshingMembers, showNotification]);
+  }, [projectId, hasMore, showNotification]);
 
   useEffect(() => {
-    fetchMembers(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    fetchMembers(0, true);
+  }, [projectId, fetchMembers]);
 
-  const handleRefresh = () => {
-    setCurrentPage(0);
-    setHasMore(true);
-    fetchMembers(0);
-  };
+  const handleRefresh = useCallback(() => {
+    fetchMembers(0, false, true);
+  }, [fetchMembers]);
 
-  const handleLoadMore = () => {
-    fetchMembers(currentPage);
-  };
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !loadingMembers && !refreshingMembers && !initialLoading && !isFetching.current) {
+        fetchMembers(currentPage);
+    }
+  }, [hasMore, loadingMembers, refreshingMembers, initialLoading, currentPage, fetchMembers]);
 
   return {
     members,
     setMembers,
     loadingMembers,
     refreshingMembers,
+    initialLoading,
     handleRefresh,
     handleLoadMore,
   };

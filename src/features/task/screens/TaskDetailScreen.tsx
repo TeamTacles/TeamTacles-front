@@ -1,6 +1,6 @@
-// src/screens/TaskDetailScreen.tsx
+// src/features/task/screens/TaskDetailScreen.tsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -16,11 +16,12 @@ import { ConfirmationModal } from '../../../components/common/ConfirmationModal'
 import { SelectTaskMembersModal } from '../components/SelectTaskMembersModal';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import TimeAgo from '../../../components/TimeAgo';
-// --- INÍCIO DA CORREÇÃO ---
-// Importe o tipo correto de ProjectMember e remova a definição local
-import { ProjectMember } from '../../project/services/projectService';
-// --- FIM DA CORREÇÃO ---
+import { ProjectMember, projectService } from '../../project/services/projectService';
 
+import { useAppContext } from '../../../contexts/AppContext';
+import { taskService, TaskDetailsApiResponse, formatDateTimeWithOffset, TaskAssignmentRequest } from '../services/taskService';
+import { getErrorMessage } from '../../../utils/errorHandler';
+import { getInitialsFromName } from '../../../utils/stringUtils';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -28,36 +29,38 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 
 // --- TIPOS ---
 type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'DONE';
-interface TaskMember { userId: number; username: string; taskRole: 'OWNER' | 'ASSIGNEE'; }
-// A definição local de ProjectMember foi removida daqui
-interface TaskDetails {
-  id: number; title: string; description: string; status: TaskStatus;
-  createdAt: string; dueDate: string; ownerId: number; assignments: TaskMember[];
-}
+type TaskMember = TaskDetailsApiResponse['assignments'][0];
+
 type TaskDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 type TaskDetailRouteProp = RouteProp<RootStackParamList, 'TaskDetail'>;
 
-const MemberRow = ({ member, onRemove }: { member: TaskMember, onRemove: () => void }) => (
+// Componente MemberRow
+const MemberRow = ({ member, onRemove, canRemove }: { member: TaskMember, onRemove: () => void, canRemove: boolean }) => (
     <View style={styles.memberRow}>
-        <View style={styles.avatar}><Text style={styles.avatarText}>{member.username.substring(0, 2).toUpperCase()}</Text></View>
+        <View style={styles.avatar}><Text style={styles.avatarText}>{member.username ? member.username.substring(0, 2).toUpperCase() : '?'}</Text></View>
         <View style={styles.memberInfo}>
-            <Text style={styles.memberName}>{member.username}</Text>
+            <Text style={styles.memberName}>{member.username || 'Usuário desconhecido'}</Text>
             <Text style={styles.memberRole}>{member.taskRole === 'OWNER' ? 'Dono' : 'Responsável'}</Text>
         </View>
-        {member.taskRole !== 'OWNER' && (
+        {member.taskRole !== 'OWNER' && canRemove && (
             <TouchableOpacity onPress={onRemove}><Icon name="trash-outline" size={22} color="#ff4545" /></TouchableOpacity>
         )}
     </View>
 );
 
+
 export const TaskDetailScreen = () => {
     const navigation = useNavigation<TaskDetailNavigationProp>();
     const route = useRoute<TaskDetailRouteProp>();
-    const { projectId, taskId } = route.params;
+    // --- INÍCIO DA ALTERAÇÃO: Obter projectRole dos parâmetros da rota ---
+    // Precisamos saber a role do usuário NO PROJETO para as permissões
+    const { projectId, taskId, projectRole } = route.params;
+    // --- FIM DA ALTERAÇÃO ---
     const notificationRef = useRef<NotificationPopupRef>(null);
+    const { user } = useAppContext();
 
     const [loading, setLoading] = useState(true);
-    const [task, setTask] = useState<TaskDetails | null>(null);
+    const [task, setTask] = useState<TaskDetailsApiResponse | null>(null);
     const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
     const [isEditModalVisible, setEditModalVisible] = useState(false);
     const [isConfirmRemoveVisible, setConfirmRemoveVisible] = useState(false);
@@ -67,127 +70,386 @@ export const TaskDetailScreen = () => {
     const [isAssignmentsExpanded, setAssignmentsExpanded] = useState(true);
     const [date, setDate] = useState(new Date());
     const [showDatePicker, setShowDatePicker] = useState(false);
+    const [isConfirmLeaveVisible, setConfirmLeaveVisible] = useState(false);
+    const [isLeavingOrDeleting, setIsLeavingOrDeleting] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
 
-    const statusItems = [
+    const baseStatusItems = [
         { label: 'A Fazer', value: 'TO_DO', color: '#FFA500' },
         { label: 'Em Andamento', value: 'IN_PROGRESS', color: '#FFD700' },
         { label: 'Concluído', value: 'DONE', color: '#2E7D32' },
     ];
 
-    const isOverdue = task ? new Date(task.dueDate) < new Date() && task.status !== 'DONE' : false;
-
-    useEffect(() => { 
-        const taskData: TaskDetails = { id: taskId, title: 'Revisar protótipo de alta fidelidade', description: 'Verificar todos os fluxos de usuário e garantir que os componentes estão alinhados com o design system.', status: 'IN_PROGRESS', createdAt: new Date(Date.now() - 86400000 * 2).toISOString(), dueDate: '2020-01-01T00:00:00Z', ownerId: 101, assignments: [ { userId: 101, username: 'Gabriela S.', taskRole: 'OWNER' }, { userId: 102, username: 'Caio Dib', taskRole: 'ASSIGNEE' } ] };
-        
-        // Mock de membros do projeto com a estrutura correta (adicionando email e projectRole)
-        const membersData: { content: ProjectMember[] } = { 
-            content: [ 
-                { userId: 101, username: 'Gabriela S.', email: 'gabriela@email.com', projectRole: 'OWNER'}, 
-                { userId: 102, username: 'Caio Dib', email: 'caio@email.com', projectRole: 'ADMIN' }, 
-                { userId: 103, username: 'Pedro L.', email: 'pedro@email.com', projectRole: 'MEMBER' } 
-            ] 
-        };
-        
-        setTask(taskData);
-        setDate(new Date(taskData.dueDate));
-        setProjectMembers(membersData.content); 
-        setLoading(false);
-    }, [taskId, projectId]);
-    
-    const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        setShowDatePicker(Platform.OS === 'ios');
-        if (event.type === 'set' && selectedDate) {
-            const newDate = selectedDate;
-            setDate(newDate);
-            if (Platform.OS === 'android') {
-                updateTaskDueDate(newDate);
-            }
+    const getAvailableStatusItems = () => {
+        if (!task) return baseStatusItems;
+        switch (task.status) {
+            case 'TO_DO':
+                return baseStatusItems.filter(item => item.value === 'TO_DO' || item.value === 'IN_PROGRESS' || item.value === 'DONE');
+            case 'IN_PROGRESS':
+                return baseStatusItems.filter(item => item.value === 'IN_PROGRESS' || item.value === 'DONE');
+            case 'DONE':
+                return baseStatusItems.filter(item => item.value === 'DONE');
+            default:
+                return baseStatusItems;
         }
     };
 
+    // --- INÍCIO DA ALTERAÇÃO: Lógica de Permissão ---
+    const isOverdue = task ? new Date(task.dueDate) < new Date() && task.status !== 'DONE' : false;
+    const isTaskOwner = task?.ownerId === user?.id;
+    // Verifica se o usuário tem role privilegiada no PROJETO
+    const isAdminOrOwnerOfProject = projectRole === 'ADMIN' || projectRole === 'OWNER';
+    // Verifica se o usuário é um responsável (assignee) pela TAREFA
+    const isAssignee = task?.assignments.some(a => a.userId === user?.id && a.taskRole === 'ASSIGNEE');
+
+    // Pode editar/deletar a tarefa se for dono da TAREFA ou admin/dono do PROJETO
+    const canEditTask = isTaskOwner || isAdminOrOwnerOfProject;
+    // Pode remover responsável se for dono da TAREFA ou admin/dono do PROJETO
+    const canRemoveAssignee = isTaskOwner || isAdminOrOwnerOfProject;
+    // Pode mudar status se for dono da TAREFA ou admin/dono do PROJETO ou responsável pela TAREFA
+    const canChangeStatus = isTaskOwner || isAdminOrOwnerOfProject || isAssignee;
+    // Pode adicionar responsável se puder editar a tarefa
+    const canAddAssignee = canEditTask;
+    // --- FIM DA ALTERAÇÃO ---
+
+
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const [taskData, membersResponse] = await Promise.all([
+                taskService.getTaskById(projectId, taskId),
+                projectService.getProjectMembers(projectId, 0, 100) // Busca mais membros para o modal
+            ]);
+            setTask(taskData);
+            setDate(new Date(taskData.dueDate)); // Inicializa a data do picker com a data atual da tarefa
+            setProjectMembers(membersResponse.content);
+        } catch (error) {
+            notificationRef.current?.show({ type: 'error', message: 'Erro ao carregar dados da tarefa.' });
+            console.error(error);
+             setTimeout(() => navigation.goBack(), 1500);
+        } finally {
+            setLoading(false);
+        }
+    }, [projectId, taskId, navigation]);
+
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+
+    const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        setShowDatePicker(Platform.OS === 'ios'); // Mantém aberto no iOS até confirmação
+        if (event.type === 'set' && selectedDate) {
+            const newDate = selectedDate;
+            // Combina a data selecionada com a hora existente da tarefa para evitar resetar a hora
+            const currentTime = task ? new Date(task.dueDate) : new Date();
+            newDate.setHours(currentTime.getHours());
+            newDate.setMinutes(currentTime.getMinutes());
+            newDate.setSeconds(currentTime.getSeconds());
+
+            setDate(newDate); // Atualiza o estado local da data
+            if (Platform.OS !== 'ios') { // No Android, atualiza imediatamente
+                 updateTaskDueDate(newDate);
+            }
+        } else if (event.type !== 'set' && Platform.OS !== 'ios') {
+             // Se cancelou no Android (ou outro OS), reseta para a data original
+             if (task) setDate(new Date(task.dueDate));
+        }
+        // No iOS, a confirmação/cancelamento é feita pelos botões
+    };
+
+    // Função de confirmação para iOS DatePicker
     const confirmIOSDate = () => {
         setShowDatePicker(false);
-        updateTaskDueDate(date);
+        updateTaskDueDate(date); // Atualiza com a data/hora selecionada (estado 'date')
     };
 
-    const updateTaskDueDate = (newDate: Date) => {
-        setTask(prev => prev ? { ...prev, dueDate: newDate.toISOString() } : null);
-        notificationRef.current?.show({ type: 'success', message: 'Prazo atualizado com sucesso!' });
+    // Função para cancelar no iOS DatePicker
+    const cancelIOSDate = () => {
+        setShowDatePicker(false);
+        if (task) setDate(new Date(task.dueDate)); // Reseta para a data original
+    }
+
+    const updateTaskDueDate = async (newDate: Date) => {
+        if (!task || !canEditTask) return; // Verifica permissão
+        setIsUpdating(true);
+        try {
+            const formattedDueDate = formatDateTimeWithOffset(newDate); // Garante formato correto
+            const updatedTask = await taskService.updateTaskDetails(projectId, taskId, { dueDate: formattedDueDate });
+            setTask(updatedTask); // Atualiza estado com resposta da API
+            setDate(new Date(updatedTask.dueDate)); // Sincroniza estado do picker
+            notificationRef.current?.show({ type: 'success', message: 'Prazo atualizado com sucesso!' });
+        } catch (error) {
+            notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
+            // Reverte o estado do picker em caso de erro
+            if (task) setDate(new Date(task.dueDate));
+        } finally {
+             setIsUpdating(false);
+        }
     };
 
-    const handleUpdateStatus = (newStatus: string | number) => { setTask(prev => prev ? { ...prev, status: newStatus as TaskStatus } : null); notificationRef.current?.show({type: 'success', message: 'Status Atualizado!'}) };
-    const handleSaveTaskDetails = (updatedData: { title: string; description: string }) => { setTask(prev => prev ? { ...prev, ...updatedData } : null); setEditModalVisible(false); };
-    const handleConfirmRemove = () => { /* ... */ };
-    const openRemoveConfirmation = (member: TaskMember) => { setMemberToRemove(member); setConfirmRemoveVisible(true); };
-    
-    const handleSaveNewAssignments = (selectedMemberIds: number[]) => {
-        if (!task || selectedMemberIds.length === 0) {
+
+    const handleUpdateStatus = async (newStatusValue: string | number) => {
+        const newStatus = newStatusValue as TaskStatus;
+        // --- INÍCIO DA ALTERAÇÃO: Adicionar verificação de permissão ---
+        if (!task || task.status === newStatus || !canChangeStatus) return;
+        // --- FIM DA ALTERAÇÃO ---
+
+        // Manter as validações de transição
+        if (task.status === 'IN_PROGRESS' && newStatus === 'TO_DO') {
+            notificationRef.current?.show({ type: 'error', message: 'Não é possível voltar o status de "Em Andamento" para "A Fazer".' });
+            return;
+        }
+        if (task.status === 'DONE') {
+             notificationRef.current?.show({ type: 'error', message: 'Não é possível alterar o status de uma tarefa concluída.' });
+             return;
+        }
+        setIsUpdating(true); // Ativa loading específico para status
+        try {
+            const updatedTask = await taskService.updateTaskStatus(projectId, taskId, { newStatus });
+            // Atualiza o estado local da tarefa com a resposta da API
+            setTask(prev => prev ? { ...prev, status: updatedTask.status, completedAt: updatedTask.completedAt, completionComment: updatedTask.completionComment } : null);
+            notificationRef.current?.show({ type: 'success', message: 'Status Atualizado!' });
+        } catch (error) {
+            notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
+            // Não precisa reverter o picker aqui, pois ele é controlado pelo estado `task.status`
+        } finally {
+            setIsUpdating(false); // Desativa loading
+        }
+    };
+
+    const handleSaveTaskDetails = async (updatedData: { title: string; description: string }) => {
+        if (!task || !canEditTask) return; // Verifica permissão
+        setIsUpdating(true); // Reutiliza o estado de loading
+        try {
+            const updatedTask = await taskService.updateTaskDetails(projectId, taskId, updatedData);
+            setTask(updatedTask);
+            setEditModalVisible(false);
+            notificationRef.current?.show({ type: 'success', message: 'Tarefa atualizada!' });
+        } catch (error) {
+            notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleConfirmRemove = async () => {
+        if (!memberToRemove || !task || !canRemoveAssignee) return; // Verifica permissão
+        setIsUpdating(true); // Reutiliza o estado de loading
+        setConfirmRemoveVisible(false);
+        try {
+            await taskService.removeAssignees(projectId, taskId, { userIds: [memberToRemove.userId] });
+            // Atualiza o estado local da tarefa removendo o membro
+            setTask(prev => prev ? { ...prev, assignments: prev.assignments.filter(a => a.userId !== memberToRemove.userId) } : null);
+            notificationRef.current?.show({ type: 'success', message: `${memberToRemove.username} removido.` });
+        } catch (error) {
+            notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
+        } finally {
+            setMemberToRemove(null);
+            setIsUpdating(false);
+        }
+    };
+
+    // Abre modal de confirmação para remover membro
+    const openRemoveConfirmation = (member: TaskMember) => {
+        if (!canRemoveAssignee) return; // Não abre se não tiver permissão
+        setMemberToRemove(member);
+        setConfirmRemoveVisible(true);
+    };
+
+    // Salva novas atribuições
+    const handleSaveNewAssignments = async (selectedMemberIds: number[]) => {
+        if (!task || selectedMemberIds.length === 0 || !canAddAssignee) { // Verifica permissão
             setAssignModalVisible(false);
             return;
         }
-
-        const newAssignments = selectedMemberIds.map(id => {
-            const member = projectMembers.find(p => p.userId === id);
-            return {
-                userId: id,
-                username: member?.username || 'Desconhecido',
-                taskRole: 'ASSIGNEE' as const,
-            };
-        });
-
-        setTask(prev => prev ? { ...prev, assignments: [...prev.assignments, ...newAssignments] } : null);
+        setIsUpdating(true); // Reutiliza estado de loading
         setAssignModalVisible(false);
-        notificationRef.current?.show({ type: 'success', message: 'Membros adicionados!' });
+
+        const assignmentsPayload: TaskAssignmentRequest[] = selectedMemberIds.map(id => ({
+            userId: id,
+            taskRole: 'ASSIGNEE', // Só pode adicionar como ASSIGNEE
+        }));
+
+        try {
+            const updatedTask = await taskService.assignUsersToTask(projectId, taskId, assignmentsPayload);
+            setTask(updatedTask); // Atualiza o estado com a resposta da API (incluindo novos membros)
+            notificationRef.current?.show({ type: 'success', message: 'Membros adicionados!' });
+        } catch (error) {
+             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
+        } finally {
+             setIsUpdating(false);
+        }
     };
 
-    const handleConfirmDeleteTask = () => {
+
+    const handleConfirmDeleteTask = async () => {
+        if (!task || !canEditTask) return; // Verifica permissão
+        setIsLeavingOrDeleting(true); // Usa estado específico para delete/leave
         setConfirmDeleteTaskVisible(false);
-        setEditModalVisible(false);
-        navigation.goBack();
-        setTimeout(() => {
-            notificationRef.current?.show({ type: 'success', message: 'Tarefa excluída com sucesso!' });
-        }, 500);
+        setEditModalVisible(false); // Fecha modal de edição se estiver aberto
+        try {
+            await taskService.deleteTask(projectId, taskId);
+            navigation.goBack();
+            // A notificação de sucesso pode ser mostrada na tela anterior se necessário
+            // usando um parâmetro de navegação ou estado global
+            setTimeout(() => {
+                 // Idealmente, a tela anterior escutaria um evento ou parâmetro
+                 // para mostrar a notificação após a navegação
+                 console.log('Tarefa excluída com sucesso! (Notificação adiada)');
+                 // notificationRef.current?.show({ type: 'success', message: 'Tarefa excluída com sucesso!' });
+            }, 500);
+        } catch (error) {
+            notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
+            setIsLeavingOrDeleting(false); // Libera o loading em caso de erro
+        }
+        // Não precisa de finally se a navegação ocorrer sempre no sucesso
     };
 
+
+    const handleLeaveTask = async () => {
+        if (!task) return;
+        // Verifica se o usuário é realmente um membro (assignee ou owner) para poder sair
+        const isMember = task.assignments.some(a => a.userId === user?.id);
+        if (!isMember) {
+            notificationRef.current?.show({ type: 'error', message: 'Você não é membro desta tarefa para poder sair.' });
+            return;
+        }
+        // Dono não pode sair usando esta ação (deve deletar ou transferir) - backend já valida isso
+        // if (isTaskOwner) { ... } // Frontend pode adicionar essa checagem se desejar
+
+        setIsLeavingOrDeleting(true);
+        setConfirmLeaveVisible(false);
+        try {
+            await taskService.leaveTask(projectId, taskId); // Mantém projectId por consistência, backend ignora
+            navigation.goBack();
+            setTimeout(() => {
+                 // Notificação na tela anterior
+                 console.log(`Você saiu da tarefa "${task.title}" (Notificação adiada)`);
+                 // if (notificationRef.current) { ... }
+            }, 500);
+        } catch (error) {
+             if (notificationRef.current) {
+                 notificationRef.current.show({ type: 'error', message: getErrorMessage(error) });
+             }
+            setIsLeavingOrDeleting(false);
+        }
+    };
+
+    // Animação para expandir/recolher
     const toggleAssignments = () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setAssignmentsExpanded(!isAssignmentsExpanded);
     };
 
+    // Perfil para o Header
+    const userProfileForHeader = user ? { initials: getInitialsFromName(user.name) } : { initials: '?' };
+    const handleProfilePress = () => navigation.navigate('EditProfile');
+
+
+    // Loading inicial
     if (loading || !task) {
-        return <SafeAreaView style={styles.container}><ActivityIndicator size="large" color="#EB5F1C" /></SafeAreaView>;
+        return (
+            <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+                 <Header
+                     userProfile={userProfileForHeader}
+                     onPressProfile={handleProfilePress}
+                     notificationCount={0}
+                     onPressNotifications={() => {}}
+                 />
+                 <View style={styles.loadingView}>
+                     <ActivityIndicator size="large" color="#EB5F1C" />
+                 </View>
+            </SafeAreaView>
+         );
     }
 
+
+    // Renderização principal
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-            <Header userProfile={{ initials: 'CD' }} onPressProfile={() => {}} notificationCount={0} onPressNotifications={() => {}} />
-            
+            {/* Header */}
+            <Header
+                userProfile={userProfileForHeader}
+                onPressProfile={handleProfilePress}
+                notificationCount={0}
+                onPressNotifications={() => {}}
+            />
+
+            {/* Cabeçalho da Página */}
             <View style={styles.pageHeader}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}><Icon name="arrow-back-outline" size={30} color="#EB5F1C" /></TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1}>Detalhes da Tarefa</Text>
-                <TouchableOpacity onPress={() => setEditModalVisible(true)}><Icon name="pencil-outline" size={24} color="#FFFFFF" /></TouchableOpacity>
+                 <View style={styles.actionIconsContainer}>
+                    {/* Botão Editar Tarefa (controlado por canEditTask) */}
+                    {canEditTask && (
+                        <TouchableOpacity onPress={() => !isUpdating && setEditModalVisible(true)} style={styles.actionIcon} disabled={isUpdating}>
+                            <Icon name="pencil-outline" size={24} color={isUpdating ? "#555" : "#FFFFFF"} />
+                        </TouchableOpacity>
+                    )}
+                    {/* Botão Sair da Tarefa (visível se for membro, desabilitado durante ações) */}
+                    {task.assignments.some(a => a.userId === user?.id) && ( // Só mostra se for membro
+                        <TouchableOpacity onPress={() => !isLeavingOrDeleting && setConfirmLeaveVisible(true)} style={styles.actionIcon} disabled={isLeavingOrDeleting || isUpdating}>
+                            <Icon name="log-out-outline" size={24} color={isLeavingOrDeleting || isUpdating ? "#888" : "#ff4545"} />
+                        </TouchableOpacity>
+                    )}
+                </View>
             </View>
 
+            {/* Conteúdo Scrollable */}
             <ScrollView contentContainerStyle={styles.scrollContainer}>
-                <View style={styles.section}><Text style={styles.taskTitle}>{task.title}</Text><Text style={styles.descriptionText}>{task.description || 'Nenhuma descrição fornecida.'}</Text></View>
-                
+                {/* Detalhes da Tarefa */}
+                <View style={styles.section}>
+                    <Text style={styles.taskTitle}>{task.title}</Text>
+                    <Text style={styles.descriptionText}>{task.description || 'Nenhuma descrição fornecida.'}</Text>
+                </View>
+
+                {/* Grid de Informações */}
                 <View style={styles.infoGrid}>
-                    <View style={styles.infoBox}><Text style={styles.infoLabel}>Criada</Text><Text style={styles.infoValue}><TimeAgo timestamp={new Date(task.createdAt).getTime()} /></Text></View>
-                    
-                    <TouchableOpacity style={styles.infoBox} onPress={() => setShowDatePicker(true)}>
+                    <View style={styles.infoBox}>
+                        <Text style={styles.infoLabel}>Criada</Text>
+                        <Text style={styles.infoValue}>
+                            {/* Usa TimeAgo para data de criação */}
+                            <TimeAgo timestamp={new Date(task.createdAt).getTime()} />
+                        </Text>
+                    </View>
+
+                    {/* Caixa de Prazo (Editável se tiver permissão) */}
+                    <TouchableOpacity
+                        style={styles.infoBox}
+                        onPress={() => !isUpdating && canEditTask && setShowDatePicker(true)} // Abre picker se puder editar
+                        disabled={isUpdating || !canEditTask} // Desabilita se atualizando ou sem permissão
+                    >
                         <View style={styles.labelContainer}>
                             <Text style={styles.infoLabel}>Prazo</Text>
-                            <Text style={styles.editText}>(editar)</Text>
+                            {/* Mostra "(editar)" apenas se puder editar */}
+                            {canEditTask && <Text style={styles.editText}>(editar)</Text>}
                         </View>
                         <View style={styles.dueDateContainer}>
-                            <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>{new Date(task.dueDate).toLocaleDateString('pt-BR')}</Text>
-                            {isOverdue && <Icon name="warning" size={16} color="#ff4545" style={styles.editIcon} />}
+                            <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>
+                                {new Date(task.dueDate).toLocaleDateString('pt-BR')} {/* Mostra apenas data */}
+                            </Text>
+                            {isOverdue && <Icon name="warning" size={16} color="#ff4545" style={styles.warningIcon} />}
                         </View>
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.section}><FilterPicker label="Status" items={statusItems} selectedValue={task.status} onValueChange={handleUpdateStatus} /></View>
-                
+                {/* Seção Status (Editável se tiver permissão) */}
+                <View style={styles.section}>
+                    <FilterPicker
+                        label="Status"
+                        items={getAvailableStatusItems()}
+                        selectedValue={task.status}
+                        onValueChange={handleUpdateStatus}
+                        // Desabilita o picker se estiver atualizando ou sem permissão
+                        style={isUpdating || !canChangeStatus ? styles.pickerDisabled : null}
+                    />
+                     {/* Mostra mensagem se o picker estiver desabilitado */}
+                    {!canChangeStatus && <Text style={styles.disabledReasonText}>Você não pode alterar o status.</Text>}
+                </View>
+
+                {/* Seção Responsáveis (Colapsável) */}
                 <View style={styles.section}>
                     <TouchableOpacity onPress={toggleAssignments} style={styles.collapsibleHeader}>
                         <Text style={styles.sectionTitle}>Responsáveis ({task.assignments.length})</Text>
@@ -195,26 +457,45 @@ export const TaskDetailScreen = () => {
                     </TouchableOpacity>
                     {isAssignmentsExpanded && (
                         <View style={styles.membersContainer}>
-                            {task.assignments.map(member => ( <MemberRow key={member.userId} member={member} onRemove={() => openRemoveConfirmation(member)} /> ))}
-                            <TouchableOpacity style={styles.addMemberRow} onPress={() => setAssignModalVisible(true)}>
-                                <Icon name="add-circle-outline" size={30} color="#EB5F1C" />
-                                <Text style={styles.addMemberText}>Adicionar responsável</Text>
-                            </TouchableOpacity>
+                            {/* Lista de Membros */}
+                            {task.assignments.map(member => (
+                                <MemberRow
+                                    key={member.userId}
+                                    member={member}
+                                    onRemove={() => openRemoveConfirmation(member)}
+                                    // Habilita remoção baseado em canRemoveAssignee
+                                    canRemove={canRemoveAssignee}
+                                />
+                             ))}
+                            {/* Botão Adicionar Responsável (Controlado por canAddAssignee) */}
+                            {canAddAssignee && (
+                                <TouchableOpacity
+                                    style={styles.addMemberRow}
+                                    onPress={() => !isUpdating && setAssignModalVisible(true)} // Abre modal de atribuição
+                                    disabled={isUpdating} // Desabilita se atualizando
+                                >
+                                    <Icon name="add-circle-outline" size={30} color={isUpdating ? "#555" : "#EB5F1C"} />
+                                    <Text style={[styles.addMemberText, isUpdating && styles.addMemberTextDisabled]}>Adicionar responsável</Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     )}
                 </View>
 
-                {showDatePicker && (
+                {/* DateTimePicker (renderização condicional) */}
+                 {showDatePicker && (
                     <DateTimePicker
-                        mode="date"
+                        mode="date" // Modo data
                         display="default"
-                        value={date}
+                        value={date} // Usa o estado 'date'
                         onChange={handleDateChange}
+                        // minimumDate={new Date()} // Opcional: restringir datas passadas
                     />
                 )}
+                {/* Botões de confirmação/cancelamento para iOS */}
                 {showDatePicker && Platform.OS === 'ios' && (
                     <View style={styles.iosPickerButtons}>
-                        <TouchableOpacity style={styles.iosPickerButton} onPress={() => setShowDatePicker(false)}>
+                        <TouchableOpacity style={styles.iosPickerButton} onPress={cancelIOSDate}>
                             <Text style={styles.iosPickerButtonText}>Cancelar</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={[styles.iosPickerButton, styles.iosPickerButtonConfirm]} onPress={confirmIOSDate}>
@@ -224,43 +505,95 @@ export const TaskDetailScreen = () => {
                 )}
             </ScrollView>
 
-            <EditTaskModal 
-                visible={isEditModalVisible} 
-                task={task} 
-                onClose={() => setEditModalVisible(false)} 
+            {/* --- MODAIS --- */}
+
+            {/* Modal Editar Tarefa (controlado por canEditTask indiretamente) */}
+             <EditTaskModal
+                visible={isEditModalVisible}
+                task={task ? { title: task.title, description: task.description || '' } : null}
+                onClose={() => setEditModalVisible(false)}
                 onSave={handleSaveTaskDetails}
+                // Passa a função para abrir o modal de confirmação de exclusão
                 onDelete={() => setConfirmDeleteTaskVisible(true)}
-            />
-            
-            <SelectTaskMembersModal 
-                visible={isAssignModalVisible} 
-                onClose={() => setAssignModalVisible(false)} 
-                projectMembers={projectMembers.filter(pm => !task.assignments.some(a => a.userId === pm.userId))}
-                onSave={handleSaveNewAssignments} 
-            />
-            
-            <ConfirmationModal visible={isConfirmRemoveVisible} title="Remover Membro" message={`Tem certeza que deseja remover ${memberToRemove?.username} desta tarefa?`} onClose={() => setConfirmRemoveVisible(false)} onConfirm={handleConfirmRemove} confirmText="Remover" />
-            
-            <ConfirmationModal 
-                visible={isConfirmDeleteTaskVisible} 
-                title="Excluir Tarefa" 
-                message={`Você tem certeza que deseja excluir a tarefa "${task.title}"?`} 
-                onClose={() => setConfirmDeleteTaskVisible(false)} 
-                onConfirm={handleConfirmDeleteTask} 
-                confirmText="Excluir" 
+                isSaving={isUpdating} // Passa estado de loading
             />
 
+            {/* Modal Selecionar Membros (controlado por canAddAssignee indiretamente) */}
+            <SelectTaskMembersModal
+                visible={isAssignModalVisible}
+                onClose={() => setAssignModalVisible(false)}
+                // Filtra membros do projeto que ainda não estão na tarefa
+                projectMembers={projectMembers.filter(pm => !task.assignments.some(a => a.userId === pm.userId))}
+                onSave={handleSaveNewAssignments}
+                isSaving={isUpdating} // Passa estado de loading
+            />
+
+            {/* Modal Confirmação Remover Membro (controlado por canRemoveAssignee indiretamente) */}
+            <ConfirmationModal
+                visible={isConfirmRemoveVisible}
+                title="Remover Membro"
+                message={`Tem certeza que deseja remover ${memberToRemove?.username} desta tarefa?`}
+                onClose={() => setConfirmRemoveVisible(false)}
+                onConfirm={handleConfirmRemove}
+                confirmText="Remover"
+                isConfirming={isUpdating} // Passa estado de loading
+                confirmingText="Removendo..."
+                disableClose={isUpdating} // Desabilita fechar durante a ação
+            />
+
+             {/* Modal Confirmação Deletar Tarefa (controlado por canEditTask indiretamente) */}
+             <ConfirmationModal
+                visible={isConfirmDeleteTaskVisible}
+                title="Excluir Tarefa"
+                message={`Você tem certeza que deseja excluir a tarefa "${task.title}"?`}
+                onClose={() => setConfirmDeleteTaskVisible(false)}
+                onConfirm={handleConfirmDeleteTask}
+                confirmText="Excluir"
+                isConfirming={isLeavingOrDeleting} // Usa estado específico
+                confirmingText="Excluindo..."
+                disableClose={isLeavingOrDeleting} // Desabilita fechar
+            />
+
+            {/* Modal Confirmação Sair da Tarefa */}
+            <ConfirmationModal
+                visible={isConfirmLeaveVisible}
+                title="Sair da Tarefa"
+                message={`Tem certeza que deseja sair da tarefa "${task.title}"?`}
+                onClose={() => setConfirmLeaveVisible(false)}
+                onConfirm={handleLeaveTask}
+                confirmText="Sair"
+                isConfirming={isLeavingOrDeleting} // Usa estado específico
+                confirmingText="Saindo..."
+                disableClose={isLeavingOrDeleting} // Desabilita fechar
+            />
+
+            {/* Popup de Notificação */}
             <NotificationPopup ref={notificationRef} />
         </SafeAreaView>
     );
 };
 
+// --- ESTILOS --- (Adicionar estilos para picker desabilitado e texto de motivo)
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#191919', justifyContent: 'center' },
+    // ... (estilos anteriores)
+    pickerDisabled: {
+        opacity: 0.5, // Deixa o picker mais transparente quando desabilitado
+    },
+    disabledReasonText: {
+        fontSize: 12,
+        color: '#A9A9A9',
+        marginTop: -10, // Ajusta posição abaixo do picker
+        marginBottom: 15,
+        marginLeft: 5,
+    },
+    container: { flex: 1, backgroundColor: '#191919' },
+    loadingView: { flex: 1, justifyContent: 'center', alignItems: 'center', },
     scrollContainer: { paddingHorizontal: 20, paddingBottom: 40 },
     pageHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10, marginBottom: 15 },
     backButton: { marginRight: 15 },
-    headerTitle: { color: '#FFFFFF', fontSize: 22, fontWeight: 'bold', flex: 1 },
+    headerTitle: { color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', flex: 1, marginRight: 10 },
+    actionIconsContainer: { flexDirection: 'row', alignItems: 'center' },
+    actionIcon: { marginLeft: 15 },
     taskTitle: { color: '#EB5F1C', fontSize: 26, fontWeight: 'bold', marginBottom: 8 },
     descriptionText: { color: '#ffffffff', fontSize: 16, lineHeight: 24 },
     section: { marginBottom: 25 },
@@ -268,20 +601,12 @@ const styles = StyleSheet.create({
     infoGrid: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 },
     infoBox: { backgroundColor: '#2A2A2A', borderRadius: 10, padding: 15, width: '48%' },
     infoLabel: { color: '#A9A9A9', fontSize: 14, marginBottom: 5 },
-    labelContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    editText: {
-        color: '#A9A9A9',
-        fontSize: 12,
-        marginLeft: 4,
-        fontStyle: 'italic',
-    },
+    labelContainer: { flexDirection: 'row', alignItems: 'center' },
+    editText: { color: '#A9A9A9', fontSize: 12, marginLeft: 4, fontStyle: 'italic' },
     infoValue: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
     overdueText: { color: '#ff4545' },
     dueDateContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    editIcon: { marginLeft: 8 },
+    warningIcon: { marginLeft: 8 },
     collapsibleHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     membersContainer: { paddingTop: 5 },
     memberRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
@@ -290,27 +615,11 @@ const styles = StyleSheet.create({
     memberInfo: { flex: 1 },
     memberName: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
     memberRole: { color: '#A9A9A9', fontSize: 14 },
-    addMemberRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, paddingLeft: 4, },
+    addMemberRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, paddingLeft: 4, opacity: 1 },
     addMemberText: { color: '#EB5F1C', fontSize: 16, fontWeight: 'bold', marginLeft: 12, },
-    iosPickerButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        backgroundColor: '#3C3C3C',
-        padding: 10,
-        borderTopWidth: 1,
-        borderColor: '#555'
-    },
-    iosPickerButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-    },
-    iosPickerButtonConfirm: {
-        backgroundColor: '#EB5F1C',
-        borderRadius: 8,
-    },
-    iosPickerButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold'
-    }
+    addMemberTextDisabled: { color: '#555'},
+    iosPickerButtons: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#3C3C3C', padding: 10, borderTopWidth: 1, borderColor: '#555' },
+    iosPickerButton: { paddingHorizontal: 20, paddingVertical: 10 },
+    iosPickerButtonConfirm: { backgroundColor: '#EB5F1C', borderRadius: 8 },
+    iosPickerButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
 });

@@ -1,7 +1,7 @@
-// src/components/EditTaskModal.tsx
+// src/features/task/components/EditTaskModal.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'; // Import ActivityIndicator
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -17,9 +17,17 @@ interface EditTaskModalProps {
   onClose: () => void;
   onSave: (updatedData: { title: string; description: string }) => void;
   onDelete: () => void; // Adicionada a função para deletar
+  isSaving?: boolean; // <-- PROPRIEDADE ADICIONADA
 }
 
-export const EditTaskModal: React.FC<EditTaskModalProps> = ({ visible, task, onClose, onSave, onDelete }) => {
+export const EditTaskModal: React.FC<EditTaskModalProps> = ({
+    visible,
+    task,
+    onClose,
+    onSave,
+    onDelete,
+    isSaving = false // <-- Valor padrão adicionado
+}) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
 
@@ -38,8 +46,8 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ visible, task, onC
         <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
             <View style={styles.centeredView}>
                 <View style={styles.modalView}>
-                    <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                        <Icon name="close-outline" size={30} color="#fff" />
+                    <TouchableOpacity style={styles.closeButton} onPress={onClose} disabled={isSaving}>
+                        <Icon name="close-outline" size={30} color={isSaving ? "#555" : "#fff"} />
                     </TouchableOpacity>
                     <Text style={styles.modalTitle}>Editar Tarefa</Text>
                     <ScrollView>
@@ -48,25 +56,36 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ visible, task, onC
                             value={title}
                             onChangeText={setTitle}
                             maxLength={100}
+                            editable={!isSaving} // Desabilita edição enquanto salva
                         />
                         <InputsField
                             label="Descrição"
                             value={description}
                             onChangeText={setDescription}
-                            multiline={true}      
-                            numberOfLines={4}  
-                            maxLength={500}     
+                            multiline={true}
+                            numberOfLines={4}
+                            maxLength={500}
+                            editable={!isSaving} // Desabilita edição enquanto salva
                         />
                     </ScrollView>
                     <View style={styles.buttonContainer}>
-                      <MainButton title="Salvar Alterações" onPress={handleSave} />
+                      {/* Mostra ActivityIndicator ou Texto no botão */}
+                      <MainButton
+                        title={isSaving ? "Salvando..." : "Salvar Alterações"}
+                        onPress={handleSave}
+                        disabled={isSaving}
+                      />
                     </View>
 
                     {/* Seção para deletar a tarefa */}
                     <View style={styles.divider} />
-                    <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
-                        <Icon name="trash-outline" size={20} color="#ff4545" />
-                        <Text style={styles.deleteButtonText}>Excluir Tarefa</Text>
+                    <TouchableOpacity
+                        style={[styles.deleteButton, isSaving && styles.disabledButton]} // Estilo desabilitado
+                        onPress={onDelete}
+                        disabled={isSaving} // Desabilita enquanto salva
+                    >
+                        <Icon name="trash-outline" size={20} color={isSaving ? "#888" : "#ff4545"} />
+                        <Text style={[styles.deleteButtonText, isSaving && styles.disabledText]}>Excluir Tarefa</Text>
                     </TouchableOpacity>
                 </View>
             </View>
@@ -97,5 +116,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginLeft: 8,
+    },
+    // Estilos para desabilitar botões
+    disabledButton: {
+        opacity: 0.5,
+    },
+    disabledText: {
+        color: '#888',
     },
 });

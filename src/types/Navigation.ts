@@ -1,5 +1,6 @@
+// src/types/navigation.ts
 import { TeamType } from './entities';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'; 
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
@@ -11,7 +12,13 @@ export type RootStackParamList = {
     TeamDetail: { team: TeamType };
     ProjectDetail: { projectId: number; projectTitle: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' };
     ReportCenter: { projectId: number };
-    TaskDetail: { projectId: number; taskId: number };
+    // --- CORREÇÃO AQUI ---
+    TaskDetail: {
+        projectId: number;
+        taskId: number;
+        projectRole: 'OWNER' | 'ADMIN' | 'MEMBER'; // Adicionar projectRole
+    };
+    // --- FIM DA CORREÇÃO ---
 };
 
 export type RootTabParamList = {
@@ -21,4 +28,3 @@ export type RootTabParamList = {
     Mais: undefined;
 };
 export type AuthNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Register'>;
-
