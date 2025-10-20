@@ -157,6 +157,11 @@ const deleteProject = async (projectId: number | string): Promise<void> => {
     await api.delete(`/project/${projectId}`);
 };
 
+// --- SAIR DO PROJETO ---
+const leaveProject = async (projectId: number | string): Promise<void> => {
+    await api.delete(`/project/${projectId}/leave`);
+};
+
 
 export const projectService = {
   getProjects,
@@ -171,4 +176,5 @@ export const projectService = {
   importTeamMembers,
   generateInviteLink,
   deleteProject,
+  leaveProject,
 };

@@ -27,6 +27,7 @@ export function useProjectDetail() {
   const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
   const [isInviteMemberModalVisible, setInviteMemberModalVisible] = useState(false);
   const [isConfirmRemoveMemberVisible, setConfirmRemoveMemberVisible] = useState(false);
+  const [isConfirmLeaveVisible, setConfirmLeaveVisible] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ userId: number; username: string; email: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' } | null>(null);
 
   // --- LÓGICA DE PERMISSÃO ---
@@ -136,6 +137,25 @@ export function useProjectDetail() {
     }
   };
 
+  // --- Leave Project Action ---
+  const handleLeaveProject = async () => {
+    if (!project) return;
+
+    setIsDeleting(true); // Reutilizar estado de loading
+    setConfirmLeaveVisible(false); // Fechar modal de confirmação
+    try {
+      await projectService.leaveProject(project.id);
+      navigation.goBack(); // Voltar para a tela anterior
+      setTimeout(() => {
+        showNotification({ type: 'success', message: `Você saiu do projeto "${project.title}"` });
+      }, 500);
+    } catch (error) {
+      showNotification({ type: 'error', message: getErrorMessage(error) });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return {
     navigation,
     project,
@@ -157,6 +177,8 @@ export function useProjectDetail() {
     setInviteMemberModalVisible,
     isConfirmRemoveMemberVisible,
     setConfirmRemoveMemberVisible,
+    isConfirmLeaveVisible,
+    setConfirmLeaveVisible,
     selectedMember,
     handleRefresh,
     handleLoadMore,
@@ -165,5 +187,6 @@ export function useProjectDetail() {
     handleSelectMember,
     handleUpdateMemberRole,
     handleRemoveMember,
+    handleLeaveProject,
   };
 }

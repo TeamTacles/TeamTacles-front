@@ -49,6 +49,8 @@ export const ProjectDetailScreen = () => {
         setInviteMemberModalVisible,
         isConfirmRemoveMemberVisible,
         setConfirmRemoveMemberVisible,
+        isConfirmLeaveVisible,
+        setConfirmLeaveVisible,
         selectedMember,
         handleRefresh,
         handleLoadMore,
@@ -57,6 +59,7 @@ export const ProjectDetailScreen = () => {
         handleSelectMember,
         handleUpdateMemberRole,
         handleRemoveMember,
+        handleLeaveProject,
     } = useProjectDetail();
 
     // Estados locais apenas para UI e tasks (ainda mock)
@@ -175,11 +178,20 @@ export const ProjectDetailScreen = () => {
                 <View style={styles.projectHeaderText}>
                     <Text style={styles.titleHeaderText}>Detalhes do Projeto</Text>
                 </View>
-                {isOwner && (
-                    <TouchableOpacity onPress={() => setEditModalVisible(true)}>
-                        <Icon name="pencil-outline" size={24} color="#FFFFFF" />
+
+                {/* --- ÍCONES DE AÇÃO --- */}
+                <View style={styles.actionIconsContainer}>
+                    {/* Ícone de Editar: Apenas para o Dono */}
+                    {isOwner && (
+                        <TouchableOpacity onPress={() => setEditModalVisible(true)} style={styles.actionIcon}>
+                            <Icon name="pencil-outline" size={24} color="#FFFFFF" />
+                        </TouchableOpacity>
+                    )}
+                    {/* Ícone de Sair: Para todos */}
+                    <TouchableOpacity onPress={() => setConfirmLeaveVisible(true)} style={styles.actionIcon}>
+                        <Icon name="log-out-outline" size={24} color="#ff4545" />
                     </TouchableOpacity>
-                )}
+                </View>
             </View>
 
             <View style={styles.staticContent}>
@@ -340,6 +352,18 @@ export const ProjectDetailScreen = () => {
                 confirmText="Remover"
             />
 
+            <ConfirmationModal
+                visible={isConfirmLeaveVisible}
+                title="Sair do Projeto"
+                message={`Tem certeza que deseja sair do projeto "${project?.title}"?`}
+                onClose={() => setConfirmLeaveVisible(false)}
+                onConfirm={handleLeaveProject}
+                confirmText="Sair"
+                isConfirming={isDeleting}
+                confirmingText="Saindo..."
+                disableClose={isDeleting}
+            />
+
             <NewTaskModal
                 visible={isNewTaskModalVisible}
                 onClose={() => setNewTaskModalVisible(false)}
@@ -371,6 +395,8 @@ const styles = StyleSheet.create({
         color: '#FFFFFF', fontSize: 24, fontWeight: 'bold'
     },
     projectHeaderText: { flex: 1 },
+    actionIconsContainer: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+    actionIcon: { padding: 5 },
     projectTitle: { color: '#EB5F1C', fontSize: 24, fontWeight: 'bold' },
     projectDetails: {
         gap: 10,
