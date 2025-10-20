@@ -152,6 +152,11 @@ const generateInviteLink = async (projectId: number): Promise<InviteLinkResponse
     return response.data;
 };
 
+// --- DELETAR PROJETO ---
+const deleteProject = async (projectId: number | string): Promise<void> => {
+    await api.delete(`/project/${projectId}`);
+};
+
 
 export const projectService = {
   getProjects,
@@ -165,4 +170,5 @@ export const projectService = {
   removeMember,
   importTeamMembers,
   generateInviteLink,
+  deleteProject,
 };

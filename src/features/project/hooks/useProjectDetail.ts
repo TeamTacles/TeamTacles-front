@@ -19,6 +19,7 @@ export function useProjectDetail() {
   // States
   const [project, setProject] = useState<ProjectDetails | null>(null);
   const [loadingProject, setLoadingProject] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Modal States
   const [isEditModalVisible, setEditModalVisible] = useState(false);
@@ -76,15 +77,24 @@ export function useProjectDetail() {
     }
   };
 
-  const handleDeleteProject = () => {
-    setConfirmDeleteVisible(false);
-    setEditModalVisible(false);
+  const handleDeleteProject = async () => {
+    if (!project) return;
 
-    navigation.goBack();
-
-    setTimeout(() => {
-      showNotification({ type: 'success', message: 'Projeto excluído com sucesso!' });
-    }, 500);
+    setIsDeleting(true);
+    try {
+      await projectService.deleteProject(project.id);
+      setConfirmDeleteVisible(false);
+      setEditModalVisible(false);
+      navigation.goBack();
+      setTimeout(() => {
+        showNotification({ type: 'success', message: `Projeto "${project.title}" excluído com sucesso!` });
+      }, 500);
+    } catch (error) {
+      setConfirmDeleteVisible(false);
+      showNotification({ type: 'error', message: getErrorMessage(error) });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // --- Member Actions ---
@@ -130,6 +140,7 @@ export function useProjectDetail() {
     navigation,
     project,
     loadingProject,
+    isDeleting,
     members,
     loadingMembers,
     refreshingMembers,

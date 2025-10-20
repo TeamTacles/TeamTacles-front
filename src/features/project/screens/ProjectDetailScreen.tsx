@@ -32,6 +32,7 @@ export const ProjectDetailScreen = () => {
         navigation,
         project,
         loadingProject,
+        isDeleting,
         members,
         loadingMembers,
         refreshingMembers,
@@ -174,9 +175,11 @@ export const ProjectDetailScreen = () => {
                 <View style={styles.projectHeaderText}>
                     <Text style={styles.titleHeaderText}>Detalhes do Projeto</Text>
                 </View>
-                <TouchableOpacity onPress={() => setEditModalVisible(true)}>
-                    <Icon name="pencil-outline" size={24} color="#FFFFFF" />
-                </TouchableOpacity>
+                {isOwner && (
+                    <TouchableOpacity onPress={() => setEditModalVisible(true)}>
+                        <Icon name="pencil-outline" size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
+                )}
             </View>
 
             <View style={styles.staticContent}>
@@ -306,13 +309,15 @@ export const ProjectDetailScreen = () => {
                 onDelete={() => setConfirmRemoveMemberVisible(true)}
             />
 
-            <EditProjectModal
-                visible={isEditModalVisible}
-                project={project}
-                onClose={() => setEditModalVisible(false)}
-                onSave={handleUpdateProject}
-                onDelete={() => setConfirmDeleteVisible(true)}
-            />
+            {isOwner && (
+                <EditProjectModal
+                    visible={isEditModalVisible}
+                    project={project}
+                    onClose={() => setEditModalVisible(false)}
+                    onSave={handleUpdateProject}
+                    onDelete={() => setConfirmDeleteVisible(true)}
+                />
+            )}
 
             <ConfirmationModal
                 visible={isConfirmDeleteVisible}
@@ -321,6 +326,9 @@ export const ProjectDetailScreen = () => {
                 onClose={() => setConfirmDeleteVisible(false)}
                 onConfirm={handleDeleteProject}
                 confirmText="Excluir"
+                isConfirming={isDeleting}
+                confirmingText="Excluindo..."
+                disableClose={isDeleting}
             />
 
             <ConfirmationModal
