@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MainButton } from '../../../components/common/MainButton';
+import { DatePickerField } from '../../../components/common/DatePickerField';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export interface Filters {
@@ -34,19 +35,28 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
         onClear();
     };
 
-    const onDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        const currentDate = selectedDate;
-        setShowPickerFor(null);
-
-        if (event.type === 'set' && currentDate) {
-            setLocalFilters(prev => ({ ...prev, [showPickerFor!]: currentDate }));
+    const handleDateChange = (field: 'createdAtAfter' | 'createdAtBefore', date: Date) => {
+        setLocalFilters(prev => ({ ...prev, [field]: date }));
+        if (Platform.OS !== 'web') {
+            setShowPickerFor(null); // Fecha o picker no mobile
         }
+    };
+
+    // Handler para DateTimePicker no mobile
+    const onDateChangeMobile = (event: DateTimePickerEvent, selectedDate?: Date) => {
+        const currentDate = selectedDate;
+
+        if (event.type === 'set' && currentDate && showPickerFor) {
+            setLocalFilters(prev => ({ ...prev, [showPickerFor]: currentDate }));
+        }
+
+        setShowPickerFor(null); // Fecha o picker
     };
 
     const toggleStatus = (status: Filters['status']) => {
         setLocalFilters(prev => ({
             ...prev,
-            status: prev.status === status ? undefined : status, 
+            status: prev.status === status ? undefined : status,
         }));
     };
 
@@ -77,25 +87,44 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
                         </>
                     )}
 
-                    <Text style={styles.label}>Criado Após:</Text>
-                    <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickerFor('createdAtAfter')}>
-                        <Text style={styles.dateText}>{formatDate(localFilters.createdAtAfter)}</Text>
-                        <Icon name="calendar-outline" size={24} color="#A9A9A9" />
-                    </TouchableOpacity>
+                    {Platform.OS === 'web' ? (
+                        <>
+                            <DatePickerField
+                                mode="date"
+                                value={localFilters.createdAtAfter || new Date()}
+                                onChange={(date) => handleDateChange('createdAtAfter', date)}
+                                label="Criado Após:"
+                            />
+                            <DatePickerField
+                                mode="date"
+                                value={localFilters.createdAtBefore || new Date()}
+                                onChange={(date) => handleDateChange('createdAtBefore', date)}
+                                label="Criado Antes de:"
+                            />
+                        </>
+                    ) : (
+                        <>
+                            <Text style={styles.label}>Criado Após:</Text>
+                            <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickerFor('createdAtAfter')}>
+                                <Text style={styles.dateText}>{formatDate(localFilters.createdAtAfter)}</Text>
+                                <Icon name="calendar-outline" size={24} color="#A9A9A9" />
+                            </TouchableOpacity>
 
-                    <Text style={styles.label}>Criado Antes de:</Text>
-                    <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickerFor('createdAtBefore')}>
-                        <Text style={styles.dateText}>{formatDate(localFilters.createdAtBefore)}</Text>
-                        <Icon name="calendar-outline" size={24} color="#A9A9A9" />
-                    </TouchableOpacity>
+                            <Text style={styles.label}>Criado Antes de:</Text>
+                            <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickerFor('createdAtBefore')}>
+                                <Text style={styles.dateText}>{formatDate(localFilters.createdAtBefore)}</Text>
+                                <Icon name="calendar-outline" size={24} color="#A9A9A9" />
+                            </TouchableOpacity>
 
-                    {showPickerFor && (
-                        <DateTimePicker
-                            mode="date"
-                            display="default"
-                            value={localFilters[showPickerFor] || new Date()}
-                            onChange={onDateChange}
-                        />
+                            {showPickerFor && (
+                                <DateTimePicker
+                                    mode="date"
+                                    display="default"
+                                    value={localFilters[showPickerFor] || new Date()}
+                                    onChange={onDateChangeMobile}
+                                />
+                            )}
+                        </>
                     )}
 
                     <View style={styles.buttonContainer}>

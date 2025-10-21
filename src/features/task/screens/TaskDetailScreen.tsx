@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 import { RootStackParamList } from '../../../types/navigation';
 import { Header } from '../../../components/common/Header';
@@ -17,6 +16,7 @@ import { SelectTaskMembersModal } from '../components/SelectTaskMembersModal';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import TimeAgo from '../../../components/TimeAgo';
 import { ProjectMember, projectService } from '../../project/services/projectService';
+import { DatePickerField } from '../../../components/common/DatePickerField';
 
 import { useAppContext } from '../../../contexts/AppContext';
 import { taskService, TaskDetailsApiResponse, formatDateTimeWithOffset, TaskAssignmentRequest } from '../services/taskService';
@@ -69,7 +69,6 @@ export const TaskDetailScreen = () => {
     const [memberToRemove, setMemberToRemove] = useState<TaskMember | null>(null);
     const [isAssignmentsExpanded, setAssignmentsExpanded] = useState(true);
     const [date, setDate] = useState(new Date());
-    const [showDatePicker, setShowDatePicker] = useState(false);
     const [isConfirmLeaveVisible, setConfirmLeaveVisible] = useState(false);
     const [isLeavingOrDeleting, setIsLeavingOrDeleting] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -138,38 +137,16 @@ export const TaskDetailScreen = () => {
     }, [fetchData]);
 
 
-    const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
-        setShowDatePicker(Platform.OS === 'ios'); // Mantém aberto no iOS até confirmação
-        if (event.type === 'set' && selectedDate) {
-            const newDate = selectedDate;
-            // Combina a data selecionada com a hora existente da tarefa para evitar resetar a hora
-            const currentTime = task ? new Date(task.dueDate) : new Date();
-            newDate.setHours(currentTime.getHours());
-            newDate.setMinutes(currentTime.getMinutes());
-            newDate.setSeconds(currentTime.getSeconds());
+    const handleDateChange = (newDate: Date) => {
+        // Combina a data selecionada com a hora existente da tarefa para evitar resetar a hora
+        const currentTime = task ? new Date(task.dueDate) : new Date();
+        newDate.setHours(currentTime.getHours());
+        newDate.setMinutes(currentTime.getMinutes());
+        newDate.setSeconds(currentTime.getSeconds());
 
-            setDate(newDate); // Atualiza o estado local da data
-            if (Platform.OS !== 'ios') { // No Android, atualiza imediatamente
-                 updateTaskDueDate(newDate);
-            }
-        } else if (event.type !== 'set' && Platform.OS !== 'ios') {
-             // Se cancelou no Android (ou outro OS), reseta para a data original
-             if (task) setDate(new Date(task.dueDate));
-        }
-        // No iOS, a confirmação/cancelamento é feita pelos botões
+        setDate(newDate); // Atualiza o estado local da data
+        updateTaskDueDate(newDate); // Atualiza no backend
     };
-
-    // Função de confirmação para iOS DatePicker
-    const confirmIOSDate = () => {
-        setShowDatePicker(false);
-        updateTaskDueDate(date); // Atualiza com a data/hora selecionada (estado 'date')
-    };
-
-    // Função para cancelar no iOS DatePicker
-    const cancelIOSDate = () => {
-        setShowDatePicker(false);
-        if (task) setDate(new Date(task.dueDate)); // Reseta para a data original
-    }
 
     const updateTaskDueDate = async (newDate: Date) => {
         if (!task || !canEditTask) return; // Verifica permissão
@@ -416,23 +393,38 @@ export const TaskDetailScreen = () => {
                     </View>
 
                     {/* Caixa de Prazo (Editável se tiver permissão) */}
-                    <TouchableOpacity
-                        style={styles.infoBox}
-                        onPress={() => !isUpdating && canEditTask && setShowDatePicker(true)} // Abre picker se puder editar
-                        disabled={isUpdating || !canEditTask} // Desabilita se atualizando ou sem permissão
-                    >
+                    <View style={styles.infoBox}>
                         <View style={styles.labelContainer}>
                             <Text style={styles.infoLabel}>Prazo</Text>
-                            {/* Mostra "(editar)" apenas se puder editar */}
                             {canEditTask && <Text style={styles.editText}>(editar)</Text>}
                         </View>
                         <View style={styles.dueDateContainer}>
-                            <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>
-                                {new Date(task.dueDate).toLocaleDateString('pt-BR')} {/* Mostra apenas data */}
-                            </Text>
+                            {canEditTask ? (
+                                <DatePickerField
+                                    mode="date"
+                                    value={date}
+                                    onChange={handleDateChange}
+                                    disabled={isUpdating}
+                                    editable={canEditTask}
+                                    isOverdue={isOverdue}
+                                    inline={true}
+                                    webInputStyle={{
+                                        width: '100%',
+                                        padding: '8px',
+                                        backgroundColor: 'transparent',
+                                        border: 'none',
+                                        fontSize: '16px',
+                                        fontWeight: 'bold',
+                                    }}
+                                />
+                            ) : (
+                                <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>
+                                    {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                                </Text>
+                            )}
                             {isOverdue && <Icon name="warning" size={16} color="#ff4545" style={styles.warningIcon} />}
                         </View>
-                    </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Seção Status (Editável se tiver permissão) */}
@@ -482,27 +474,6 @@ export const TaskDetailScreen = () => {
                     )}
                 </View>
 
-                {/* DateTimePicker (renderização condicional) */}
-                 {showDatePicker && (
-                    <DateTimePicker
-                        mode="date" // Modo data
-                        display="default"
-                        value={date} // Usa o estado 'date'
-                        onChange={handleDateChange}
-                        // minimumDate={new Date()} // Opcional: restringir datas passadas
-                    />
-                )}
-                {/* Botões de confirmação/cancelamento para iOS */}
-                {showDatePicker && Platform.OS === 'ios' && (
-                    <View style={styles.iosPickerButtons}>
-                        <TouchableOpacity style={styles.iosPickerButton} onPress={cancelIOSDate}>
-                            <Text style={styles.iosPickerButtonText}>Cancelar</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.iosPickerButton, styles.iosPickerButtonConfirm]} onPress={confirmIOSDate}>
-                            <Text style={styles.iosPickerButtonText}>Confirmar</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
             </ScrollView>
 
             {/* --- MODAIS --- */}
@@ -618,8 +589,4 @@ const styles = StyleSheet.create({
     addMemberRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, paddingLeft: 4, opacity: 1 },
     addMemberText: { color: '#EB5F1C', fontSize: 16, fontWeight: 'bold', marginLeft: 12, },
     addMemberTextDisabled: { color: '#555'},
-    iosPickerButtons: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#3C3C3C', padding: 10, borderTopWidth: 1, borderColor: '#555' },
-    iosPickerButton: { paddingHorizontal: 20, paddingVertical: 10 },
-    iosPickerButtonConfirm: { backgroundColor: '#EB5F1C', borderRadius: 8 },
-    iosPickerButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
 });
