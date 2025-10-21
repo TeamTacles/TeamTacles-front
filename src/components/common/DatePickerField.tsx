@@ -112,13 +112,14 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
         const inputElement = mode === 'date' ? (
             <input
                 type="date"
-                value={value.toISOString().split('T')[0]}
+                value={`${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`}
                 onChange={(e) => {
-                    const newDate = new Date(e.target.value + 'T00:00:00');
+                    const [year, month, day] = e.target.value.split('-').map(Number);
+                    const newDate = new Date(year, month - 1, day, 0, 0, 0, 0);
                     onChange(newDate);
                 }}
                 disabled={disabled || !editable}
-                min={minDate ? minDate.toISOString().split('T')[0] : undefined}
+                min={minDate ? `${minDate.getFullYear()}-${String(minDate.getMonth() + 1).padStart(2, '0')}-${String(minDate.getDate()).padStart(2, '0')}` : undefined}
                 className="date-input-custom"
                 style={{
                     width: '100%',
@@ -144,9 +145,9 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
                 type="time"
                 value={`${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`}
                 onChange={(e) => {
-                    const [hours, minutes] = e.target.value.split(':');
+                    const [hours, minutes] = e.target.value.split(':').map(Number);
                     const newTime = new Date(value);
-                    newTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+                    newTime.setHours(hours, minutes, 0, 0);
                     onChange(newTime);
                 }}
                 disabled={disabled || !editable}
@@ -189,7 +190,22 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
     // Renderização para MOBILE
     return (
         <>
-            {!inline && (
+            {inline ? (
+                // Modo inline: Renderiza apenas texto clicável (SEM box ao redor)
+                <Pressable
+                    onPress={() => editable && !disabled && setShowPicker(true)}
+                    disabled={!editable || disabled}
+                >
+                    <Text style={[
+                        styles.inlineClickableText,
+                        isOverdue && styles.overdueText,
+                        (!editable || disabled) && styles.disabledText
+                    ]}>
+                        {formatValue()}
+                    </Text>
+                </Pressable>
+            ) : (
+                // Modo normal: Renderiza com label e box
                 <Pressable onPress={() => editable && !disabled && setShowPicker(true)}>
                     <View pointerEvents="none">
                         <Text style={styles.label}>{label}</Text>
@@ -249,6 +265,14 @@ const styles = StyleSheet.create({
     mobileInputText: {
         color: '#FFFFFF',
         fontSize: 16,
+    },
+    inlineClickableText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    disabledText: {
+        opacity: 0.5,
     },
     overdueText: {
         color: '#ff4545',
