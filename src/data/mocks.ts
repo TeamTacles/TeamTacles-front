@@ -20,6 +20,8 @@ export const MOCK_TEAMS: Team[] = [
             { name: 'Luana Marques', initials: 'LM' }
         ],
         createdAt: new Date('2025-08-15T10:00:00Z'),
+        memberCount: 5,
+        memberNames: ['Caio Dib', 'João Victor', 'Ana Mello', 'Túlio Santos', 'Luana Marques']
     },
     {
         id: '2',
@@ -31,6 +33,8 @@ export const MOCK_TEAMS: Team[] = [
             { name: 'Felipe Garcia', initials: 'FG' }
         ],
         createdAt: new Date('2025-09-20T11:30:00Z'),
+        memberCount: 3,
+        memberNames: ['Pedro Ramos', 'Sofia Costa', 'Felipe Garcia']
     },
     {
         id: '3',
@@ -41,6 +45,8 @@ export const MOCK_TEAMS: Team[] = [
             { name: 'Daniel Almeida', initials: 'DA' }
         ],
         createdAt: new Date('2025-10-01T15:00:00Z'),
+        memberCount: 2,
+        memberNames: ['Mariana Costa', 'Daniel Almeida']
     }
 ];
 
@@ -57,7 +63,9 @@ export const MOCK_USER_TEAMS: Team[] = [
             { name: 'João Victor', initials: 'JV' },
             { name: 'Ana Mello', initials: 'AM' }
         ],
-        createdAt: new Date()
+        createdAt: new Date(),
+        memberCount: 3,
+        memberNames: ['Caio Dib', 'João Victor', 'Ana Mello']
     },
     {
         id: '2',
@@ -67,7 +75,9 @@ export const MOCK_USER_TEAMS: Team[] = [
             { name: 'Pedro Ramos', initials: 'PR' },
             { name: 'Sofia Costa', initials: 'SC' }
         ],
-        createdAt: new Date()
+        createdAt: new Date(),
+        memberCount: 2,
+        memberNames: ['Pedro Ramos', 'Sofia Costa']
     },
 ];
 
@@ -113,6 +123,7 @@ export const MOCK_INITIAL_TASKS: ProjectTask[] = [
         status: 'IN_PROGRESS',
         dueDate: '2025-06-26T00:00:00Z',
         ownerId: 1,
+        projectId: 999,
         assignments: [
             { userId: 1, username: 'Caio Dib' },
             { userId: 4, username: 'Ana M.' }
@@ -125,6 +136,7 @@ export const MOCK_INITIAL_TASKS: ProjectTask[] = [
         status: 'TO_DO',
         dueDate: '2025-05-28T00:00:00Z',
         ownerId: 2,
+        projectId: 999,
         assignments: [
             { userId: 2, username: 'Pedro L.' },
             { userId: 3, username: 'João S.' }
@@ -137,6 +149,7 @@ export const MOCK_INITIAL_TASKS: ProjectTask[] = [
         status: 'DONE',
         dueDate: '2025-05-20T00:00:00Z',
         ownerId: 1,
+        projectId: 999,
         assignments: [
             { userId: 1, username: 'Caio Dib' },
             { userId: 2, username: 'Pedro L.' }
@@ -149,6 +162,7 @@ export const MOCK_INITIAL_TASKS: ProjectTask[] = [
         status: 'TO_DO',
         dueDate: '2020-01-01T00:00:00Z',
         ownerId: 1,
+        projectId: 999,
         assignments: [
             { userId: 1, username: 'Caio Dib' }
         ]
@@ -160,6 +174,7 @@ export const MOCK_INITIAL_TASKS: ProjectTask[] = [
         status: 'TO_DO',
         dueDate: '2025-12-31T00:00:00Z',
         ownerId: 3,
+        projectId: 999,
         assignments: [
             { userId: 3, username: 'João S.' }
         ]
