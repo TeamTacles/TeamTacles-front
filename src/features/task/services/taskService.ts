@@ -12,13 +12,13 @@ export interface UserTaskApiResponse {
   title: string;
   description: string;
   taskStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
-  dueDate: string; // Vem como string da API (OffsetDateTime)
+  dueDate: string; // ISO 8601 UTC
   project: {
     id: number;
     title: string;
     description?: string; // Opcional, pois pode não vir sempre
   };
-  createdAt?: string; // Adicionar createdAt se a API retornar
+  createdAt?: string; // ISO 8601 UTC
 }
 
 // --- INÍCIO: NOVAS INTERFACES E TIPOS ---
@@ -29,12 +29,12 @@ export interface TaskDetailsApiResponse {
   title: string;
   description: string;
   status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
-  createdAt: string; // OffsetDateTime
-  dueDate: string; // OffsetDateTime
+  createdAt: string; // ISO 8601 UTC
+  dueDate: string; // ISO 8601 UTC
   projectId: number;
   ownerId: number;
-  completionComment?: string; // Adicionado
-  completedAt?: string; // Adicionado OffsetDateTime
+  completionComment?: string;
+  completedAt?: string; // ISO 8601 UTC
   assignments: {
     userId: number;
     username: string;
@@ -54,9 +54,9 @@ export interface TaskUpdateStatusResponse {
     title: string;
     description: string;
     status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
-    createdAt: string; // OffsetDateTime
-    dueDate: string; // OffsetDateTime
-    completedAt?: string; // OffsetDateTime
+    createdAt: string; // ISO 8601 UTC
+    dueDate: string; // ISO 8601 UTC
+    completedAt?: string; // ISO 8601 UTC
     completionComment?: string;
 }
 
@@ -65,7 +65,7 @@ export interface TaskUpdateStatusResponse {
 export interface TaskRequestUpdate {
     title?: string;
     description?: string;
-    dueDate?: string; // Formato ISO 8601 com offset
+    dueDate?: string; // Formato ISO 8601 UTC: "YYYY-MM-DDTHH:mm:ss.sssZ"
 }
 
 // Baseado em TaskAssignmentRequestDTO.java (POST /assignments)
@@ -89,8 +89,8 @@ export interface TaskCreateResponse {
   title: string;
   description: string;
   status: 'TO_DO' | 'IN_PROGRESS' | 'DONE'; // Backend retorna "status", não "taskStatus"
-  createdAt: string;
-  dueDate: string;
+  createdAt: string; // ISO 8601 UTC
+  dueDate: string; // ISO 8601 UTC
   projectId: number;
   ownerId: number;
   assignments: {
@@ -104,7 +104,7 @@ export interface TaskCreateResponse {
 export interface CreateTaskRequest {
   title: string;
   description: string;
-  dueDate: string; // Formato ISO 8601 com offset: "YYYY-MM-DDTHH:mm:ss±HH:mm"
+  dueDate: string; // Formato ISO 8601 UTC: "YYYY-MM-DDTHH:mm:ss.sssZ"
 }
 
 
@@ -112,32 +112,6 @@ export interface CreateTaskRequest {
 const formatDateForApi = (date: Date | undefined): string | undefined => {
   if (!date) return undefined;
   return date.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-};
-
-// Função auxiliar para formatar data/hora com offset timezone (ISO 8601 completo)
-// Retorna formato: "YYYY-MM-DDTHH:mm:ss±HH:mm"
-// Exemplo: "2025-09-25T18:00:00-03:00"
-export const formatDateTimeWithOffset = (date: Date): string => {
-  // Obtém o offset do timezone em minutos
-  const offsetMinutes = date.getTimezoneOffset();
-
-  // Converte o offset para horas e minutos (com sinal invertido)
-  const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
-  const offsetMins = Math.abs(offsetMinutes) % 60;
-  const offsetSign = offsetMinutes <= 0 ? '+' : '-'; // Inverte sinal porque getTimezoneOffset retorna invertido
-
-  // Formata o offset: ±HH:mm
-  const offsetString = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
-
-  // Formata a data e hora: YYYY-MM-DDTHH:mm:ss
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-
-  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetString}`;
 };
 
 // Função para buscar as tarefas do usuário com filtros e paginação

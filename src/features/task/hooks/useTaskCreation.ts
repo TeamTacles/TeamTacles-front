@@ -1,6 +1,6 @@
 // src/features/task/hooks/useTaskCreation.ts
 import { useState } from 'react';
-import { taskService, formatDateTimeWithOffset, TaskCreateResponse, TaskAssignmentRequest } from '../services/taskService';
+import { taskService, TaskCreateResponse, TaskAssignmentRequest } from '../services/taskService';
 import { ProjectTask } from '../../project/services/projectService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { getErrorMessage } from '../../../utils/errorHandler';
@@ -63,8 +63,8 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
     try {
       setCreatingTask(true);
 
-      // Formata a data/hora com offset timezone (formato ISO 8601 completo)
-      const formattedDueDate = formatDateTimeWithOffset(newTaskData.dueDate);
+      // Formata a data/hora para ISO 8601 UTC (formato padrão: "YYYY-MM-DDTHH:mm:ss.sssZ")
+      const formattedDueDate = newTaskData.dueDate.toISOString();
 
       // Chama a API para criar a task
       const newTaskResponse = await taskService.createTask(projectId, {

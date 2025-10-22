@@ -19,7 +19,7 @@ import { ProjectMember, projectService } from '../../project/services/projectSer
 import { DatePickerField } from '../../../components/common/DatePickerField';
 
 import { useAppContext } from '../../../contexts/AppContext';
-import { taskService, TaskDetailsApiResponse, formatDateTimeWithOffset, TaskAssignmentRequest } from '../services/taskService';
+import { taskService, TaskDetailsApiResponse, TaskAssignmentRequest } from '../services/taskService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { getInitialsFromName } from '../../../utils/stringUtils';
 
@@ -152,7 +152,8 @@ export const TaskDetailScreen = () => {
         if (!task || !canEditTask) return; // Verifica permissão
         setIsUpdating(true);
         try {
-            const formattedDueDate = formatDateTimeWithOffset(newDate); // Garante formato correto
+            // Converte para ISO 8601 UTC (formato padrão: "YYYY-MM-DDTHH:mm:ss.sssZ")
+            const formattedDueDate = newDate.toISOString();
             const updatedTask = await taskService.updateTaskDetails(projectId, taskId, { dueDate: formattedDueDate });
             setTask(updatedTask); // Atualiza estado com resposta da API
             setDate(new Date(updatedTask.dueDate)); // Sincroniza estado do picker
