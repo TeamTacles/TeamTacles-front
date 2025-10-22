@@ -350,7 +350,7 @@ export const ProjectDetailScreen = () => {
             <SelectTaskMembersModal
                 visible={isSelectMembersModalVisible}
                 onClose={handleCloseSelectMembersModal}
-                projectMembers={members}
+                projectMembers={members.filter(m => m.userId !== user?.id)}
                 onSave={handleFinalizeTaskCreation}
                 isSaving={isCreatingTask}
             />
