@@ -1,6 +1,6 @@
 // src/features/task/hooks/useTaskCreation.ts
 import { useState } from 'react';
-import { taskService, formatDateTimeWithOffset, TaskCreateResponse } from '../services/taskService';
+import { taskService, formatDateTimeWithOffset, TaskCreateResponse, TaskAssignmentRequest } from '../services/taskService';
 import { ProjectTask } from '../../project/services/projectService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { getErrorMessage } from '../../../utils/errorHandler';
@@ -73,8 +73,30 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
         dueDate: formattedDueDate,
       });
 
+      // Se houver membros selecionados, atribui-os à task
+      let finalTaskResponse = newTaskResponse;
+      if (selectedMemberIds.length > 0) {
+        const assignmentsPayload: TaskAssignmentRequest[] = selectedMemberIds.map(id => ({
+          userId: id,
+          taskRole: 'ASSIGNEE',
+        }));
+
+        // Chama a API para atribuir membros e obtém a task atualizada
+        const updatedTaskResponse = await taskService.assignUsersToTask(
+          projectId,
+          newTaskResponse.id,
+          assignmentsPayload
+        );
+
+        // Usa a resposta atualizada que inclui os membros atribuídos
+        finalTaskResponse = {
+          ...newTaskResponse,
+          assignments: updatedTaskResponse.assignments,
+        };
+      }
+
       // Converte a resposta do backend para o formato ProjectTask (usado na UI)
-      const newTask = convertToProjectTask(newTaskResponse);
+      const newTask = convertToProjectTask(finalTaskResponse);
 
       // Callback para adicionar a task na lista (componente pai)
       onTaskCreated(newTask);

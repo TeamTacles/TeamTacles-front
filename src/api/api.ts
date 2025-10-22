@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // Caio
-const baseURL = 'http://192.168.15.14:8080/api'; // caro dev, para fim de testes, altere este IP para o IP da sua máquina local (CMD > ipconfig)
+const baseURL = 'http://192.168.0.137:8080/api'; // caro dev, para fim de testes, altere este IP para o IP da sua máquina local (CMD > ipconfig)
 
 // Pedro
 //const baseURL = 'http://192.168.15.35:8080/api'; // caro dev, para fim de testes, altere este IP para o IP da sua máquina local (CMD > ipconfig)

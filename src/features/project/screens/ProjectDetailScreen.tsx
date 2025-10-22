@@ -350,8 +350,9 @@ export const ProjectDetailScreen = () => {
             <SelectTaskMembersModal
                 visible={isSelectMembersModalVisible}
                 onClose={handleCloseSelectMembersModal}
-                projectMembers={members.filter(pm => !projectTasks.some(t => t.assignments.some(a => a.userId === pm.userId)))}
+                projectMembers={members}
                 onSave={handleFinalizeTaskCreation}
+                isSaving={isCreatingTask}
             />
 
             <InviteMemberModal
