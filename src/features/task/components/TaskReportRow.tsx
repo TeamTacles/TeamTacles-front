@@ -1,44 +1,70 @@
-// src/components/TaskReportRow.tsx
+// src/features/task/components/TaskReportRow.tsx
 
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { getInitialsFromName } from '../../../utils/stringUtils';
 
+interface TaskAssignment {
+    userId: number;
+    username: string;
+}
+
 interface Task {
-  title: string;
-  projectName: string;
-  assignments: { username: string }[];
-  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
-  dueDate: string;
+    id: number;
+    title: string;
+    description: string;
+    status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+    dueDate: string; // ISO 8601 string
+    assignments: TaskAssignment[];
 }
 
 interface TaskReportRowProps {
-  task: Task;
+    task: Task;
 }
 
 const statusConfig = {
     DONE: { label: 'Concluído', color: '#3CB371' },
     IN_PROGRESS: { label: 'Em andamento', color: '#FFD700' },
-    TO_DO: { label: 'A Fazer', color: '#ff4545' },
+    TO_DO: { label: 'A Fazer', color: '#FFA500' },
 };
 
 export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
-    const responsible = task.assignments[0]?.username || 'N/A';
-    const initials = getInitialsFromName(responsible);
+    // Pega o primeiro responsável ou mostra "N/A"
+    const responsible = task.assignments && task.assignments.length > 0
+        ? task.assignments[0].username
+        : 'N/A';
+    
+    const initials = responsible !== 'N/A' ? getInitialsFromName(responsible) : '?';
     const statusInfo = statusConfig[task.status] || { label: 'Desconhecido', color: '#A9A9A9' };
+
+    // Formata a data
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        } catch {
+            return 'Data inválida';
+        }
+    };
 
     return (
         <View style={styles.row}>
-            <Text style={[styles.col, styles.colTask]} numberOfLines={1}>{task.title}</Text>
-            <Text style={[styles.col, styles.colProject]} numberOfLines={1}>{task.projectName}</Text>
-            
+            {/* Coluna: Tarefa */}
+            <Text style={[styles.col, styles.colTask]} numberOfLines={2}>
+                {task.title}
+            </Text>
+
+            {/* Coluna: Responsável */}
             <View style={[styles.col, styles.colResponsible]}>
                 <View style={styles.avatar}>
                     <Text style={styles.avatarText}>{initials}</Text>
                 </View>
-                <Text style={styles.responsibleName} numberOfLines={1}>{responsible}</Text>
+                <Text style={styles.responsibleName} numberOfLines={1}>
+                    {responsible}
+                </Text>
             </View>
 
+            {/* Coluna: Status */}
             <View style={[styles.col, styles.colStatus]}>
                 <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
                 <Text style={[styles.statusText, { color: statusInfo.color }]} numberOfLines={1}>
@@ -46,8 +72,9 @@ export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
                 </Text>
             </View>
 
+            {/* Coluna: Prazo */}
             <Text style={[styles.col, styles.colDueDate]} numberOfLines={1}>
-                {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                {formatDate(task.dueDate)}
             </Text>
         </View>
     );
@@ -56,45 +83,42 @@ export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
 const styles = StyleSheet.create({
     row: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        paddingVertical: 14, // Reduzido
+        alignItems: 'center',
+        paddingVertical: 14,
         borderBottomWidth: 1,
         borderBottomColor: '#3C3C3C',
+        minHeight: 50,
     },
     col: {
         color: '#E0E0E0',
-        fontSize: 13, // Reduzido
+        fontSize: 13,
         paddingHorizontal: 4,
     },
     colTask: {
-        flex: 2.8, // Ajustado
+        flex: 3,
         fontWeight: 'bold',
-        fontSize: 7,
-    },
-    colProject: {
-        flex: 2, // Ajustado
-        fontSize: 7,
+        fontSize: 12,
     },
     colResponsible: {
-        flex: 2.5, // Ajustado
+        flex: 2.5,
         flexDirection: 'row',
         alignItems: 'center',
-        fontSize: 7,
+        fontSize: 11,
     },
     colStatus: {
-        flex: 2.2, // Ajustado
+        flex: 2.2,
         flexDirection: 'row',
         alignItems: 'center',
-        fontSize: 7,
+        fontSize: 11,
     },
     colDueDate: {
-        flex: 1.8, // Ajustado
+        flex: 1.8,
         textAlign: 'right',
-        fontSize: 7,
+        fontSize: 11,
     },
     avatar: {
-        width: 10, // Reduzido
-        height: 10, // Reduzido
+        width: 24,
+        height: 24,
         borderRadius: 12,
         backgroundColor: '#555',
         justifyContent: 'center',
@@ -104,20 +128,21 @@ const styles = StyleSheet.create({
     avatarText: {
         color: '#fff',
         fontWeight: 'bold',
-        fontSize: 4, // Reduzido
+        fontSize: 10,
     },
     responsibleName: {
         color: '#E0E0E0',
-        fontSize: 7, // Reduzido
+        fontSize: 11,
         flex: 1,
     },
     statusDot: {
-        width: 8, // Reduzido
-        height: 8, // Reduzido
+        width: 8,
+        height: 8,
         borderRadius: 4,
         marginRight: 5,
     },
     statusText: {
-        fontSize: 7, // Reduzido
+        fontSize: 11,
+        fontWeight: '600',
     },
 });

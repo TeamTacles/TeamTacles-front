@@ -32,6 +32,12 @@ export interface Project {
   taskCount: number; // <-- Adicionado
 }
 
+export interface TaskAssignment {
+  userId: number;
+  username: string;
+  // Add other assignment details if needed (e.g., taskRole)
+}
+
 /**
  * Representa uma tarefa baseada em TaskResponseDTO
  */
@@ -44,6 +50,7 @@ export interface Task {
   projectName: string; // Campo de conveniência para o front-end
   status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
   createdAt: number; // OffsetDateTime vira timestamp
+  assignments: TaskAssignment[]; // <-- ADD THIS LINE (make it required)
 }
 
 /**
