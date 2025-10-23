@@ -48,7 +48,7 @@ export const ProjectTaskCard = ({ task, onPress }: ProjectTaskCardProps) => {
                     <View style={styles.dueDateContainer}>
                         <Icon name="calendar-outline" size={14} color={isOverdue ? '#ff4545' : '#A9A9A9'} />
                         <Text style={[styles.footerText, isOverdue && styles.overdueText]}>
-                            {new Date(dueDate).toLocaleDateString('pt-BR')}
+                            {new Date(dueDate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </Text>
                     </View>
                     <View style={styles.assigneesContainer}>

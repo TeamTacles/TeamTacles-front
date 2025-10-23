@@ -420,7 +420,7 @@ export const TaskDetailScreen = () => {
                                 />
                             ) : (
                                 <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>
-                                    {new Date(task.dueDate).toLocaleDateString('pt-BR')}
+                                    {new Date(task.dueDate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </Text>
                             )}
                             {isOverdue && <Icon name="warning" size={16} color="#ff4545" style={styles.warningIcon} />}
