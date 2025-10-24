@@ -11,12 +11,12 @@ import { RootStackParamList } from '../../../types/navigation';
 import { Header } from '../../../components/common/Header';
 import { FilterPicker } from '../components/FilterPicker';
 import { EditTaskModal } from '../components/EditTaskModal';
+import { EditDeadlineModal } from '../components/EditDeadlineModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { SelectTaskMembersModal } from '../components/SelectTaskMembersModal';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import TimeAgo from '../../../components/TimeAgo';
 import { ProjectMember, projectService } from '../../project/services/projectService';
-import { DatePickerField } from '../../../components/common/DatePickerField';
 
 import { useAppContext } from '../../../contexts/AppContext';
 import { taskService, TaskDetailsApiResponse, TaskAssignmentRequest } from '../services/taskService';
@@ -63,12 +63,12 @@ export const TaskDetailScreen = () => {
     const [task, setTask] = useState<TaskDetailsApiResponse | null>(null);
     const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
     const [isEditModalVisible, setEditModalVisible] = useState(false);
+    const [isEditDeadlineModalVisible, setEditDeadlineModalVisible] = useState(false);
     const [isConfirmRemoveVisible, setConfirmRemoveVisible] = useState(false);
     const [isConfirmDeleteTaskVisible, setConfirmDeleteTaskVisible] = useState(false);
     const [isAssignModalVisible, setAssignModalVisible] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState<TaskMember | null>(null);
     const [isAssignmentsExpanded, setAssignmentsExpanded] = useState(true);
-    const [date, setDate] = useState(new Date());
     const [isConfirmLeaveVisible, setConfirmLeaveVisible] = useState(false);
     const [isLeavingOrDeleting, setIsLeavingOrDeleting] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -120,7 +120,6 @@ export const TaskDetailScreen = () => {
                 projectService.getProjectMembers(projectId, 0, 100) // Busca mais membros para o modal
             ]);
             setTask(taskData);
-            setDate(new Date(taskData.dueDate)); // Inicializa a data do picker com a data atual da tarefa
             setProjectMembers(membersResponse.content);
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: 'Erro ao carregar dados da tarefa.' });
@@ -137,18 +136,7 @@ export const TaskDetailScreen = () => {
     }, [fetchData]);
 
 
-    const handleDateChange = (newDate: Date) => {
-        // Combina a data selecionada com a hora existente da tarefa para evitar resetar a hora
-        const currentTime = task ? new Date(task.dueDate) : new Date();
-        newDate.setHours(currentTime.getHours());
-        newDate.setMinutes(currentTime.getMinutes());
-        newDate.setSeconds(currentTime.getSeconds());
-
-        setDate(newDate); // Atualiza o estado local da data
-        updateTaskDueDate(newDate); // Atualiza no backend
-    };
-
-    const updateTaskDueDate = async (newDate: Date) => {
+    const handleSaveDeadline = async (newDate: Date) => {
         if (!task || !canEditTask) return; // Verifica permissão
         setIsUpdating(true);
         try {
@@ -156,12 +144,10 @@ export const TaskDetailScreen = () => {
             const formattedDueDate = newDate.toISOString();
             const updatedTask = await taskService.updateTaskDetails(projectId, taskId, { dueDate: formattedDueDate });
             setTask(updatedTask); // Atualiza estado com resposta da API
-            setDate(new Date(updatedTask.dueDate)); // Sincroniza estado do picker
+            setEditDeadlineModalVisible(false); // Fecha o modal
             notificationRef.current?.show({ type: 'success', message: 'Prazo atualizado com sucesso!' });
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
-            // Reverte o estado do picker em caso de erro
-            if (task) setDate(new Date(task.dueDate));
         } finally {
              setIsUpdating(false);
         }
@@ -393,39 +379,27 @@ export const TaskDetailScreen = () => {
                         </Text>
                     </View>
 
-                    {/* Caixa de Prazo (Editável se tiver permissão) */}
-                    <View style={styles.infoBox}>
+                    {/* Caixa de Prazo (Clicável se tiver permissão) */}
+                    <TouchableOpacity
+                        style={styles.infoBox}
+                        onPress={() => canEditTask && !isUpdating && setEditDeadlineModalVisible(true)}
+                        disabled={!canEditTask || isUpdating}
+                        activeOpacity={canEditTask ? 0.7 : 1}
+                    >
                         <View style={styles.labelContainer}>
                             <Text style={styles.infoLabel}>Prazo</Text>
                             {canEditTask && <Text style={styles.editText}>(editar)</Text>}
                         </View>
+                        <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>
+                            {new Date(task.dueDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        </Text>
                         <View style={styles.dueDateContainer}>
-                            {canEditTask ? (
-                                <DatePickerField
-                                    mode="date"
-                                    value={date}
-                                    onChange={handleDateChange}
-                                    disabled={isUpdating}
-                                    editable={canEditTask}
-                                    isOverdue={isOverdue}
-                                    inline={true}
-                                    webInputStyle={{
-                                        width: '100%',
-                                        padding: '8px',
-                                        backgroundColor: 'transparent',
-                                        border: 'none',
-                                        fontSize: '16px',
-                                        fontWeight: 'bold',
-                                    }}
-                                />
-                            ) : (
-                                <Text style={[styles.infoValue, isOverdue && styles.overdueText]}>
-                                    {new Date(task.dueDate).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                </Text>
-                            )}
+                            <Text style={[styles.infoTimeValue, isOverdue && styles.overdueText]}>
+                                às {new Date(task.dueDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </Text>
                             {isOverdue && <Icon name="warning" size={16} color="#ff4545" style={styles.warningIcon} />}
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Seção Status (Editável se tiver permissão) */}
@@ -488,6 +462,16 @@ export const TaskDetailScreen = () => {
                 // Passa a função para abrir o modal de confirmação de exclusão
                 onDelete={() => setConfirmDeleteTaskVisible(true)}
                 isSaving={isUpdating} // Passa estado de loading
+            />
+
+            {/* Modal Editar Prazo (Data/Hora) */}
+            <EditDeadlineModal
+                visible={isEditDeadlineModalVisible}
+                currentDate={task ? new Date(task.dueDate) : new Date()}
+                onClose={() => setEditDeadlineModalVisible(false)}
+                onSave={handleSaveDeadline}
+                isSaving={isUpdating}
+                isOverdue={isOverdue}
             />
 
             {/* Modal Selecionar Membros (controlado por canAddAssignee indiretamente) */}
@@ -576,6 +560,7 @@ const styles = StyleSheet.create({
     labelContainer: { flexDirection: 'row', alignItems: 'center' },
     editText: { color: '#A9A9A9', fontSize: 12, marginLeft: 4, fontStyle: 'italic' },
     infoValue: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+    infoTimeValue: { color: '#A9A9A9', fontSize: 14, marginTop: 4 },
     overdueText: { color: '#ff4545' },
     dueDateContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     warningIcon: { marginLeft: 8 },
