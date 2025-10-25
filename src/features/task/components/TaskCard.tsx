@@ -13,17 +13,16 @@ interface TaskCardProps {
 
 export const TaskCard = ({ task, onPress }: TaskCardProps) => {
     const { title, projectName, dueDate, status } = task;
-    const isOverdue = new Date(dueDate) < new Date() && status !== 'DONE';
+    const isOverdue = status === 'OVERDUE';
 
     const getStatusInfo = () => {
-        if (isOverdue) {
-            return {
-                label: 'Atrasado',
-                containerStyle: styles.statusOverdue,
-                textStyle: styles.statusTextOverdue,
-            };
-        }
         switch (status) {
+            case 'OVERDUE':
+                return {
+                    label: 'Atrasado',
+                    containerStyle: styles.statusOverdue,
+                    textStyle: styles.statusTextOverdue,
+                };
             case 'IN_PROGRESS':
                 return {
                     label: 'Em Andamento',

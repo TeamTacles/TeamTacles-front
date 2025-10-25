@@ -28,7 +28,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 // --- TIPOS ---
-type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
 type TaskMember = TaskDetailsApiResponse['assignments'][0];
 
 type TaskDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -88,13 +88,16 @@ export const TaskDetailScreen = () => {
                 return baseStatusItems.filter(item => item.value === 'IN_PROGRESS' || item.value === 'DONE');
             case 'DONE':
                 return baseStatusItems.filter(item => item.value === 'DONE');
+            case 'OVERDUE':
+                // Tarefa atrasada pode ser movida para Em Andamento ou Concluído
+                return baseStatusItems.filter(item => item.value === 'IN_PROGRESS' || item.value === 'DONE');
             default:
                 return baseStatusItems;
         }
     };
 
     // --- INÍCIO DA ALTERAÇÃO: Lógica de Permissão ---
-    const isOverdue = task ? new Date(task.dueDate) < new Date() && task.status !== 'DONE' : false;
+    const isOverdue = task?.status === 'OVERDUE';
     const isTaskOwner = task?.ownerId === user?.id;
     // Verifica se o usuário tem role privilegiada no PROJETO
     const isAdminOrOwnerOfProject = projectRole === 'ADMIN' || projectRole === 'OWNER';
@@ -160,6 +163,12 @@ export const TaskDetailScreen = () => {
         if (!task || task.status === newStatus || !canChangeStatus) return;
         // --- FIM DA ALTERAÇÃO ---
 
+        // Validação: usuário não pode definir status como OVERDUE manualmente
+        if (newStatus === 'OVERDUE') {
+            notificationRef.current?.show({ type: 'error', message: 'O status "Atrasado" é definido automaticamente pelo sistema.' });
+            return;
+        }
+
         // Manter as validações de transição
         if (task.status === 'IN_PROGRESS' && newStatus === 'TO_DO') {
             notificationRef.current?.show({ type: 'error', message: 'Não é possível voltar o status de "Em Andamento" para "A Fazer".' });
@@ -171,7 +180,7 @@ export const TaskDetailScreen = () => {
         }
         setIsUpdating(true); // Ativa loading específico para status
         try {
-            const updatedTask = await taskService.updateTaskStatus(projectId, taskId, { newStatus });
+            const updatedTask = await taskService.updateTaskStatus(projectId, taskId, { newStatus: newStatus as 'TO_DO' | 'IN_PROGRESS' | 'DONE' });
             // Atualiza o estado local da tarefa com a resposta da API
             setTask(prev => prev ? { ...prev, status: updatedTask.status, completedAt: updatedTask.completedAt, completionComment: updatedTask.completionComment } : null);
             notificationRef.current?.show({ type: 'success', message: 'Status Atualizado!' });

@@ -28,7 +28,7 @@ export interface ProjectTask {
   id: number;
   title: string;
   description: string;
-  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE'; // Renomeado de taskStatus para status
+  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE'; // Renomeado de taskStatus para status
   dueDate: string; // A API retorna OffsetDateTime, que chegará como string
   ownerId: number;
   assignments: {

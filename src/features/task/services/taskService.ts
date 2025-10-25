@@ -28,7 +28,7 @@ export interface TaskDetailsApiResponse {
   id: number;
   title: string;
   description: string;
-  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
   createdAt: string; // ISO 8601 UTC
   dueDate: string; // ISO 8601 UTC
   projectId: number;

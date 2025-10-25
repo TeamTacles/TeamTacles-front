@@ -104,7 +104,7 @@ export const ProjectDetailScreen = () => {
         let currentTasks = [...projectTasks];
         if (sortOption === 'DEFAULT') return currentTasks;
         if (sortOption === 'OVERDUE') {
-            return currentTasks.filter(task => new Date(task.dueDate) < new Date() && task.status !== 'DONE');
+            return currentTasks.filter(task => task.status === 'OVERDUE');
         }
         return currentTasks.filter(task => task.status === sortOption);
     }, [sortOption, projectTasks]);

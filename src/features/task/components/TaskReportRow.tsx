@@ -13,7 +13,7 @@ interface Task {
     id: number;
     title: string;
     description: string;
-    status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+    status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
     dueDate: string; // ISO 8601 string
     assignments: TaskAssignment[];
 }
@@ -26,6 +26,7 @@ const statusConfig = {
     DONE: { label: 'Concluído', color: '#3CB371' },
     IN_PROGRESS: { label: 'Em andamento', color: '#FFD700' },
     TO_DO: { label: 'A Fazer', color: '#FFA500' },
+    OVERDUE: { label: 'Atrasado', color: '#ff4545' },
 };
 
 export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {

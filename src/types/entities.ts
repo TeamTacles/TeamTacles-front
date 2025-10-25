@@ -48,7 +48,7 @@ export interface Task {
   dueDate: string; // OffsetDateTime vira string
   projectId: number;
   projectName: string; // Campo de conveniência para o front-end
-  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
   createdAt: number; // OffsetDateTime vira timestamp
   assignments: TaskAssignment[]; // <-- ADD THIS LINE (make it required)
 }
