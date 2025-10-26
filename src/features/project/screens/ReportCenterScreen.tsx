@@ -29,7 +29,7 @@ import { TaskFilterReportDTO } from '../../task/services/taskService'; // Tipo d
 // --- ADICIONADO: Importar tipo Task ---
 import { Task } from '../../../types/entities'; // Tipo usado no TaskReportRow
 // --- FIM ADICIONADO ---
-
+import { Text as SvgText } from 'react-native-svg';
 
 type ReportCenterRouteProp = RouteProp<RootStackParamList, 'ReportCenter'>;
 // --- CORREÇÃO: Tipar Navigation ---
@@ -55,6 +55,7 @@ const chartConfig = {
     decimalPlaces: 0, // <-- Garante números inteiros no eixo Y
     propsForLabels: {
         fontSize: 12,
+        fontWeight: 'bold'
     },
 };
 
@@ -348,13 +349,16 @@ export const ReportCenterScreen = () => {
         labels: filteredRanking.map(p => truncateText(p.username, 10)), // Usa filteredRanking
         legend: STACKED_BAR_LEGEND,
         // Mapeia os dados na ordem definida em STATUS_ORDER_KEYS
-        data: filteredRanking.map(p => // Usa filteredRanking
-            STATUS_ORDER_KEYS.map(statusKey => p.statusCounts[statusKey] || 0)
-        ),
+        data: filteredRanking.map(p =>
+            STATUS_ORDER_KEYS.map(statusKey => {
+                const value = p.statusCounts[statusKey] || 0;
+                return value === 0 ? null : value;
+            })
+        ) as unknown as number[][],
         barColors: STACKED_BAR_COLORS,
+        decimalPlaces: 0
     } : null;
     // --- FIM ALTERAÇÃO ---
-
 
     // Cálculo da largura dinâmica do gráfico de barras
     const barChartWidth = barChartData
@@ -490,7 +494,7 @@ export const ReportCenterScreen = () => {
                                 />
                             </View>
                         )}
-
+                        
                         {/* --- ALTERAÇÃO: Gráfico de Barras EMPILHADAS --- */}
                         {barChartData && (
                             <View style={styles.chartContainer}>
@@ -502,15 +506,19 @@ export const ReportCenterScreen = () => {
                                         height={250}
                                         yAxisLabel=""
                                         yAxisSuffix=""
-                                        chartConfig={chartConfig}
+                                        decimalPlaces={0}
+                                        chartConfig={{
+                                            ...chartConfig,
+                                            decimalPlaces: 0,
+                                        }}
                                         fromZero={true}
                                         // --- CORREÇÃO: Remover prop showValuesOnTopOfBars ---
-                                        // showValuesOnTopOfBars={true} // Removido
                                         // --- FIM CORREÇÃO ---
+                                        segments={3}
                                         style={{
                                             marginVertical: 8,
                                             borderRadius: 16,
-                                            marginLeft: -10, // Ajuste para centralizar
+                                            marginLeft: -15, // Ajuste para centralizar
                                         }}
                                         hideLegend={false} // Garante que a legenda seja mostrada
                                     />
