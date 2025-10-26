@@ -8,7 +8,9 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 // --- FIM CORREÇÃO ---
 import Icon from 'react-native-vector-icons/Ionicons';
-import { PieChart, BarChart } from 'react-native-chart-kit';
+// --- ALTERAÇÃO: Importar StackedBarChart ---
+import { PieChart, StackedBarChart } from 'react-native-chart-kit';
+// --- FIM ALTERAÇÃO ---
 import * as Progress from 'react-native-progress';
 
 import { RootStackParamList } from '../../../types/navigation';
@@ -20,7 +22,9 @@ import { useProjectReport } from '../hooks/useProjectReport';
 import { useAppContext } from '../../../contexts/AppContext';
 import { getInitialsFromName } from '../../../utils/stringUtils';
 import { projectService } from '../services/projectService'; // Para buscar nome/membros iniciais
-import { projectReportService } from '../services/projectReportService'; // Para buscar tarefas do relatório
+// --- ALTERAÇÃO: Importar MemberTaskDistributionDTO ---
+import { projectReportService, MemberTaskDistributionDTO } from '../services/projectReportService'; // Para buscar tarefas do relatório E tipo
+// --- FIM ALTERAÇÃO ---
 import { TaskFilterReportDTO } from '../../task/services/taskService'; // Tipo dos filtros
 // --- ADICIONADO: Importar tipo Task ---
 import { Task } from '../../../types/entities'; // Tipo usado no TaskReportRow
@@ -32,8 +36,13 @@ type ReportCenterRouteProp = RouteProp<RootStackParamList, 'ReportCenter'>;
 type ReportCenterNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 // --- FIM CORREÇÃO ---
 
-// Paleta de cores para as barras do gráfico
-const barColorPalette = ['#EB5F1C', '#FFA500', '#FFD700', '#3CB371', '#4682B4'];
+// --- ALTERAÇÃO: Cores para o gráfico de barras empilhadas (ordem específica) ---
+// Ordem: A Fazer, Em Andamento, Concluído, Atrasado
+const STACKED_BAR_COLORS = ['#FFA500', '#FFD700', '#3CB371', '#ff4545'];
+const STACKED_BAR_LEGEND = ['A Fazer', 'Em Andamento', 'Concluído', 'Atrasado'];
+// Ordem das chaves correspondente à legenda e cores
+const STATUS_ORDER_KEYS: (keyof MemberTaskDistributionDTO['statusCounts'])[] = ['TO_DO', 'IN_PROGRESS', 'DONE', 'OVERDUE'];
+// --- FIM ALTERAÇÃO ---
 
 // Configuração dos gráficos
 const chartConfig = {
@@ -43,7 +52,7 @@ const chartConfig = {
     strokeWidth: 2,
     barPercentage: 0.8,
     useShadowColorFromDataset: false,
-    decimalPlaces: 0,
+    decimalPlaces: 0, // <-- Garante números inteiros no eixo Y
     propsForLabels: {
         fontSize: 12,
     },
@@ -62,7 +71,9 @@ interface ReportTaskApiResponse {
     id: number;
     title: string;
     description: string;
-    status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+    // --- ALTERAÇÃO: Permitir OVERDUE aqui se a API retornar ---
+    status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
+    // --- FIM ALTERAÇÃO ---
     dueDate: string; // ISO 8601 string
     assignments: {
         userId: number;
@@ -98,6 +109,10 @@ export const ReportCenterScreen = () => {
     const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [selectedPeriod, setSelectedPeriod] = useState<string>('all'); // Mantido 'all' como padrão para período
 
+    // *** INÍCIO DA ALTERAÇÃO 1 (NOVO ESTADO) ***
+    const [appliedMemberName, setAppliedMemberName] = useState<string | null>(null);
+    // *** FIM DA ALTERAÇÃO 1 ***
+
     // Hook customizado para gerenciar o DASHBOARD (sumário, ranking) e PDF
     const {
         report, // Contém summary e ranking
@@ -106,19 +121,20 @@ export const ReportCenterScreen = () => {
         isExportingPdf,
         fetchDashboard, // Busca apenas summary/ranking
         handleExportPdf, // Usa o estado 'filters' atual para exportar
-        applyFilters: applyDashboardFilters, // Aplica filtros e refaz busca do DASHBOARD
+        applyFilters, // Aplica filtros e refaz busca do DASHBOARD
         clearFilters: clearDashboardFilters, // Limpa filtros e refaz busca do DASHBOARD
     } = useProjectReport(projectId); // Hook agora gerencia SÓ dashboard e PDF
 
     // Itens para os pickers
+    // --- ALTERAÇÃO: Adicionar cores e opção OVERDUE ---
     const statusItems = [
-        { label: 'Todos Status', value: 'all' },
-        { label: 'A Fazer', value: 'TO_DO' },
-        { label: 'Em Andamento', value: 'IN_PROGRESS' },
-        { label: 'Concluído', value: 'DONE' },
-        // Adicione 'OVERDUE' se o backend suportar filtrar por status OVERDUE diretamente
-        // { label: 'Atrasado', value: 'OVERDUE' },
+        { label: 'Todos Status', value: 'all', color: '#FFFFFF' },
+        { label: 'A Fazer', value: 'TO_DO', color: '#FFA500' },
+        { label: 'Em Andamento', value: 'IN_PROGRESS', color: '#FFD700' },
+        { label: 'Concluído', value: 'DONE', color: '#3CB371' },
+        { label: 'Atrasado', value: 'OVERDUE', color: '#ff4545' },
     ];
+    // --- FIM ALTERAÇÃO ---
 
     const periodItems = [
         { label: 'Qualquer data', value: 'all' }, // Renomeado para clareza
@@ -202,21 +218,30 @@ export const ReportCenterScreen = () => {
     const handleGenerateReport = () => {
         const newFilters: TaskFilterReportDTO = {}; // Usar o tipo correto
 
+        // *** INÍCIO DA ALTERAÇÃO 2 (GUARDA NOME) ***
+        // Guarda o nome do membro selecionado *neste momento*
+        const memberNameToApply = selectedMemberId
+            ? memberItems.find(m => m.value === selectedMemberId)?.label
+            : null;
+        // *** FIM DA ALTERAÇÃO 2 ***
+
         if (selectedMemberId && selectedMemberId !== 0) {
             newFilters.assignedUserId = selectedMemberId;
         }
 
+        // --- ALTERAÇÃO: Lógica para 'OVERDUE' ---
         if (selectedStatus !== 'all') {
-            // Garante que o status corresponda ao Enum esperado pelo backend
-            newFilters.status = selectedStatus as 'TO_DO' | 'IN_PROGRESS' | 'DONE';
-             // Se você adicionou 'OVERDUE' e o backend suporta:
-             // if (selectedStatus === 'OVERDUE') {
-             //    newFilters.isOverdue = true; // Ou o parâmetro que seu backend espera
-             //    delete newFilters.status; // Remove status se estiver filtrando por overdue
-             // } else {
-             //    newFilters.status = selectedStatus as 'TO_DO' | 'IN_PROGRESS' | 'DONE';
-             // }
+            if (selectedStatus === 'OVERDUE') {
+                newFilters.isOverdue = true;
+                // Não definimos newFilters.status, pois queremos apenas atrasadas
+            } else {
+                // Se for TO_DO, IN_PROGRESS ou DONE
+                newFilters.status = selectedStatus as 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+                // Garantir que isOverdue não seja enviado se outro status for selecionado
+                // (Como o DTO é opcional, não definir 'isOverdue' é o suficiente)
+            }
         }
+        // --- FIM ALTERAÇÃO ---
 
         // --- CORREÇÃO: Filtragem por Data de Criação (createdAt) ---
         if (selectedPeriod !== 'all') {
@@ -231,9 +256,21 @@ export const ReportCenterScreen = () => {
         }
         // --- FIM CORREÇÃO ---
 
-        setFilters(newFilters); // Atualiza o estado local de filtros
-        applyDashboardFilters(newFilters); // Atualiza filtros no hook (refaz busca do dashboard)
-        fetchTasksForReport(newFilters); // Busca tarefas com os novos filtros
+        // --- MODIFICATION START ---
+        // Update the local filters state (used by fetchTasksForReport and potentially handleExportPdf)
+        setFilters(newFilters);
+
+        // Call applyFilters from the hook - this now handles both setting filters in the hook AND refetching the dashboard
+        applyFilters(newFilters);
+
+        // Fetch tasks separately with the new filters
+        fetchTasksForReport(newFilters);
+        // --- MODIFICATION END ---
+
+        // *** INÍCIO DA ALTERAÇÃO 3 (APLICA NOME) ***
+        // Atualiza o estado do nome do membro *aplicado*
+        setAppliedMemberName(memberNameToApply || null); // Define null se 'Todos Membros' foi selecionado
+        // *** FIM DA ALTERAÇÃO 3 ***
     };
 
     // Perfil para o Header
@@ -249,7 +286,7 @@ export const ReportCenterScreen = () => {
 
     if (combinedInitialLoading) { // Verifica loading combinado
         return (
-            <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+            <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
                  <Header
                      userProfile={userProfileForHeader}
                      onPressProfile={handleProfilePress}
@@ -267,7 +304,7 @@ export const ReportCenterScreen = () => {
     // Se não houver dados do dashboard após o loading inicial
     if (!report) {
          return (
-            <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+            <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
                 <Header
                     userProfile={userProfileForHeader}
                     onPressProfile={handleProfilePress}
@@ -278,14 +315,14 @@ export const ReportCenterScreen = () => {
                     <Icon name="document-text-outline" size={80} color="#555" />
                     <Text style={styles.emptyText}>Nenhum dado disponível para o dashboard</Text>
                     {/* Botão para tentar recarregar o DASHBOARD */}
-                    <MainButton title="Tentar Novamente" onPress={fetchDashboard} />
+                    <MainButton title="Tentar Novamente" onPress={() => fetchDashboard(filters)} />
                 </View>
             </SafeAreaView>
         );
     }
 
     // Desestruturação segura do report
-    const { summary = { totalCount: 0, doneCount: 0, inProgressCount: 0, toDoCount: 0, overdueCount: 0 }, memberPerformanceRanking = [] } = report || {};
+    const { summary = { totalCount: 0, doneCount: 0, inProgressCount: 0, toDoCount: 0, overdueCount: 0 }, memberTaskDistribution: memberPerformanceRanking = [] } = report || {};
 
 
     // Calcula a porcentagem de conclusão
@@ -301,14 +338,23 @@ export const ReportCenterScreen = () => {
         { name: truncateText('Atrasadas', 10), population: summary.overdueCount, color: '#ff4545', legendFontColor: '#7F7F7F', legendFontSize: 14 },
     ].filter(item => item.population > 0) : [];
 
-    // Dados para o gráfico de barras
-    const barChartData = memberPerformanceRanking && memberPerformanceRanking.length > 0 ? {
-        labels: memberPerformanceRanking.map(p => truncateText(p.username, 10)),
-        datasets: [{
-            data: memberPerformanceRanking.map(p => p.completedTasksCount),
-            colors: memberPerformanceRanking.map((_, index) => (opacity = 1) => barColorPalette[index % barColorPalette.length])
-        }]
+
+    // --- ALTERAÇÃO: Dados para o gráfico de barras EMPILHADAS ---
+    const filteredRanking = selectedMemberId && selectedMemberId !== 0
+        ? memberPerformanceRanking.filter(p => p.userId === selectedMemberId)
+        : memberPerformanceRanking; // Se nenhum membro selecionado (ou "Todos"), usa todos
+
+    const barChartData = (filteredRanking && filteredRanking.length > 0 && filteredRanking.some(p => p.totalTasksCount > 0)) ? {
+        labels: filteredRanking.map(p => truncateText(p.username, 10)), // Usa filteredRanking
+        legend: STACKED_BAR_LEGEND,
+        // Mapeia os dados na ordem definida em STATUS_ORDER_KEYS
+        data: filteredRanking.map(p => // Usa filteredRanking
+            STATUS_ORDER_KEYS.map(statusKey => p.statusCounts[statusKey] || 0)
+        ),
+        barColors: STACKED_BAR_COLORS,
     } : null;
+    // --- FIM ALTERAÇÃO ---
+
 
     // Cálculo da largura dinâmica do gráfico de barras
     const barChartWidth = barChartData
@@ -316,7 +362,7 @@ export const ReportCenterScreen = () => {
         : Dimensions.get('window').width - 40;
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
             <Header
                 userProfile={userProfileForHeader}
                 onPressProfile={handleProfilePress}
@@ -362,7 +408,7 @@ export const ReportCenterScreen = () => {
                         <FilterPicker
                             label="Status Tarefa" // Label ajustado
                             style={{ width: '48%' }}
-                            items={statusItems}
+                            items={statusItems} // Usa os itens com cores
                             selectedValue={selectedStatus}
                             onValueChange={(v) => setSelectedStatus(v as string)}
                         />
@@ -409,10 +455,20 @@ export const ReportCenterScreen = () => {
                                         formatText={() => `${Math.round(completionPercentage * 100)}%`}
                                         textStyle={styles.progressText}
                                     />
+                                    {/* --- INÍCIO DA ALTERAÇÃO 1 --- */}
+                                    <Text style={styles.progressSubLabel}>Tarefas concluídas</Text>
+                                    {/* --- FIM DA ALTERAÇÃO 1 --- */}
                                 </View>
                                 <View style={styles.totalTasksContainer}>
                                     <Text style={styles.totalTasksValue}>{summary.totalCount}</Text>
-                                    <Text style={styles.totalTasksLabel}>Tarefas Totais</Text>
+                                    {/* --- INÍCIO DA ALTERAÇÃO 4 (USA appliedMemberName) --- */}
+                                    <Text style={styles.totalTasksLabel}>
+                                        {appliedMemberName
+                                            ? `Tarefas totais\nde ${appliedMemberName}`
+                                            : 'Tarefas Totais'
+                                        }
+                                    </Text>
+                                    {/* --- FIM DA ALTERAÇÃO 4 --- */}
                                 </View>
                             </View>
                         </View>
@@ -435,32 +491,34 @@ export const ReportCenterScreen = () => {
                             </View>
                         )}
 
-                        {/* Gráfico de Barras - Tarefas Concluídas por Membro (usa 'memberPerformanceRanking') */}
-                        {barChartData && barChartData.datasets[0].data.length > 0 && (
+                        {/* --- ALTERAÇÃO: Gráfico de Barras EMPILHADAS --- */}
+                        {barChartData && (
                             <View style={styles.chartContainer}>
-                                <Text style={styles.sectionTitle}>Tarefas Concluídas por Membro</Text>
+                                <Text style={styles.sectionTitle}>Tarefas por Membro e Status</Text>
                                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                    <BarChart
+                                    <StackedBarChart
                                         data={barChartData}
                                         width={barChartWidth}
                                         height={250}
                                         yAxisLabel=""
                                         yAxisSuffix=""
                                         chartConfig={chartConfig}
-                                        verticalLabelRotation={-25}
                                         fromZero={true}
-                                        showValuesOnTopOfBars={true}
+                                        // --- CORREÇÃO: Remover prop showValuesOnTopOfBars ---
+                                        // showValuesOnTopOfBars={true} // Removido
+                                        // --- FIM CORREÇÃO ---
                                         style={{
                                             marginVertical: 8,
                                             borderRadius: 16,
-                                            marginLeft: -30, // Ajuste para centralizar
+                                            marginLeft: -10, // Ajuste para centralizar
                                         }}
-                                        withCustomBarColorFromData={true}
-                                        flatColor={true} // Garante cores do dataset
+                                        hideLegend={false} // Garante que a legenda seja mostrada
                                     />
                                 </ScrollView>
                             </View>
                         )}
+                        {/* --- FIM ALTERAÇÃO --- */}
+
 
                         {/* Seção de Tarefas Detalhadas */}
                         <View style={styles.tasksSection}>
@@ -599,8 +657,15 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#FFFFFF',
     },
+    progressSubLabel: {
+        fontSize: 14,
+        color: '#A9A9A9',
+        marginTop: 8, // Adiciona espaço abaixo do círculo
+        textAlign: 'center',
+    },
     totalTasksContainer: {
         alignItems: 'center',
+        minWidth: 100, // Garante um espaço mínimo para o texto
     },
     totalTasksValue: {
         fontSize: 40,
@@ -611,6 +676,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#A9A9A9',
         marginTop: 4,
+        textAlign: 'center', // Para centralizar o texto com quebra de linha
     },
     // Contêineres dos Gráficos
     chartContainer: {

@@ -2,8 +2,7 @@
 import api from '../../../api/api';
 import { TaskFilterReportDTO } from '../../task/services/taskService';
 
-// --- TIPOS PARA RELATÓRIOS ---
-
+// --- TIPOS PARA RELATÓRIOS --- (Manter os tipos existentes)
 export interface TaskSummaryDTO {
     totalCount: number;
     doneCount: number;
@@ -12,45 +11,32 @@ export interface TaskSummaryDTO {
     overdueCount: number;
 }
 
-export interface MemberPerformanceDTO {
+export interface MemberTaskDistributionDTO {
     userId: number;
     username: string;
-    completedTasksCount: number;
+    totalTasksCount: number;
+    statusCounts: {
+        [key in 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE']?: number;
+    };
 }
 
 export interface ProjectReportDTO {
     summary: TaskSummaryDTO;
-    memberPerformanceRanking: MemberPerformanceDTO[];
+    memberTaskDistribution: MemberTaskDistributionDTO[];
 }
 
-export interface ProjectDashboardFilters {
-    // Filtros opcionais que podem ser adicionados no futuro
-    // Por enquanto, o dashboard não recebe filtros pela URL
+// --- NOVO TIPO PARA O RETORNO DA FUNÇÃO DE EXPORTAÇÃO ---
+interface PdfExportResult {
+    blob: Blob;
+    filename: string;
 }
 
 // --- FUNÇÕES DE API ---
 
-/**
- * Busca os dados do dashboard do projeto
- */
-const getProjectDashboard = async (projectId: number): Promise<ProjectReportDTO> => {
-    const response = await api.get<ProjectReportDTO>(`/project/${projectId}/dashboard`);
-    return response.data;
-};
-
-/**
- * Exporta o relatório do projeto em PDF
- * @param projectId ID do projeto
- * @param filter Filtros opcionais para o relatório
- * @returns Blob com o conteúdo do PDF
- */
-const exportProjectToPdf = async (
-    projectId: number,
-    filter?: TaskFilterReportDTO
-): Promise<Blob> => {
-    // Constrói os parâmetros da query
+// Função getProjectDashboard (manter como está)
+const getProjectDashboard = async (projectId: number, filter?: TaskFilterReportDTO): Promise<ProjectReportDTO> => {
+    // ... (código existente sem alterações)
     const params = new URLSearchParams();
-    
     if (filter?.title) params.append('title', filter.title);
     if (filter?.status) params.append('status', filter.status);
     if (filter?.assignedUserId) params.append('assignedUserId', filter.assignedUserId.toString());
@@ -60,6 +46,37 @@ const exportProjectToPdf = async (
     if (filter?.createdAtBefore) params.append('createdAtBefore', filter.createdAtBefore);
     if (filter?.conclusionDateAfter) params.append('conclusionDateAfter', filter.conclusionDateAfter);
     if (filter?.conclusionDateBefore) params.append('conclusionDateBefore', filter.conclusionDateBefore);
+    if (filter?.isOverdue !== undefined) params.append('isOverdue', String(filter.isOverdue));
+
+    const queryString = params.toString();
+    const url = `/project/${projectId}/dashboard${queryString ? `?${queryString}` : ''}`;
+
+    const response = await api.get<ProjectReportDTO>(url);
+    return response.data;
+};
+
+/**
+ * Exporta o relatório do projeto em PDF
+ * @param projectId ID do projeto
+ * @param filter Filtros opcionais para o relatório
+ * @returns Objeto contendo o Blob do PDF e o nome do arquivo extraído do cabeçalho
+ */
+const exportProjectToPdf = async (
+    projectId: number,
+    filter?: TaskFilterReportDTO
+): Promise<PdfExportResult> => { // <-- Alterado o tipo de retorno
+    // Constrói os parâmetros da query (mesma lógica de antes)
+    const params = new URLSearchParams();
+    if (filter?.title) params.append('title', filter.title);
+    if (filter?.status) params.append('status', filter.status);
+    if (filter?.assignedUserId) params.append('assignedUserId', filter.assignedUserId.toString());
+    if (filter?.dueDateAfter) params.append('dueDateAfter', filter.dueDateAfter);
+    if (filter?.dueDateBefore) params.append('dueDateBefore', filter.dueDateBefore);
+    if (filter?.createdAtAfter) params.append('createdAtAfter', filter.createdAtAfter);
+    if (filter?.createdAtBefore) params.append('createdAtBefore', filter.createdAtBefore);
+    if (filter?.conclusionDateAfter) params.append('conclusionDateAfter', filter.conclusionDateAfter);
+    if (filter?.conclusionDateBefore) params.append('conclusionDateBefore', filter.conclusionDateBefore);
+     if (filter?.isOverdue !== undefined) params.append('isOverdue', String(filter.isOverdue)); // Adiciona isOverdue se presente
 
     const queryString = params.toString();
     const url = `/project/${projectId}/export/pdf${queryString ? `?${queryString}` : ''}`;
@@ -68,13 +85,39 @@ const exportProjectToPdf = async (
         responseType: 'blob', // Importante para receber o PDF como Blob
     });
 
-    return response.data;
+    // --- EXTRAÇÃO DO NOME DO ARQUIVO ---
+    let filename = `relatorio_projeto_${projectId}.pdf`; // Nome padrão
+    const contentDisposition = response.headers['content-disposition'];
+
+    if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename\*?=['"]?([^'";]+)['"]?/);
+        if (filenameMatch && filenameMatch[1]) {
+            // Decodifica o nome do arquivo se estiver em formato UTF-8 URL encoded
+             try {
+                filename = decodeURIComponent(filenameMatch[1]);
+            } catch (e) {
+                console.warn("Could not decode filename, using raw value:", filenameMatch[1]);
+                filename = filenameMatch[1]; // Usa o valor bruto se a decodificação falhar
+            }
+        }
+         // Fallback se a regex acima falhar, tenta uma mais simples
+         else {
+             const simpleFilenameMatch = contentDisposition.match(/filename="(.+)"/);
+             if (simpleFilenameMatch && simpleFilenameMatch[1]) {
+                 filename = simpleFilenameMatch[1];
+             }
+         }
+    }
+    // --- FIM DA EXTRAÇÃO ---
+
+    console.log(`[PDF Export] Extracted filename: ${filename}`); // Log para depuração
+
+    return { blob: response.data, filename }; // <-- Retorna o objeto
 };
 
-/**
- * Faz o download do PDF no navegador (Web)
- */
+// Função downloadPdfWeb (manter como está)
 const downloadPdfWeb = (blob: Blob, filename: string) => {
+    // ... (código existente sem alterações)
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -85,16 +128,13 @@ const downloadPdfWeb = (blob: Blob, filename: string) => {
     window.URL.revokeObjectURL(url);
 };
 
-/**
- * Busca as tarefas do projeto com filtros para o relatório
- */
+// Função getProjectTasksForReport (manter como está)
 const getProjectTasksForReport = async (
     projectId: number,
     filter?: TaskFilterReportDTO
 ): Promise<any[]> => {
-    // Constrói os parâmetros da query
+    // ... (código existente sem alterações)
     const params = new URLSearchParams();
-    
     if (filter?.title) params.append('title', filter.title);
     if (filter?.status) params.append('status', filter.status);
     if (filter?.assignedUserId) params.append('assignedUserId', filter.assignedUserId.toString());
@@ -104,14 +144,17 @@ const getProjectTasksForReport = async (
     if (filter?.createdAtBefore) params.append('createdAtBefore', filter.createdAtBefore);
     if (filter?.conclusionDateAfter) params.append('conclusionDateAfter', filter.conclusionDateAfter);
     if (filter?.conclusionDateBefore) params.append('conclusionDateBefore', filter.conclusionDateBefore);
+     if (filter?.isOverdue !== undefined) params.append('isOverdue', String(filter.isOverdue)); // Adiciona isOverdue se presente
 
     const queryString = params.toString();
-    const url = `/project/${projectId}/tasks${queryString ? `?${queryString}` : ''}`;
+    const url = `/project/${projectId}/tasks${queryString ? `?${queryString}` : ''}`; // Corrigido para /tasks
 
     const response = await api.get(url);
-    return response.data.content || []; // Retorna o array de tarefas da resposta paginada
+    // Ajuste para pegar 'content' se a API retornar um objeto paginado
+    return Array.isArray(response.data) ? response.data : (response.data.content || []);
 };
 
+// Exporta o serviço (manter como está)
 export const projectReportService = {
     getProjectDashboard,
     getProjectTasksForReport,

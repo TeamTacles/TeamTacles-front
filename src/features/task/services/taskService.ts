@@ -239,4 +239,5 @@ export interface TaskFilterReportDTO {
     createdAtBefore?: string; // Formato YYYY-MM-DD
     conclusionDateAfter?: string; // Formato YYYY-MM-DD
     conclusionDateBefore?: string; // Formato YYYY-MM-DD
+    isOverdue?: boolean;
 }
