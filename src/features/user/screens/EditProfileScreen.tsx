@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -12,13 +12,11 @@ import { userService } from '../services/userService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { useAppContext } from '../../../contexts/AppContext';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 
 export const EditProfileScreen = () => {
     const navigation = useNavigation();
     const { signOut } = useAppContext();
     const { showNotification } = useNotification();
-    const notificationRef = useRef<NotificationPopupRef | null>(null);
 
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -157,13 +155,13 @@ export const EditProfileScreen = () => {
                 visible={changePasswordModalVisible}
                 onClose={() => setChangePasswordModalVisible(false)}
                 onChangePassword={handlePasswordChange}
-                notificationRef={notificationRef}
+                showNotification={showNotification}
             />
             <DeleteAccountModal
                 visible={deleteAccountModalVisible}
                 onClose={() => setDeleteAccountModalVisible(false)}
                 onDeleteAccount={handleDeleteAccount}
-                notificationRef={notificationRef}
+                showNotification={showNotification}
             />
         </SafeAreaView>
     );

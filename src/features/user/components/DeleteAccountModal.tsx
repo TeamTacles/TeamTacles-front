@@ -3,21 +3,20 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'rea
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import { getErrorMessage } from '../../../utils/errorHandler';
 
 interface DeleteAccountModalProps {
   visible: boolean;
   onClose: () => void;
   onDeleteAccount: () => Promise<void>;
-  notificationRef: React.RefObject<NotificationPopupRef | null>;
+  showNotification: (options: { type: 'success' | 'error'; message: string }) => void;
 }
 
 export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   visible,
   onClose,
   onDeleteAccount,
-  notificationRef
+  showNotification
 }) => {
     const [confirmationText, setConfirmationText] = useState('');
     const [loading, setLoading] = useState(false);
@@ -46,7 +45,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
         try {
             await onDeleteAccount();
 
-            notificationRef.current?.show({
+            showNotification({
                 type: 'success',
                 message: 'Conta deletada com sucesso.',
             });
@@ -56,7 +55,7 @@ export const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             }, 1500);
 
         } catch (error: any) {
-            notificationRef.current?.show({
+            showNotification({
                 type: 'error',
                 message: getErrorMessage(error),
             });

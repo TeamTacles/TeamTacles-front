@@ -3,21 +3,20 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'rea
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import { getErrorMessage } from '../../../utils/errorHandler';
 
 interface ChangePasswordModalProps {
   visible: boolean;
   onClose: () => void;
   onChangePassword: (password: string, passwordConfirm: string) => Promise<void>;
-  notificationRef: React.RefObject<NotificationPopupRef | null>;
+  showNotification: (options: { type: 'success' | 'error'; message: string }) => void;
 }
 
 export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   visible,
   onClose,
   onChangePassword,
-  notificationRef
+  showNotification
 }) => {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
@@ -61,7 +60,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         try {
             await onChangePassword(newPassword, confirmPassword);
 
-            notificationRef.current?.show({
+            showNotification({
                 type: 'success',
                 message: 'Senha alterada com sucesso!',
             });
@@ -71,7 +70,7 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             }, 1500);
 
         } catch (error: any) {
-            notificationRef.current?.show({
+            showNotification({
                 type: 'error',
                 message: getErrorMessage(error),
             });
