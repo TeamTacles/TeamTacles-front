@@ -19,6 +19,7 @@ import TimeAgo from '../../../components/TimeAgo';
 import { ProjectMember, projectService } from '../../project/services/projectService';
 
 import { useAppContext } from '../../../contexts/AppContext';
+import { useNotification } from '../../../contexts/NotificationContext';
 import { taskService, TaskDetailsApiResponse, TaskAssignmentRequest } from '../services/taskService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { getInitialsFromName } from '../../../utils/stringUtils';
@@ -58,6 +59,7 @@ export const TaskDetailScreen = () => {
     // --- FIM DA ALTERAÇÃO ---
     const notificationRef = useRef<NotificationPopupRef>(null);
     const { user } = useAppContext();
+    const { showNotification } = useNotification();
 
     const [loading, setLoading] = useState(true);
     const [task, setTask] = useState<TaskDetailsApiResponse | null>(null);
@@ -272,48 +274,52 @@ export const TaskDetailScreen = () => {
             await taskService.deleteTask(projectId, taskId);
             // Remove a task da lista do projeto instantaneamente
             onTaskDelete?.(taskId);
+
+            showNotification({
+                type: 'success',
+                message: 'Tarefa excluída com sucesso!'
+            });
+
             navigation.goBack();
-            // A notificação de sucesso pode ser mostrada na tela anterior se necessário
-            // usando um parâmetro de navegação ou estado global
-            setTimeout(() => {
-                 // Idealmente, a tela anterior escutaria um evento ou parâmetro
-                 // para mostrar a notificação após a navegação
-                 console.log('Tarefa excluída com sucesso! (Notificação adiada)');
-                 // notificationRef.current?.show({ type: 'success', message: 'Tarefa excluída com sucesso!' });
-            }, 500);
         } catch (error) {
-            notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
+            showNotification({
+                type: 'error',
+                message: getErrorMessage(error)
+            });
             setIsLeavingOrDeleting(false); // Libera o loading em caso de erro
         }
-        // Não precisa de finally se a navegação ocorrer sempre no sucesso
     };
 
 
     const handleLeaveTask = async () => {
         if (!task) return;
-        // Verifica se o usuário é realmente um membro (assignee ou owner) para poder sair
+
+        // Validação: verifica se o usuário é realmente um membro (defesa em profundidade)
         const isMember = task.assignments.some(a => a.userId === user?.id);
         if (!isMember) {
-            notificationRef.current?.show({ type: 'error', message: 'Você não é membro desta tarefa para poder sair.' });
+            showNotification({
+                type: 'error',
+                message: 'Você não é membro desta tarefa para poder sair.'
+            });
             return;
         }
-        // Dono não pode sair usando esta ação (deve deletar ou transferir) - backend já valida isso
-        // if (isTaskOwner) { ... } // Frontend pode adicionar essa checagem se desejar
 
         setIsLeavingOrDeleting(true);
         setConfirmLeaveVisible(false);
         try {
-            await taskService.leaveTask(projectId, taskId); // Mantém projectId por consistência, backend ignora
+            await taskService.leaveTask(projectId, taskId);
+
+            showNotification({
+                type: 'success',
+                message: `Você saiu da tarefa "${task.title}"`
+            });
+
             navigation.goBack();
-            setTimeout(() => {
-                 // Notificação na tela anterior
-                 console.log(`Você saiu da tarefa "${task.title}" (Notificação adiada)`);
-                 // if (notificationRef.current) { ... }
-            }, 500);
         } catch (error) {
-             if (notificationRef.current) {
-                 notificationRef.current.show({ type: 'error', message: getErrorMessage(error) });
-             }
+            showNotification({
+                type: 'error',
+                message: getErrorMessage(error)
+            });
             setIsLeavingOrDeleting(false);
         }
     };
