@@ -18,7 +18,8 @@ interface EditProjectModalProps {
 export const EditProjectModal: React.FC<EditProjectModalProps> = ({ visible, project, onClose, onSave, onDelete }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    
+    const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
+
     // O estado para o modal de confirmação foi movido para a tela principal
 
     useEffect(() => {
@@ -28,7 +29,34 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ visible, pro
         }
     }, [project]);
 
+    const validateForm = () => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!title.trim()) {
+            newErrors.title = "O título do projeto é obrigatório.";
+        } else if (title.trim().length < 3) {
+            newErrors.title = "O título deve ter pelo menos 3 caracteres.";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleInputChange = (field: string, value: string) => {
+        if (field === 'title') setTitle(value);
+        if (field === 'description') setDescription(value);
+
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
+    };
+
     const handleSave = () => {
+        if (!validateForm()) return;
         onSave({ title, description });
     };
 
@@ -44,16 +72,17 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ visible, pro
                         <InputsField
                             label="Título do Projeto"
                             value={title}
-                            onChangeText={setTitle}
+                            onChangeText={(text) => handleInputChange('title', text)}
                             maxLength={50}
+                            error={errors.title}
                         />
                         <InputsField
                             label="Descrição"
                             value={description}
-                            onChangeText={setDescription}
-                            multiline={true}      
-                            numberOfLines={4}  
-                            maxLength={250}     
+                            onChangeText={(text) => handleInputChange('description', text)}
+                            multiline={true}
+                            numberOfLines={4}
+                            maxLength={250}
                         />
                     </ScrollView>
                     <View style={styles.buttonContainer}>

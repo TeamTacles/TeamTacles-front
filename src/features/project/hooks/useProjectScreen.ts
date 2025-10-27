@@ -33,12 +33,6 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
    * Cria um projeto e procede para o modal de adicionar membros
    */
   const handleCreateProjectAndProceed = async (data: { title: string; description: string }) => {
-    if (!data.title.trim()) {
-      // Usar InfoPopup para validação de título obrigatório
-      setInfoPopup({ visible: true, title: 'Atenção', message: 'O título do projeto é obrigatório.' });
-      return;
-    }
-
     setIsCreatingProject(true);
     try {
       // Chama a API para criar o projeto

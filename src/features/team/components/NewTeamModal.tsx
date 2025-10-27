@@ -16,15 +16,43 @@ interface NewTeamModalProps {
 export const NewTeamModal: React.FC<NewTeamModalProps> = ({ visible, onClose, onNext, isCreating }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
+
+    const validateForm = () => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!title.trim()) {
+            newErrors.title = "O título da equipe é obrigatório.";
+        } else if (title.trim().length < 3) {
+            newErrors.title = "O título deve ter pelo menos 3 caracteres.";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleInputChange = (field: string, value: string) => {
+        if (field === 'title') setTitle(value);
+        if (field === 'description') setDescription(value);
+
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
+    };
 
     const handleNext = () => {
-        // A validação agora será feita na tela principal
+        if (!validateForm()) return;
         onNext({ title, description });
     };
 
     const handleClose = () => {
         setTitle('');
         setDescription('');
+        setErrors({});
         onClose();
     }
 
@@ -41,14 +69,15 @@ export const NewTeamModal: React.FC<NewTeamModalProps> = ({ visible, onClose, on
                             label="Título da Equipe *"
                             placeholder='Digite o nome da equipe'
                             value={title}
-                            onChangeText={setTitle}
+                            onChangeText={(text) => handleInputChange('title', text)}
                             maxLength={50}
+                            error={errors.title}
                         />
                         <InputsField
                             label="Descrição"
                             placeholder='Descreva o objetivo da equipe'
                             value={description}
-                            onChangeText={setDescription}
+                            onChangeText={(text) => handleInputChange('description', text)}
                             multiline={true}
                             numberOfLines={4}
                             maxLength={250}

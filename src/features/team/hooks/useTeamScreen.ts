@@ -35,10 +35,6 @@ export function useTeamScreen() {
       setInfoPopup({ visible: true, title: 'Erro', message: 'Dados do usuário não carregados. Tente novamente.' });
       return;
     }
-    if (!data.title.trim()) {
-      setInfoPopup({ visible: true, title: 'Atenção', message: 'O título da equipe é obrigatório.' });
-      return;
-    }
 
     setIsCreatingTeam(true);
     try {

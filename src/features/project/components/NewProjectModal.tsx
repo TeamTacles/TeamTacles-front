@@ -15,14 +15,43 @@ interface NewProjectModalProps {
 export const NewProjectModal: React.FC<NewProjectModalProps> = ({ visible, onClose, onCreate, isCreating }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
+
+    const validateForm = () => {
+        const newErrors: { [key: string]: string } = {};
+
+        if (!title.trim()) {
+            newErrors.title = "O título do projeto é obrigatório.";
+        } else if (title.trim().length < 3) {
+            newErrors.title = "O título deve ter pelo menos 3 caracteres.";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleInputChange = (field: string, value: string) => {
+        if (field === 'title') setTitle(value);
+        if (field === 'description') setDescription(value);
+
+        if (errors[field]) {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[field];
+                return newErrors;
+            });
+        }
+    };
 
     const handleCreate = () => {
+        if (!validateForm()) return;
         onCreate({ title, description });
     };
 
     const handleClose = () => {
         setTitle('');
         setDescription('');
+        setErrors({});
         onClose();
     }
 
@@ -39,14 +68,15 @@ export const NewProjectModal: React.FC<NewProjectModalProps> = ({ visible, onClo
                             label="Título do Projeto *"
                             placeholder='Digite o nome do projeto'
                             value={title}
-                            onChangeText={setTitle}
+                            onChangeText={(text) => handleInputChange('title', text)}
                             maxLength={50}
+                            error={errors.title}
                         />
                         <InputsField
                             label="Descrição"
                             placeholder='Descreva o objetivo do projeto'
                             value={description}
-                            onChangeText={setDescription} // <-- CORREÇÃO: Esta linha foi adicionada
+                            onChangeText={(text) => handleInputChange('description', text)}
                             multiline={true}
                             numberOfLines={4}
                             maxLength={250}
