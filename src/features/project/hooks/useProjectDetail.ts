@@ -224,6 +224,18 @@ export function useProjectDetail() {
     setProjectTasks(prev => [newTask, ...prev]);
   };
 
+  const updateTaskInList = useCallback((taskId: number, updates: Partial<ProjectTask>) => {
+    setProjectTasks(prev =>
+      prev.map(task =>
+        task.id === taskId ? { ...task, ...updates } : task
+      )
+    );
+  }, []);
+
+  const removeTaskFromList = useCallback((taskId: number) => {
+    setProjectTasks(prev => prev.filter(task => task.id !== taskId));
+  }, []);
+
   return {
     navigation,
     project,
@@ -242,6 +254,8 @@ export function useProjectDetail() {
     handleRefreshTasks,
     handleLoadMoreTasks,
     addTaskLocally,
+    updateTaskInList,
+    removeTaskFromList,
     currentUserRole,
     isOwner,
     isAdmin,

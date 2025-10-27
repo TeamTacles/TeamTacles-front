@@ -54,7 +54,7 @@ export const TaskDetailScreen = () => {
     const route = useRoute<TaskDetailRouteProp>();
     // --- INÍCIO DA ALTERAÇÃO: Obter projectRole dos parâmetros da rota ---
     // Precisamos saber a role do usuário NO PROJETO para as permissões
-    const { projectId, taskId, projectRole } = route.params;
+    const { projectId, taskId, projectRole, onTaskUpdate, onTaskDelete } = route.params;
     // --- FIM DA ALTERAÇÃO ---
     const notificationRef = useRef<NotificationPopupRef>(null);
     const { user } = useAppContext();
@@ -148,6 +148,8 @@ export const TaskDetailScreen = () => {
             const updatedTask = await taskService.updateTaskDetails(projectId, taskId, { dueDate: formattedDueDate });
             setTask(updatedTask); // Atualiza estado com resposta da API
             setEditDeadlineModalVisible(false); // Fecha o modal
+            // Atualiza a lista do projeto instantaneamente
+            onTaskUpdate?.(taskId, { dueDate: updatedTask.dueDate });
             notificationRef.current?.show({ type: 'success', message: 'Prazo atualizado com sucesso!' });
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
@@ -183,6 +185,8 @@ export const TaskDetailScreen = () => {
             const updatedTask = await taskService.updateTaskStatus(projectId, taskId, { newStatus: newStatus as 'TO_DO' | 'IN_PROGRESS' | 'DONE' });
             // Atualiza o estado local da tarefa com a resposta da API
             setTask(prev => prev ? { ...prev, status: updatedTask.status, completedAt: updatedTask.completedAt, completionComment: updatedTask.completionComment } : null);
+            // Atualiza a lista do projeto instantaneamente
+            onTaskUpdate?.(taskId, { status: updatedTask.status });
             notificationRef.current?.show({ type: 'success', message: 'Status Atualizado!' });
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
@@ -199,6 +203,8 @@ export const TaskDetailScreen = () => {
             const updatedTask = await taskService.updateTaskDetails(projectId, taskId, updatedData);
             setTask(updatedTask);
             setEditModalVisible(false);
+            // Atualiza a lista do projeto instantaneamente
+            onTaskUpdate?.(taskId, { title: updatedTask.title, description: updatedTask.description });
             notificationRef.current?.show({ type: 'success', message: 'Tarefa atualizada!' });
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
@@ -264,6 +270,8 @@ export const TaskDetailScreen = () => {
         setEditModalVisible(false); // Fecha modal de edição se estiver aberto
         try {
             await taskService.deleteTask(projectId, taskId);
+            // Remove a task da lista do projeto instantaneamente
+            onTaskDelete?.(taskId);
             navigation.goBack();
             // A notificação de sucesso pode ser mostrada na tela anterior se necessário
             // usando um parâmetro de navegação ou estado global

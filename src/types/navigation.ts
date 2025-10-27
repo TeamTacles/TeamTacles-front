@@ -1,6 +1,8 @@
 // src/types/navigation.ts
 import { TeamType } from './entities';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { ProjectTask } from '../features/project/services/projectService';
+
 export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
@@ -17,6 +19,8 @@ export type RootStackParamList = {
         projectId: number;
         taskId: number;
         projectRole: 'OWNER' | 'ADMIN' | 'MEMBER'; // Adicionar projectRole
+        onTaskUpdate?: (taskId: number, updates: Partial<ProjectTask>) => void; // Callback para atualização otimista
+        onTaskDelete?: (taskId: number) => void; // Callback para remoção otimista
     };
     // --- FIM DA CORREÇÃO ---
 };

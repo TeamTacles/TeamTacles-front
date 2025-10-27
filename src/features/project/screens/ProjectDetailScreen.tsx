@@ -47,6 +47,8 @@ export const ProjectDetailScreen = () => {
         handleRefreshTasks,
         handleLoadMoreTasks,
         addTaskLocally,
+        updateTaskInList,
+        removeTaskFromList,
         currentUserRole,
         isOwner,
         isAdmin,
@@ -201,7 +203,7 @@ export const ProjectDetailScreen = () => {
                         renderItem={({ item }) => (
                             <ProjectTaskCard
                                 task={item}
-                                onPress={() => project && navigation.navigate('TaskDetail', { projectId: project.id, taskId: item.id, projectRole: currentUserRole})}
+                                onPress={() => project && navigation.navigate('TaskDetail', { projectId: project.id, taskId: item.id, projectRole: currentUserRole, onTaskUpdate: updateTaskInList, onTaskDelete: removeTaskFromList})}
                             />
                         )}
                         contentContainerStyle={styles.listContainer}
