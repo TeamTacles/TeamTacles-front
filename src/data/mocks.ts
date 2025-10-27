@@ -194,6 +194,7 @@ export const MOCK_TASKS: Task[] = [
         projectName: 'Projeto TeamTacles',
         status: 'IN_PROGRESS',
         createdAt: new Date(Date.now() - 86400000 * 2).getTime(), // Criado há 2 dias
+        assignments: [],
     },
     {
         id: 102,
@@ -204,6 +205,7 @@ export const MOCK_TASKS: Task[] = [
         projectName: 'Projeto TeamTacles',
         status: 'TO_DO',
         createdAt: new Date(Date.now() - 86400000).getTime(), // Criado ontem
+        assignments: [],
     },
     {
         id: 103,
@@ -214,6 +216,7 @@ export const MOCK_TASKS: Task[] = [
         projectName: 'Website Redesign',
         status: 'TO_DO',
         createdAt: new Date('2025-10-01T23:59:59Z').getTime(),
+        assignments: [],
     },
     {
         id: 104,
@@ -224,5 +227,6 @@ export const MOCK_TASKS: Task[] = [
         projectName: 'Website Redesign',
         status: 'DONE',
         createdAt: new Date('2025-09-15T23:59:59Z').getTime(),
+        assignments: [],
     },
 ];

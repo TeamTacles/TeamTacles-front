@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { projectService, ProjectDetails, ProjectTask, UpdateProjectRequest } from '../services/projectService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { RootStackParamList } from '../../../types/navigation';
+import { RootStackParamList } from '../../../types/Navigation';
 import { useProjectMembers } from './useProjectMembers';
 
 type ProjectDetailRouteProp = RouteProp<RootStackParamList, 'ProjectDetail'>;

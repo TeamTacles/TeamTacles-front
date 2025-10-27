@@ -7,7 +7,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { RootStackParamList } from '../../../types/navigation';
+import { RootStackParamList } from '../../../types/Navigation';
 import { Header } from '../../../components/common/Header';
 import { FilterPicker } from '../components/FilterPicker';
 import { EditTaskModal } from '../components/EditTaskModal';

@@ -6,7 +6,7 @@ import { teamService, InviteByEmailRequest } from '../services/teamService';
 import { Team, TeamMemberDetail } from '../../../types/entities';
 import { getErrorMessage, getInviteErrorMessage } from '../../../utils/errorHandler';
 import { NotificationPopupRef } from '../../../components/common/NotificationPopup';
-import { RootStackParamList } from '../../../types/navigation';
+import { RootStackParamList } from '../../../types/Navigation';
 import { useNotification } from '../../../contexts/NotificationContext';
 
 type TeamDetailRouteProp = RouteProp<RootStackParamList, 'TeamDetail'>;

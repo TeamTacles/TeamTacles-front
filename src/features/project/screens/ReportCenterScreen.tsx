@@ -13,7 +13,7 @@ import { PieChart, StackedBarChart } from 'react-native-chart-kit';
 // --- FIM ALTERAÇÃO ---
 import * as Progress from 'react-native-progress';
 
-import { RootStackParamList } from '../../../types/navigation';
+import { RootStackParamList } from '../../../types/Navigation';
 import { MainButton } from '../../../components/common/MainButton';
 import { Header } from '../../../components/common/Header';
 import { FilterPicker } from '../../task/components/FilterPicker';

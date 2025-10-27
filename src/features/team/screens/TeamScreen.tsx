@@ -11,7 +11,7 @@ import { FilterModal, Filters } from "../../task/components/FilterModal";
 import { FilterButton } from "../../task/components/FilterButton";
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../types/navigation';
+import { RootStackParamList } from '../../../types/Navigation';
 import { NewTeamModal } from "../components/NewTeamModal";
 import { InviteMemberModal } from "../components/InviteMemberModal";
 import { InfoPopup } from "../../../components/common/InfoPopup";

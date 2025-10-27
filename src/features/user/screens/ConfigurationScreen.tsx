@@ -5,7 +5,7 @@ import { BaseCard } from "../../../components/common/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../../types/navigation';
+import { RootStackParamList } from '../../../types/Navigation';
 import { useAppContext } from '../../../contexts/AppContext';
 import { userService } from '../services/userService';
 import { useFocusEffect } from '@react-navigation/native'; 

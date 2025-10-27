@@ -8,7 +8,7 @@ import { MainButton } from '../../../components/common/MainButton';
 import Hyperlink from '../../../components/common/Hyperlink';
 import { FormCard } from '../../../components/common/FormCard';
 import { forgotPassword } from '../services/authService';
-import { RootStackParamList } from '../../../types/navigation';
+import { RootStackParamList } from '../../../types/Navigation';
 import { InfoPopup } from '../../../components/common/InfoPopup';
 
 const logo = require('../../../assets/logo.png');

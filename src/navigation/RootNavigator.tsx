@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useAppContext } from '../contexts/AppContext';
-import { RootStackParamList } from "../types/navigation";
+import { RootStackParamList } from "../types/Navigation";
 import { LoginScreen } from '../features/auth/screens/LoginScreen';
 import { RegisterScreen } from '../features/auth/screens/RegisterScreen';
 import { MenuNavigator } from './MenuNavigator';

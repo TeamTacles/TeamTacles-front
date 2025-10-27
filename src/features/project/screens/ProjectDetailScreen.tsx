@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { RootStackParamList } from '../../../types/navigation';
+import { RootStackParamList } from '../../../types/Navigation';
 import { Header } from '../../../components/common/Header';
 import { ProjectTask, ProjectMember } from '../services/projectService';
 import { MemberListItem } from '../../team/components/MemberListItem';

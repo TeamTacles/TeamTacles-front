@@ -13,7 +13,7 @@ import { MainButton } from "../../../components/common/MainButton";
 import { InputsField } from "../../../components/common/InputsField";
 import { FormCard } from "../../../components/common/FormCard";
 import Hyperlink from '../../../components/common/Hyperlink';
-import { RootStackParamList } from "../../../types/navigation";
+import { RootStackParamList } from "../../../types/Navigation";
 import { VerificationPopup } from "../components/VerificationPopup";
 import { InfoPopup } from "../../../components/common/InfoPopup";
 

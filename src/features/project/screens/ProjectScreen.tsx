@@ -7,7 +7,7 @@ import { SearchBar } from "../../../components/common/SearchBar";
 import { NewItemButton } from "../../../components/common/NewItemButton";
 import { CompositeScreenProps, useFocusEffect } from '@react-navigation/native';
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList, RootTabParamList } from "../../../types/navigation";
+import { RootStackParamList, RootTabParamList } from "../../../types/Navigation";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
 import { ProjectCard } from "../components/ProjectCard";
 import { EmptyState } from '../../../components/common/EmptyState';

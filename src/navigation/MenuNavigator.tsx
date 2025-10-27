@@ -7,7 +7,7 @@ import { ConfigurationScreen } from '../features/user/screens/ConfigurationScree
 import { TaskScreen } from '../features/task/screens/TaskScreen';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
-import { RootTabParamList } from '../types/navigation';
+import { RootTabParamList } from '../types/Navigation';
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
