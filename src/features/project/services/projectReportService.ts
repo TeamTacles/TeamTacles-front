@@ -78,11 +78,18 @@ const exportProjectToPdf = async (
     if (filter?.conclusionDateBefore) params.append('conclusionDateBefore', filter.conclusionDateBefore);
      if (filter?.isOverdue !== undefined) params.append('isOverdue', String(filter.isOverdue)); // Adiciona isOverdue se presente
 
+    const getDeviceTimezone = (): string => {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    };
+
     const queryString = params.toString();
     const url = `/project/${projectId}/export/pdf${queryString ? `?${queryString}` : ''}`;
-
+    const userTimeZone = getDeviceTimezone();
     const response = await api.get(url, {
         responseType: 'blob', // Importante para receber o PDF como Blob
+        headers: {
+            'X-Timezone': userTimeZone, // Envia o fuso horário do usuário
+        },
     });
 
     // --- EXTRAÇÃO DO NOME DO ARQUIVO ---
