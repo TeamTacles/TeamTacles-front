@@ -144,6 +144,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
         backgroundColor: '#232323' },
-        logo: { width: 130, height: 100, marginBottom: 10, alignSelf: 'center' },
+        logo: { width: 200, height: 160, marginBottom: 10, alignSelf: 'center' },
         introductionText: { color: '#ffffff', fontSize: 18, marginBottom: 20, textAlign: 'center' },
 });

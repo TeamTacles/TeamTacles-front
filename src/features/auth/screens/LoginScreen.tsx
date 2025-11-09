@@ -168,8 +168,8 @@ const style = StyleSheet.create({
         backgroundColor: '#232323',
     },
     logo: {
-        width: 130,
-        height: 100,
+        width: 200,
+        height: 160,
         marginBottom: 20,
         alignSelf: 'center'
     },
