@@ -1,4 +1,3 @@
-// src/utils/errorHandler.ts
 import { ErrorCode } from '../types/api';
 import { isAxiosError } from 'axios'; // Importar isAxiosError
 
@@ -23,26 +22,22 @@ export const getErrorMessage = (error: any): string => {
     [ErrorCode.RESOURCE_ALREADY_EXISTS]: backendMessage || 'Este recurso já existe.',
   };
 
-  // Retorna a mensagem específica do errorCode, se mapeada
   if (errorCode && messages[errorCode as ErrorCode]) {
       return messages[errorCode as ErrorCode]!;
   }
 
-  // Se não houver errorCode mapeado, tenta retornar a errorMessage do backend
   if (backendMessage) {
       return backendMessage;
   }
 
-  // Se for um erro genérico (não Axios ou sem detalhes), retorna a mensagem padrão
   if (error instanceof Error) {
       return error.message;
   }
 
-  // Fallback final
   return 'Ocorreu um erro desconhecido.';
 };
 
-// Função específica para tratamento de erro de convite por email
+// Função para tratamento de erro de convite por email
 export const getInviteErrorMessage = (error: any): string => {
   const errorCode = isAxiosError(error) ? error.response?.data?.errorCode : undefined;
 
@@ -52,7 +47,6 @@ export const getInviteErrorMessage = (error: any): string => {
     if (backendMessage.toLowerCase().includes('user not found')) {
         return 'Usuário não encontrado. Certifique-se de que a pessoa já possui uma conta.';
     }
-    // Se for outro RESOURCE_NOT_FOUND, usa a mensagem genérica
     return getErrorMessage(error);
   }
 

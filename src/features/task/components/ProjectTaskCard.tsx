@@ -1,10 +1,8 @@
-// src/components/ProjectTaskCard.tsx
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseCard } from "../../../components/common/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
-import { ProjectTask } from '../../project/services/projectService'; // Usamos o tipo mais detalhado
+import { ProjectTask } from '../../project/services/projectService'; 
 
 interface ProjectTaskCardProps {
     task: ProjectTask;

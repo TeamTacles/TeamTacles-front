@@ -1,15 +1,12 @@
-// src/components/common/Header.tsx
 
 import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity,StatusBar,ImageSourcePropType  } from 'react-native';
 
-// Informações do usuário. Caso a imagem não esteja disponível, as iniciais do nome serão exibidas no lugar.
 interface UserProfile {
     avatarSource?: ImageSourcePropType;
     initials: string;
 }
 
-// Informações do Header, possuindo uma função para caso clicar no ícone seja pressionado. De forma similar, uma função para caso o ícone de notificação seja apertado, além de um atributo para indicar as notificações que restam a serem lidas
 interface HeaderProps {
     userProfile: UserProfile | null;
     onPressProfile: () => void;
@@ -24,7 +21,6 @@ export const Header = ({ userProfile, onPressProfile, notificationCount = 0, onP
 
   return (
     <View style={styles.container}>
-        {/*Personalizando o fundo da barra de notificação.*/}
         <StatusBar
             translucent={true}            
             barStyle="light-content" 

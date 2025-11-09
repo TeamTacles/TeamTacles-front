@@ -67,7 +67,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     setToken(newToken);
     await AsyncStorage.setItem('@TeamTacles:token', newToken);
-    await loadUserData(); // Carrega os dados do usuário após o login
+    await loadUserData(); 
   }
 
   async function signOut() {

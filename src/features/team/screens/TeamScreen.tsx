@@ -1,4 +1,3 @@
-// src/features/team/screens/TeamScreen.tsx
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { Header } from "../../../components/common/Header";
 import { View, StyleSheet, FlatList, ActivityIndicator } from "react-native";
@@ -25,7 +24,7 @@ type TeamScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const TeamScreen = () => {
     const navigation = useNavigation<TeamScreenNavigationProp>();
-    const { signed, user } = useAppContext(); // Pega o usuário do contexto
+    const { signed, user } = useAppContext(); 
     const [search, setSearch] = useState('');
 
     const {
@@ -142,16 +141,13 @@ export const TeamScreen = () => {
               visible={isInviteModalVisible}
               onClose={handleCloseInviteModal}
               teamId={newlyCreatedTeam?.id || null}
-              // --- INÍCIO DA CORREÇÃO: Passar a ref para o modal ---
               notificationRef={modalNotificationRef}
-              // --- FIM DA CORREÇÃO ---
             />
 
             <InfoPopup visible={infoPopup.visible} title={infoPopup.title} message={infoPopup.message} onClose={() => setInfoPopup({ visible: false, title: '', message: '' })} />
         </SafeAreaView>
     );
 };
-// ESTILOS CONTINUAM OS MESMOS
 const styles = StyleSheet.create({
     safeAreaView: { flex: 1, backgroundColor: '#191919' },
     searchContainer: { flexDirection: 'row', alignItems: 'flex-start', paddingRight: 15 },

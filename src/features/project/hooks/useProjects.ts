@@ -1,22 +1,18 @@
-// src/features/project/hooks/useProjects.ts
 import { useState, useEffect, useCallback } from 'react';
-import { projectService, CreateProjectRequest, ProjectDetails } from '../services/projectService'; // Importar ProjectDetails
+import { projectService, CreateProjectRequest, ProjectDetails } from '../services/projectService'; 
 import { getErrorMessage } from '../../../utils/errorHandler';
-import { Project, Member } from '../../../types/entities'; // Importar Member
+import { Project, Member } from '../../../types/entities'; 
 import { Filters } from '../../task/components/FilterModal';
 import { getInitialsFromName } from '../../../utils/stringUtils';
-import { useAppContext } from '../../../contexts/AppContext'; // Importar useAppContext
+import { useAppContext } from '../../../contexts/AppContext'; 
 
-// Interface auxiliar que representa a resposta da API (UserProjectResponseDTO)
 interface ProjectApiResponse extends ProjectDetails {
   taskCount: number;
   memberNames: string[];
 }
 
 export function useProjects(isAuthenticated: boolean) {
-  // --- INÍCIO DA ALTERAÇÃO ---
-  const { user } = useAppContext(); // Obter o usuário do contexto
-  // --- FIM DA ALTERAÇÃO ---
+  const { user } = useAppContext(); 
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMoreProjects, setHasMoreProjects] = useState(true);
@@ -99,18 +95,15 @@ export function useProjects(isAuthenticated: boolean) {
     try {
       const createdProject = await projectService.createProject(projectData);
 
-      // --- INÍCIO DA ALTERAÇÃO: Usar dados do usuário do contexto ---
       const newProject: Project = {
         id: createdProject.id,
         title: createdProject.title,
         description: createdProject.description,
         projectRole: createdProject.projectRole,
-        // Usar dados do usuário logado (com fallback)
         teamMembers: [{ name: user?.name ?? 'Usuário', initials: user?.initials ?? '?' }],
         createdAt: Date.now(),
         taskCount: 0
       };
-      // --- FIM DA ALTERAÇÃO ---
       setProjects(currentProjects => [newProject, ...currentProjects]);
       return newProject;
     } catch (error) {

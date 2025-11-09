@@ -1,4 +1,3 @@
-// src/features/team/components/MemberListItem.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,7 +6,7 @@ interface MemberListItemProps {
   name: string;
   role: string;
   onPress: () => void;
-  disabled?: boolean; // 1. Adicionar a prop opcional 'disabled'
+  disabled?: boolean; 
 }
 
 const getRoleIcon = (role: string) => {
@@ -27,10 +26,8 @@ const roleTranslations: { [key: string]: string } = {
     MEMBER: 'Membro',
 };
 
-// 2. Receber 'disabled' nas props
 export const MemberListItem: React.FC<MemberListItemProps> = ({ name, role, onPress, disabled }) => {
   return (
-    // 3. Aplicar a prop 'disabled' e um estilo condicional ao TouchableOpacity
     <TouchableOpacity 
       style={[styles.container, disabled && styles.disabledContainer]} 
       onPress={onPress}
@@ -52,7 +49,6 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 10,
   },
-  // 4. Adicionar estilo para o estado desabilitado
   disabledContainer: {
     opacity: 0.5,
   },

@@ -1,11 +1,8 @@
-// src/features/project/components/ProjectCard.tsx
 import React from "react";
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseCard } from "../../../components/common/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
-// Remover a importação do TimeAgo, pois não será mais usado aqui
-// import TimeAgo from "../../../components/TimeAgo";
-import { Project, Member } from "../../../types/entities"; // Importar Member
+import { Project, Member } from "../../../types/entities"; 
 
 type ProjectCardProps = {
     project: Project;
@@ -13,7 +10,6 @@ type ProjectCardProps = {
 }
 
 export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
-    // Remover createdAt da desestruturação se não for mais usado em outro lugar
     const { title, description, teamMembers, taskCount } = project;
 
     return (
@@ -30,13 +26,7 @@ export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
                         <Text style={styles.footerText}>{taskCount} Tarefa{taskCount !== 1 ? 's' : ''}</Text>
                     </View>
 
-                    {/* --- INÍCIO DA ALTERAÇÃO: Remover a seção "Atualizado..." --- */}
-                    {/* <View style={styles.infoItem}>
-                        <Icon name="time-outline" size={14} color="#A9A9A9" />
-                        <Text style={styles.footerText}>Atualizado <TimeAgo timestamp={createdAt} /></Text>
-                    </View> */}
-                    {/* --- FIM DA ALTERAÇÃO --- */}
-
+                
                     <View style={styles.teamContainer}>
                         {teamMembers.slice(0, 3).map((member: Member, index: number) => (
                             <View key={`${member.name}-${index}`} style={[styles.avatar, { right: index * 15 }]}>
@@ -61,7 +51,7 @@ const styles = StyleSheet.create({
         padding: 15,
     },
     textContainer: {
-        marginBottom: 20, // Aumentar margem para compensar remoção do 'Atualizado'
+        marginBottom: 20, 
     },
     title: {
         color: '#EB5F1C',
@@ -76,15 +66,13 @@ const styles = StyleSheet.create({
     },
     footer: {
         flexDirection: 'row',
-        justifyContent: 'space-between', // Manter space-between
+        justifyContent: 'space-between', 
         alignItems: 'center',
-        // Remover marginTop se não for necessário após remover 'Atualizado'
     },
     infoItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        // Adicionar um marginRight para separar 'Tarefas' dos avatares, se necessário
-        marginRight: 10, // Exemplo
+        marginRight: 10, 
     },
     footerText: {
         color: '#A9A9A9',
@@ -94,7 +82,6 @@ const styles = StyleSheet.create({
     teamContainer: {
         flexDirection: 'row-reverse',
         alignItems: 'center',
-        // Não precisa mais de paddingLeft se o space-between funcionar bem
     },
     avatar: {
         width: 30,

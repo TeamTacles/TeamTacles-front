@@ -1,5 +1,3 @@
-// src/components/TaskCard.tsx
-
 import React from "react";
 import { View, Text, StyleSheet } from 'react-native';
 import { BaseCard } from "../../../components/common/BaseCard";

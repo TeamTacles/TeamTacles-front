@@ -1,26 +1,22 @@
-// src/components/EditProjectModal.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { ProjectDetails } from '../services/projectService'; // Usando o tipo de detalhes do projeto
+import { ProjectDetails } from '../services/projectService'; 
 
 interface EditProjectModalProps {
   visible: boolean;
   project: ProjectDetails | null;
   onClose: () => void;
   onSave: (updatedData: { title: string; description: string }) => void;
-  onDelete: () => void; // A função para deletar
+  onDelete: () => void; 
 }
 
 export const EditProjectModal: React.FC<EditProjectModalProps> = ({ visible, project, onClose, onSave, onDelete }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
-
-    // O estado para o modal de confirmação foi movido para a tela principal
 
     useEffect(() => {
         if (project) {
@@ -89,7 +85,6 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({ visible, pro
                       <MainButton title="Salvar Alterações" onPress={handleSave} />
                     </View>
 
-                    {/* Seção para deletar o projeto */}
                     <View style={styles.divider} />
                     <TouchableOpacity style={styles.deleteButton} onPress={onDelete}>
                         <Icon name="trash-outline" size={20} color="#ff4545" />

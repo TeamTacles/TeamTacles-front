@@ -1,4 +1,3 @@
-// src/components/NewProjectModal.tsx
 import React, { useState } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';

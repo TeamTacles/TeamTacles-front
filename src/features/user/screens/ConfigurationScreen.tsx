@@ -46,7 +46,6 @@ export const ConfigurationScreen = () => {
             initials: initials
         });
     } catch (error) {
-        // Error handling can be added here if needed
     } finally {
         setLoadingData(false);
     }

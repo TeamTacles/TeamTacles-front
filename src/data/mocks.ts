@@ -1,12 +1,7 @@
-// src/data/mocks.ts
-// Dados mocados centralizados para desenvolvimento e testes
-
 import { Team, Member, Task } from '../types/entities';
 import { ProjectMember, ProjectTask } from '../features/project/services/projectService';
 
-/**
- * Times mocados para a tela de Times
- */
+
 export const MOCK_TEAMS: Team[] = [
     {
         id: '1',
@@ -81,9 +76,7 @@ export const MOCK_USER_TEAMS: Team[] = [
     },
 ];
 
-/**
- * Membros mocados para os detalhes do projeto
- */
+
 export const MOCK_MEMBERS: ProjectMember[] = [
     { userId: 1001, username: 'Mock 1', email: 'mock1@email.com', projectRole: 'MEMBER' },
     { userId: 1002, username: 'Mock 2', email: 'mock2@email.com', projectRole: 'MEMBER' },
@@ -112,9 +105,7 @@ export const MOCK_MEMBERS: ProjectMember[] = [
     { userId: 1025, username: 'Mock 25', email: 'mock25@email.com', projectRole: 'MEMBER' },
 ];
 
-/**
- * Tarefas iniciais mocadas para os detalhes do projeto
- */
+
 export const MOCK_INITIAL_TASKS: ProjectTask[] = [
     {
         id: 101,
@@ -181,37 +172,35 @@ export const MOCK_INITIAL_TASKS: ProjectTask[] = [
     },
 ];
 
-/**
- * Tarefas mocadas para a tela de Tarefas
- */
+
 export const MOCK_TASKS: Task[] = [
     {
         id: 101,
         title: 'Revisar protótipo de alta fidelidade',
         description: 'Verificar todos os fluxos de usuário.',
-        dueDate: new Date(Date.now() + 86400000 * 5).toISOString(), // Prazo: 5 dias a partir de hoje
+        dueDate: new Date(Date.now() + 86400000 * 5).toISOString(), 
         projectId: 1,
         projectName: 'Projeto TeamTacles',
         status: 'IN_PROGRESS',
-        createdAt: new Date(Date.now() - 86400000 * 2).getTime(), // Criado há 2 dias
+        createdAt: new Date(Date.now() - 86400000 * 2).getTime(), 
         assignments: [],
     },
     {
         id: 102,
         title: 'Desenvolver tela de Login',
         description: 'Implementar a interface e a lógica de autenticação.',
-        dueDate: new Date(Date.now() + 86400000 * 10).toISOString(), // Prazo: 10 dias
+        dueDate: new Date(Date.now() + 86400000 * 10).toISOString(), 
         projectId: 1,
         projectName: 'Projeto TeamTacles',
         status: 'TO_DO',
-        createdAt: new Date(Date.now() - 86400000).getTime(), // Criado ontem
+        createdAt: new Date(Date.now() - 86400000).getTime(), 
         assignments: [],
     },
     {
         id: 103,
         title: 'Configurar ambiente de testes',
         description: 'Instalar e configurar o Jest e a Testing Library.',
-        dueDate: new Date('2025-10-10T23:59:59Z').toISOString(), // Prazo: 10 de Outubro de 2025 (atrasado)
+        dueDate: new Date('2025-10-10T23:59:59Z').toISOString(), 
         projectId: 2,
         projectName: 'Website Redesign',
         status: 'TO_DO',
@@ -222,7 +211,7 @@ export const MOCK_TASKS: Task[] = [
         id: 104,
         title: 'Entregar relatório de performance',
         description: 'Gerar o relatório do último trimestre.',
-        dueDate: new Date('2025-09-30T23:59:59Z').toISOString(), // Prazo: 30 de Setembro de 2025 (concluído)
+        dueDate: new Date('2025-09-30T23:59:59Z').toISOString(),
         projectId: 2,
         projectName: 'Website Redesign',
         status: 'DONE',

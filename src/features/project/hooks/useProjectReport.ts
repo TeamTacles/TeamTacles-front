@@ -1,10 +1,7 @@
-// src/features/project/hooks/useProjectReport.ts
 import { useState, useEffect, useCallback } from 'react';
 import { Platform } from 'react-native';
-// Keep the legacy import as requested
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-// Import the updated service that returns { blob, filename }
 import { projectReportService, ProjectReportDTO } from '../services/projectReportService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -19,16 +16,11 @@ export function useProjectReport(projectId: number) {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [filters, setFilters] = useState<TaskFilterReportDTO>({}); // State to hold current filters
 
-  /**
-   * Busca os dados do dashboard, applying the provided filters.
-   * Uses the hook's internal filters state if no filters are passed.
-   */
   const fetchDashboard = useCallback(async (appliedFilters: TaskFilterReportDTO = filters) => { // Modified: Accept filters, default to internal state
     if (!projectId) return;
 
-    setLoading(true); // Always set loading before request
+    setLoading(true); 
     try {
-      // Pass the filters to the service
       const data = await projectReportService.getProjectDashboard(projectId, appliedFilters);
       setReport(data);
     } catch (error) {
@@ -37,62 +29,43 @@ export function useProjectReport(projectId: number) {
         type: 'error',
         message: getErrorMessage(error),
       });
-      setReport(null); // Clear report on error
+      setReport(null); 
     } finally {
       setLoading(false);
-      if (initialLoading) setInitialLoading(false); // Only set initialLoading to false once
+      if (initialLoading) setInitialLoading(false); 
     }
-  }, [projectId, showNotification, initialLoading, filters]); // Added filters to dependencies
+  }, [projectId, showNotification, initialLoading, filters]); 
 
-  /**
-   * Exporta o relatório em PDF (compatível com Expo SDK 54+)
-   * Uses the current filters state.
-   */
   const handleExportPdf = useCallback(async () => {
-    // ... (implementation remains the same, it already uses the 'filters' state) ...
     if (!projectId) return;
 
     setIsExportingPdf(true);
     try {
-      // --- MODIFICATION START: Get blob AND filename from service ---
-      // The export function already uses the current 'filters' state
+      
       const { blob, filename } = await projectReportService.exportProjectToPdf(projectId, filters);
-      // --- MODIFICATION END ---
 
-      // --- REMOVE local filename generation ---
-      // const filename = `relatorio_projeto_${projectId}_${new Date().toISOString().split('T')[0]}.pdf`;
-      // --- REMOVE END ---
 
 
       if (Platform.OS === 'web') {
-        // --- Web ---
-        // Pass the filename obtained from the service
         projectReportService.downloadPdfWeb(blob, filename);
         showNotification({ type: 'success', message: 'PDF exportado com sucesso!' });
       } else {
-        // --- Mobile ---
         const reader = new FileReader();
         reader.readAsDataURL(blob);
 
         reader.onloadend = async () => {
           const base64data = reader.result as string;
-          const pdfBase64 = base64data.split(',')[1]; // remove prefixo data:application/pdf;base64,
+          const pdfBase64 = base64data.split(',')[1]; 
 
           try {
-                // Keep the manual type casting for legacy compatibility
                 const cacheDir = (FileSystem as any).cacheDirectory as string | null;
                 const docDir = (FileSystem as any).documentDirectory as string | null;
 
-                // Usa o cacheDirectory se existir, senão fallback para documentDirectory
-                // --- MODIFICATION START: Use filename from service ---
                 const pdfUri = `${cacheDir ?? docDir ?? ''}${filename}`;
-                // --- MODIFICATION END ---
 
 
-                // Salva o arquivo como Base64
                 await FileSystem.writeAsStringAsync(pdfUri, pdfBase64, {
-                    // Use the correct encoding constant for legacy if needed, otherwise 'base64' is fine
-                    encoding: 'base64', // Or FileSystem.EncodingType.Base64 if available in legacy
+                    encoding: 'base64', 
                 });
 
                 console.log('📄 PDF salvo em:', pdfUri);
@@ -112,8 +85,6 @@ export function useProjectReport(projectId: number) {
                     UTI: 'com.adobe.pdf',
                 });
 
-                // Opcional: deletar o arquivo após compartilhar
-                // await FileSystem.deleteAsync(pdfUri);
             } catch (err: any) {
                 console.error('Erro ao salvar/compartilhar PDF:', err);
                 // Evita mostrar erro se o usuário apenas cancelou o compartilhamento
@@ -140,43 +111,35 @@ export function useProjectReport(projectId: number) {
     } finally {
         setIsExportingPdf(false);
     }
-  }, [projectId, filters, showNotification]); // Dependencies remain the same
+  }, [projectId, filters, showNotification]); 
 
 
-  /**
-   * Applies new filters and refetches the dashboard data.
-   */
+  
   const applyFilters = useCallback((newFilters: TaskFilterReportDTO) => {
-    setFilters(newFilters); // Update internal filter state
-    fetchDashboard(newFilters); // Refetch dashboard with new filters
-  }, [fetchDashboard]); // Depends on fetchDashboard
+    setFilters(newFilters); 
+    fetchDashboard(newFilters); 
+  }, [fetchDashboard]); 
 
-  /**
-   * Clears filters and refetches the dashboard data.
-   */
+  
   const clearFilters = useCallback(() => {
     const emptyFilters = {};
-    setFilters(emptyFilters); // Clear internal filter state
-    fetchDashboard(emptyFilters); // Refetch dashboard without filters
-  }, [fetchDashboard]); // Depends on fetchDashboard
+    setFilters(emptyFilters); 
+    fetchDashboard(emptyFilters); 
+  }, [fetchDashboard]);
 
-  // Fetch initial dashboard data on mount
   useEffect(() => {
-    // Pass initial (empty) filters
     fetchDashboard({});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId]); // Only depends on projectId for initial fetch
+  }, [projectId]); 
 
   return {
     report,
     loading,
     initialLoading,
     isExportingPdf,
-    filters, // Expose filters state if needed externally
-    fetchDashboard, // Expose fetchDashboard if needed for manual refresh
+    filters, 
+    fetchDashboard, 
     handleExportPdf,
-    applyFilters, // Use this function to apply filters from the screen
-    clearFilters, // Use this function to clear filters from the screen
-    // setFilters can be removed if applyFilters/clearFilters are sufficient
+    applyFilters, 
+    clearFilters, 
   };
 }

@@ -1,7 +1,5 @@
-// src/features/task/components/EditTaskModal.tsx
-
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'; // Import ActivityIndicator
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'; 
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -16,8 +14,8 @@ interface EditTaskModalProps {
   task: TaskData | null;
   onClose: () => void;
   onSave: (updatedData: { title: string; description: string }) => void;
-  onDelete: () => void; // Adicionada a função para deletar
-  isSaving?: boolean; // <-- PROPRIEDADE ADICIONADA
+  onDelete: () => void; 
+  isSaving?: boolean; 
 }
 
 export const EditTaskModal: React.FC<EditTaskModalProps> = ({
@@ -26,7 +24,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
     onClose,
     onSave,
     onDelete,
-    isSaving = false // <-- Valor padrão adicionado
+    isSaving = false 
 }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -56,7 +54,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
                             value={title}
                             onChangeText={setTitle}
                             maxLength={100}
-                            editable={!isSaving} // Desabilita edição enquanto salva
+                            editable={!isSaving} 
                         />
                         <InputsField
                             label="Descrição"
@@ -65,11 +63,10 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
                             multiline={true}
                             numberOfLines={4}
                             maxLength={500}
-                            editable={!isSaving} // Desabilita edição enquanto salva
+                            editable={!isSaving} 
                         />
                     </ScrollView>
                     <View style={styles.buttonContainer}>
-                      {/* Mostra ActivityIndicator ou Texto no botão */}
                       <MainButton
                         title={isSaving ? "Salvando..." : "Salvar Alterações"}
                         onPress={handleSave}
@@ -77,12 +74,11 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
                       />
                     </View>
 
-                    {/* Seção para deletar a tarefa */}
                     <View style={styles.divider} />
                     <TouchableOpacity
-                        style={[styles.deleteButton, isSaving && styles.disabledButton]} // Estilo desabilitado
+                        style={[styles.deleteButton, isSaving && styles.disabledButton]} 
                         onPress={onDelete}
-                        disabled={isSaving} // Desabilita enquanto salva
+                        disabled={isSaving} 
                     >
                         <Icon name="trash-outline" size={20} color={isSaving ? "#888" : "#ff4545"} />
                         <Text style={[styles.deleteButtonText, isSaving && styles.disabledText]}>Excluir Tarefa</Text>
@@ -117,7 +113,6 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginLeft: 8,
     },
-    // Estilos para desabilitar botões
     disabledButton: {
         opacity: 0.5,
     },

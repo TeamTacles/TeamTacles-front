@@ -1,4 +1,3 @@
-// src/types/navigation.ts
 import { TeamType } from './entities';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ProjectTask } from '../features/project/services/projectService';
@@ -14,15 +13,14 @@ export type RootStackParamList = {
     TeamDetail: { team: TeamType };
     ProjectDetail: { projectId: number; projectTitle: string; projectRole: 'OWNER' | 'ADMIN' | 'MEMBER' };
     ReportCenter: { projectId: number };
-    // --- CORREÇÃO AQUI ---
     TaskDetail: {
         projectId: number;
         taskId: number;
-        projectRole: 'OWNER' | 'ADMIN' | 'MEMBER'; // Adicionar projectRole
-        onTaskUpdate?: (taskId: number, updates: Partial<ProjectTask>) => void; // Callback para atualização otimista
-        onTaskDelete?: (taskId: number) => void; // Callback para remoção otimista
+        projectRole: 'OWNER' | 'ADMIN' | 'MEMBER'; 
+        onTaskUpdate?: (taskId: number, updates: Partial<ProjectTask>) => void;
+        onTaskDelete?: (taskId: number) => void; 
     };
-    // --- FIM DA CORREÇÃO ---
+ 
 };
 
 export type RootTabParamList = {

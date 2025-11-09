@@ -1,5 +1,3 @@
-// src/types/api.ts
-// Tipos relacionados à API e respostas HTTP
 
 export interface PagedResponse<T> {
   content: T[];

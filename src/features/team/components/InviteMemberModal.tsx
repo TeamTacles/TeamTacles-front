@@ -1,4 +1,3 @@
-// src/features/team/components/InviteMemberModal.tsx
 import React, { useState, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -18,13 +17,12 @@ interface InviteMemberModalProps {
   projectId?: number | string | null; // Adicionado projectId
   onClose: () => void;
   notificationRef?: React.RefObject<NotificationPopupRef | null>;
-  // inviteLink removido, pois será gerado sob demanda para projetos
 }
 
 export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
     visible,
     teamId,
-    projectId, // Recebe projectId
+    projectId, 
     onClose,
     notificationRef
 }) => {
@@ -38,7 +36,6 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   const [isInviting, setIsInviting] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
-  // Determina o tipo de recurso (Projeto ou Time)
   const resourceType = projectId ? 'project' : 'team';
   const resourceId = projectId || teamId;
 
@@ -74,7 +71,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
     setIsGeneratingLink(true);
     try {
       let linkToShare = '';
-      let entityName = resourceType === 'project' ? 'projeto' : 'time'; // Nome para a mensagem
+      let entityName = resourceType === 'project' ? 'projeto' : 'time'; 
 
       if (resourceType === 'project') {
         const response = await projectService.generateInviteLink(Number(resourceId));
@@ -87,13 +84,12 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
       if (linkToShare) {
         await Share.share({
           message: `Você foi convidado para um ${entityName}! Junte-se através do link: ${linkToShare}`,
-          url: linkToShare, // Opcional, mas bom ter para algumas plataformas
+          url: linkToShare, 
         });
       } else {
         throw new Error("Link não recebido da API.");
       }
     } catch (error) {
-      // Ignora erro se o usuário cancelou o compartilhamento
       if (!(error instanceof Error && error.message.includes('Share Canceled'))) {
         console.error(`Erro ao gerar/compartilhar link do ${resourceType}:`, error);
         effectiveNotificationRef.current?.show({ type: 'error', message: 'Não foi possível gerar o link de convite.' });
@@ -147,7 +143,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
             <MainButton
               title={isInviting ? "Enviando..." : "Enviar Convite"}
               onPress={handleInviteByEmail}
-              disabled={isInviting || isGeneratingLink} // Desabilita também ao gerar link
+              disabled={isInviting || isGeneratingLink} 
             />
 
             <View style={styles.divider} />
@@ -156,7 +152,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
             <TouchableOpacity
               style={styles.linkContainer}
               onPress={handleGenerateAndShareLink}
-              disabled={isGeneratingLink || isInviting} // Desabilita também ao convidar por email
+              disabled={isGeneratingLink || isInviting} 
             >
                 {isGeneratingLink ? (
                   <ActivityIndicator color="#EB5F1C" />
@@ -228,7 +224,7 @@ const styles = StyleSheet.create({
     linkContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between', // Alinha texto à esquerda, ícone à direita
+        justifyContent: 'space-between', 
         backgroundColor: '#3C3C3C',
         borderRadius: 8,
         paddingVertical: 12,
@@ -237,8 +233,8 @@ const styles = StyleSheet.create({
     linkText: {
         color: '#A9A9A9',
         fontSize: 14,
-        flex: 1, // Permite que o texto ocupe espaço disponível
-        marginRight: 10, // Espaço antes do ícone
+        flex: 1, 
+        marginRight: 10, 
     },
     roleSelectorContainer: {
       flexDirection: 'row',

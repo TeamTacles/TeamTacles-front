@@ -1,4 +1,3 @@
-// src/features/team/hooks/useTeams.ts
 import { useState, useEffect, useCallback } from 'react';
 import { teamService } from '../services/teamService';
 import { getErrorMessage } from '../../../utils/errorHandler';
@@ -15,7 +14,6 @@ export function useTeams(isAuthenticated: boolean) {
   const [filters, setFilters] = useState<Filters>({});
   const [nameFilter, setNameFilter] = useState('');
 
-  // A função fetchTeams precisa ter suas dependências declaradas corretamente
   const fetchTeams = useCallback(async (page: number, currentFilters: Filters, currentName: string) => {
     const isRefreshing = page === 0;
     if (isRefreshing) {
@@ -62,7 +60,7 @@ export function useTeams(isAuthenticated: boolean) {
         setLoadingTeams(false);
       }
     }
-  }, []); // Mantemos o array vazio, pois as funções de set do state são estáveis
+  }, []); 
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -74,9 +72,7 @@ export function useTeams(isAuthenticated: boolean) {
     }
   }, [isAuthenticated, filters, nameFilter, fetchTeams]);
 
-  // --- INÍCIO DA CORREÇÃO ---
   
-  // 1. Envolver as funções que serão exportadas com `useCallback`
   const refreshTeams = useCallback(() => {
     fetchTeams(0, filters, nameFilter);
   }, [fetchTeams, filters, nameFilter]);
@@ -103,7 +99,6 @@ export function useTeams(isAuthenticated: boolean) {
     setCurrentPage(0);
   }, []);
 
-  // --- FIM DA CORREÇÃO ---
 
   return {
     teams,

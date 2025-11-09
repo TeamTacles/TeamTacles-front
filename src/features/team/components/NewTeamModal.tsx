@@ -1,5 +1,3 @@
-// src/components/NewTeamModal.tsx
-
 import React, { useState } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';
@@ -96,7 +94,6 @@ export const NewTeamModal: React.FC<NewTeamModalProps> = ({ visible, onClose, on
     );
 };
 
-// ... Estilos do NewTeamModal (sem alterações)
 const styles = StyleSheet.create({
     centeredView: {
         flex: 1,

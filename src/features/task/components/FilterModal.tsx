@@ -38,7 +38,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
     const handleDateChange = (field: 'createdAtAfter' | 'createdAtBefore', date: Date) => {
         setLocalFilters(prev => ({ ...prev, [field]: date }));
         if (Platform.OS !== 'web') {
-            setShowPickerFor(null); // Fecha o picker no mobile
+            setShowPickerFor(null); 
         }
     };
 
@@ -50,7 +50,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
             setLocalFilters(prev => ({ ...prev, [showPickerFor]: currentDate }));
         }
 
-        setShowPickerFor(null); // Fecha o picker
+        setShowPickerFor(null); 
     };
 
     const toggleStatus = (status: Filters['status']) => {

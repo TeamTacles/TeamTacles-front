@@ -1,11 +1,7 @@
-// src/features/team/services/teamService.ts
 import api from '../../../api/api';
 import { PagedResponse } from '../../../types/api';
 import { Team, TeamMemberDetail } from '../../../types/entities';
 import { Filters } from '../../task/components/FilterModal';
-
-// --- TIPOS (Baseado nos seus DTOs em Java) ---
-
 export interface CreateTeamRequest {
   name: string;
   description: string;
@@ -30,7 +26,6 @@ export interface UpdateMemberRoleRequest {
     newRole: 'OWNER' | 'ADMIN' | 'MEMBER';
 }
 
-// --- FUNÇÕES DE API ---
 
 const formatDateForApi = (date: Date | undefined): string | undefined => {
   if (!date) return undefined;
@@ -107,5 +102,5 @@ export const teamService = {
   deleteTeam,
   updateMemberRole,
   removeMember,
-  leaveTeam, // Adicionar a nova função
+  leaveTeam,
 };

@@ -1,4 +1,3 @@
-// src/features/project/hooks/useProjectDetail.ts
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';

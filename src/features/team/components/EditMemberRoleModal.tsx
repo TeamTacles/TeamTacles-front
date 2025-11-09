@@ -1,5 +1,3 @@
-// src/features/team/components/EditMemberRoleModal.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';
@@ -15,7 +13,7 @@ export interface MemberData {
 interface EditMemberRoleModalProps {
   visible: boolean;
   member: MemberData | null;
-  currentUserRole: 'OWNER' | 'ADMIN' | 'MEMBER'; // Papel do usuário logado
+  currentUserRole: 'OWNER' | 'ADMIN' | 'MEMBER'; 
   onClose: () => void;
   onSave: (newRole: MemberData['role']) => void;
   onDelete: () => void;
@@ -57,13 +55,9 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
     };
 
     const isMemberOwner = member?.role === 'OWNER';
-    // --- LÓGICA DE PERMISSÃO APRIMORADA ---
-    // Não pode editar se:
-    // 1. O membro selecionado é o OWNER
-    // 2. O usuário atual é ADMIN e o membro selecionado também é ADMIN
+    
     const cannotEditRole = isMemberOwner || (currentUserRole === 'ADMIN' && member?.role === 'ADMIN');
 
-    // Quem pode deletar: OWNER pode deletar ADMIN e MEMBER. ADMIN pode deletar MEMBER. Ninguém deleta OWNER.
     const canDelete = (currentUserRole === 'OWNER' || (currentUserRole === 'ADMIN' && member?.role === 'MEMBER')) && !isMemberOwner; //
 
     return (
@@ -85,15 +79,14 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
 
                                 <Text style={styles.label}>Cargo:</Text>
                                 <TouchableOpacity
-                                    style={[styles.pickerButton, cannotEditRole && styles.disabledPickerButton]} // Estilo desabilitado
-                                    onPress={() => !cannotEditRole && setPickerVisible(true)} // Só abre se puder editar
-                                    disabled={cannotEditRole} // Desabilita o toque
+                                    style={[styles.pickerButton, cannotEditRole && styles.disabledPickerButton]} 
+                                    onPress={() => !cannotEditRole && setPickerVisible(true)} 
+                                    disabled={cannotEditRole} 
                                 >
                                     <Text style={styles.pickerButtonText}>{roleTranslations[selectedRole]}</Text>
                                     <Icon name="chevron-down-outline" size={24} color={cannotEditRole ? "#555" : "#A9A9A9"} />
                                 </TouchableOpacity>
 
-                                {/* Mensagem informativa sobre a restrição */}
                                 {cannotEditRole && (
                                     <Text style={styles.permissionNote}>
                                         {isMemberOwner
@@ -106,7 +99,7 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
                                     <MainButton
                                         title="Confirmar Alteração"
                                         onPress={handleSave}
-                                        disabled={cannotEditRole} // Desabilita o botão se não puder editar
+                                        disabled={cannotEditRole} 
                                     />
                                 </View>
 
@@ -124,7 +117,7 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
                     </View>
                 </View>
 
-                {/* Picker de cargos (sem alteração significativa, exceto a remoção do OWNER da lista selecionável) */}
+                
                 <Modal
                     animationType="slide" transparent={true} visible={isPickerVisible}
                     onRequestClose={() => setPickerVisible(false)}
@@ -132,7 +125,6 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
                     <TouchableOpacity style={styles.pickerCenteredView} activeOpacity={1} onPressOut={() => setPickerVisible(false)}>
                         <View style={styles.pickerModalView}>
                             <Text style={styles.pickerTitle}>Selecione um Cargo</Text>
-                            {/* Filtra para não mostrar OWNER como opção selecionável */}
                             {ROLES.filter(role => role !== 'OWNER').map((role) => (
                                 <TouchableOpacity key={role} style={styles.pickerItem} onPress={() => handleSelectRole(role)}>
                                     <Text style={styles.pickerItemText}>{roleTranslations[role]}</Text>
@@ -146,7 +138,6 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
                 </Modal>
             </Modal>
 
-            {/* Modal de confirmação para remover membro */}
             {member && (
                 <ConfirmationModal
                     visible={isConfirmDeleteVisible}
@@ -161,9 +152,7 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
     );
 };
 
-// Adicione estes estilos aos seus estilos existentes
 const styles = StyleSheet.create({
-    // ... (seus estilos existentes)
     centeredView: {
         flex: 1,
         justifyContent: 'center',
@@ -228,11 +217,10 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingVertical: 12,
         paddingHorizontal: 15,
-        marginBottom: 5, // Reduzido marginBottom
+        marginBottom: 5, 
         borderWidth: 1,
         borderColor: '#EB5F1C',
     },
-    // Estilo para o botão desabilitado
     disabledPickerButton: {
         backgroundColor: '#3C3C3C',
         borderColor: '#555',
@@ -242,15 +230,14 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textTransform: 'capitalize',
     },
-    // Estilo para a nota de permissão
     permissionNote: {
-        color: '#FFD700', // Amarelo para atenção
+        color: '#FFD700', 
         fontSize: 12,
         marginBottom: 20,
         textAlign: 'center',
-        alignSelf: 'stretch', // Garante que o texto ocupe a largura
+        alignSelf: 'stretch', 
     },
-    pickerCenteredView: { // Alterado para TouchableOpacity
+    pickerCenteredView: { 
         flex: 1,
         justifyContent: 'flex-end',
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -284,7 +271,7 @@ const styles = StyleSheet.create({
     },
     buttonContainer: {
         width: '100%',
-        marginTop: 10, // Adicionado marginTop para espaçar do aviso
+        marginTop: 10, 
     },
     divider: {
         height: 1,
@@ -304,7 +291,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginLeft: 8,
     },
-    ownerNote: { // Estilo antigo, pode ser removido ou ajustado se necessário
+    ownerNote: {
         color: '#FFD700',
         fontSize: 12,
         marginBottom: 20,

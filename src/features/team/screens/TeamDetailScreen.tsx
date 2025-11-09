@@ -1,4 +1,3 @@
-// src/features/team/screens/TeamDetailScreen.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,17 +9,17 @@ import { EditMemberRoleModal } from '../components/EditMemberRoleModal';
 import { InviteMemberModal } from '../components/InviteMemberModal';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
 import { useTeamDetail } from '../hooks/useTeamDetail';
-import { useAppContext } from '../../../contexts/AppContext'; // Importar para pegar user
+import { useAppContext } from '../../../contexts/AppContext'; 
 
 export const TeamDetailScreen = () => {
-    const { user } = useAppContext(); // Pegar usuário logado do contexto
+    const { user } = useAppContext();
     const {
         navigation,
         team,
         members,
-        loading, // Loading para "carregar mais"
-        refreshing, // Loading para pull-to-refresh
-        initialLoading, // Novo estado de loading inicial
+        loading,
+        refreshing,
+        initialLoading,
         isDeleting,
         modalNotificationRef,
         currentUserRole,
@@ -43,11 +42,9 @@ export const TeamDetailScreen = () => {
         handleRemoveMember,
     } = useTeamDetail();
 
-    // Usar dados do usuário do contexto para o Header, se disponíveis
     const userProfileForHeader = user ? { initials: user.initials } : { initials: '?' };
     const handleProfilePress = () => navigation.navigate('EditProfile');
     
-    // *** INDICADOR DE LOADING INICIAL ***
     if (initialLoading) {
       return (
         <SafeAreaView style={styles.container}>
@@ -59,7 +56,6 @@ export const TeamDetailScreen = () => {
         </SafeAreaView>
       );
     }
-    // *** FIM INDICADOR ***
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -71,20 +67,16 @@ export const TeamDetailScreen = () => {
                 </TouchableOpacity>
                 <Text style={styles.headerText} numberOfLines={1}>Detalhes da Equipe</Text>
 
-                {/* --- ÍCONES DE AÇÃO --- */}
                 <View style={styles.actionIconsContainer}>
-                    {/* Ícone de Editar: Apenas para o Dono */}
                     {isOwner && (
                         <TouchableOpacity onPress={() => setEditTeamModalVisible(true)} style={styles.actionIcon}>
                             <Icon name="pencil-outline" size={24} color="#FFFFFF" />
                         </TouchableOpacity>
                     )}
-                    {/* Ícone de Sair: Para todos */}
                     <TouchableOpacity onPress={() => setConfirmLeaveVisible(true)} style={styles.actionIcon}>
                         <Icon name="log-out-outline" size={24} color="#ff4545" />
                     </TouchableOpacity>
                 </View>
-                 {/* --- FIM ÍCONES --- */}
             </View>
 
             <FlatList
@@ -93,7 +85,7 @@ export const TeamDetailScreen = () => {
                 onRefresh={handleRefresh}
                 refreshing={refreshing}
                 onEndReached={handleLoadMore}
-                onEndReachedThreshold={0.5} // Ajuste conforme necessário
+                onEndReachedThreshold={0.5} 
                 ListHeaderComponent={
                     <>
                         <View style={styles.headerContent}>
@@ -118,12 +110,10 @@ export const TeamDetailScreen = () => {
                         disabled={!isAdmin}
                     />
                 )}
-                // Indicador no final da lista apenas para "carregar mais"
                 ListFooterComponent={loading && !refreshing ? <ActivityIndicator style={{ margin: 20 }} color="#EB5F1C" /> : null}
                 contentContainerStyle={styles.scrollContainer}
             />
 
-            {/* --- Modais --- */}
             {isOwner && (
                 <EditTeamModal
                     visible={isEditTeamModalVisible}
@@ -160,7 +150,6 @@ export const TeamDetailScreen = () => {
                 onClose={() => setConfirmRemoveMemberVisible(false)}
                 onConfirm={handleRemoveMember}
                 confirmText="Remover"
-                // Adicione isConfirming/confirmingText se necessário
             />
              {isAdmin && (
                 <InviteMemberModal
@@ -187,7 +176,6 @@ export const TeamDetailScreen = () => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#191919' },
-    // *** ESTILOS PARA LOADING INICIAL ***
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -198,27 +186,26 @@ const styles = StyleSheet.create({
         color: '#A9A9A9',
         fontSize: 16,
     },
-    // *** FIM ESTILOS LOADING ***
     pageHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 15, marginBottom:10 },
     backButton: { marginRight: 15 },
     headerText:{ color: '#FFFFFF', fontSize: 24, fontWeight: 'bold', flex: 1, marginRight: 10 },
-    actionIconsContainer: { // Container para os ícones de ação
+    actionIconsContainer: { 
         flexDirection: 'row',
         alignItems: 'center',
     },
     actionIcon: {
-        padding: 5, // Área de toque maior
-        marginLeft: 10, // Espaçamento entre ícones
+        padding: 5, 
+        marginLeft: 10, 
     },
     scrollContainer: { paddingHorizontal: 20, paddingBottom: 20 },
     headerContent: { marginBottom: 30 },
     teamTitle: { color: '#EB5F1C', fontSize: 24, fontWeight: 'bold', marginBottom: 10 },
     descriptionText: { color: '#E0E0E0', fontSize: 16, lineHeight: 24, flexShrink: 1 },
-    participantsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#3C3C3C', paddingBottom: 10 }, // Adicionada borda
+    participantsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, borderBottomWidth: 1, borderBottomColor: '#3C3C3C', paddingBottom: 10 }, 
     sectionTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: 'bold' },
-    separator: { // Estilo para o separador
+    separator: {
        height: 1,
-       backgroundColor: '#3C3C3C', // Cor sutil
-       marginVertical: 5, // Espaçamento vertical
+       backgroundColor: '#3C3C3C', 
+       marginVertical: 5, 
     },
 });

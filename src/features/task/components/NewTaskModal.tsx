@@ -1,4 +1,3 @@
-// src/components/NewTaskModal.tsx
 import React from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';

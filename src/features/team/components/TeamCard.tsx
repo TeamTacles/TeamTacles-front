@@ -18,7 +18,6 @@ const truncateText = (text: string, maxLength: number) => {
 
 export const TeamCard = ({ team, onPress }: TeamCardProps) => {
     const { title, description, members, memberCount } = team;
-    // Compatibilidade: usa title ou name
     const teamTitle = title || (team as any).name || '';
 
     return (
@@ -36,12 +35,9 @@ export const TeamCard = ({ team, onPress }: TeamCardProps) => {
                 <View style={styles.footer}>
                     <View style={styles.memberInfo}>
                         <Icon name="people-outline" size={16} color="#A9A9A9" />
-                        {/* --- INÍCIO DA CORREÇÃO --- */}
                         <Text style={styles.memberText}>{`${memberCount} participante${memberCount !== 1 ? 's' : ''}`}</Text>
-                        {/* --- FIM DA CORREÇÃO --- */}
                     </View>
                     <View style={styles.teamContainer}>
-                        {/* 3. Use 'member.initials' para os avatares */}
                         {members.slice(0, 4).map((member, index) => (
                             <View key={index} style={[styles.avatar, { right: index * 15 }]}>
                                 <Text style={styles.avatarText}>{member.initials}</Text>

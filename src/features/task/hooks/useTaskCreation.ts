@@ -1,4 +1,3 @@
-// src/features/task/hooks/useTaskCreation.ts
 import { useState } from 'react';
 import { taskService, TaskCreateResponse, TaskAssignmentRequest } from '../services/taskService';
 import { ProjectTask } from '../../project/services/projectService';
@@ -19,20 +18,17 @@ interface NewTaskData {
 export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationParams) {
   const { showNotification } = useNotification();
 
-  // Estados de modais
   const [isNewTaskModalVisible, setNewTaskModalVisible] = useState(false);
   const [isSelectMembersModalVisible, setSelectMembersModalVisible] = useState(false);
   const [newTaskData, setNewTaskData] = useState<NewTaskData | null>(null);
   const [isCreatingTask, setCreatingTask] = useState(false);
 
-  // Handler: NewTaskModal -> SelectTaskMembersModal
   const handleProceedToMemberSelection = (data: NewTaskData) => {
     setNewTaskData(data);
     setNewTaskModalVisible(false);
     setSelectMembersModalVisible(true);
   };
 
-  // Função auxiliar para converter TaskCreateResponse em ProjectTask
   const convertToProjectTask = (response: TaskCreateResponse): ProjectTask => {
     return {
       id: response.id,
@@ -48,7 +44,6 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
     };
   };
 
-  // Handler: Finalizar criação da task (integrado com backend)
   const handleFinalizeTaskCreation = async (selectedMemberIds: number[]) => {
     if (!newTaskData) {
       showNotification({ type: 'error', message: 'Dados da tarefa não encontrados.' });
@@ -73,7 +68,6 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
         dueDate: formattedDueDate,
       });
 
-      // Se houver membros selecionados, atribui-os à task
       let finalTaskResponse = newTaskResponse;
       if (selectedMemberIds.length > 0) {
         const assignmentsPayload: TaskAssignmentRequest[] = selectedMemberIds.map(id => ({
@@ -81,34 +75,27 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
           taskRole: 'ASSIGNEE',
         }));
 
-        // Chama a API para atribuir membros e obtém a task atualizada
         const updatedTaskResponse = await taskService.assignUsersToTask(
           projectId,
           newTaskResponse.id,
           assignmentsPayload
         );
 
-        // Usa a resposta atualizada que inclui os membros atribuídos
         finalTaskResponse = {
           ...newTaskResponse,
           assignments: updatedTaskResponse.assignments,
         };
       }
 
-      // Converte a resposta do backend para o formato ProjectTask (usado na UI)
       const newTask = convertToProjectTask(finalTaskResponse);
 
-      // Callback para adicionar a task na lista (componente pai)
       onTaskCreated(newTask);
 
-      // Fecha o modal e limpa dados temporários
       setSelectMembersModalVisible(false);
       setNewTaskData(null);
 
-      // Mostra notificação de sucesso
       showNotification({ type: 'success', message: 'Tarefa criada com sucesso!' });
     } catch (error: any) {
-      // Mostra mensagem de erro apropriada
       const errorMessage = getErrorMessage(error);
       showNotification({ type: 'error', message: errorMessage });
     } finally {
@@ -116,21 +103,17 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
     }
   };
 
-  // Handler: Fechar SelectTaskMembersModal sem salvar
   const handleCloseSelectMembersModal = () => {
     setSelectMembersModalVisible(false);
-    // Se fechar sem salvar, cria a task sem membros selecionados
     if (newTaskData) {
       handleFinalizeTaskCreation([]);
     }
   };
 
-  // Handler: Abrir modal de criação de task
   const handleOpenNewTaskModal = () => {
     setNewTaskModalVisible(true);
   };
 
-  // Handler: Cancelar criação completamente (fechar ambos os modais e limpar dados)
   const handleCancelCreation = () => {
     setNewTaskModalVisible(false);
     setSelectMembersModalVisible(false);
@@ -138,13 +121,11 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
   };
 
   return {
-    // Estados de modais
     isNewTaskModalVisible,
     setNewTaskModalVisible,
     isSelectMembersModalVisible,
     isCreatingTask,
 
-    // Handlers
     handleOpenNewTaskModal,
     handleProceedToMemberSelection,
     handleFinalizeTaskCreation,

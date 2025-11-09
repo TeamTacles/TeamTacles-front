@@ -26,11 +26,8 @@ export const LoginScreen = () => {
 
     const { signIn } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-
-    // Estados para popups
     const [showVerificationPopup, setShowVerificationPopup] = useState(false);
     const [showErrorPopup, setShowErrorPopup] = useState(false);
     const [showResendSuccessPopup, setShowResendSuccessPopup] = useState(false);
@@ -94,7 +91,6 @@ export const LoginScreen = () => {
 
     return (
         <View style={ style.LoginScreen }>
-            {/* Popup de verificação de conta */}
             <VerificationPopup
                 visible={showVerificationPopup}
                 email={email}
@@ -104,7 +100,6 @@ export const LoginScreen = () => {
                 imageSource={require('../../../assets/polvo_nao_verificado.png')}
             />
 
-            {/* Popup de sucesso ao reenviar */}
             <InfoPopup
                 visible={showResendSuccessPopup}
                 title="E-mail Enviado"
@@ -113,7 +108,6 @@ export const LoginScreen = () => {
                 imageSource={require('../../../assets/polvo_verificar.png')}
             />
 
-            {/* Popup de erro genérico */}
             <InfoPopup
                 visible={showErrorPopup}
                 title="Falha no Login"

@@ -3,7 +3,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale'; 
 import { Text } from "react-native";
 
-// O componente que se atualiza
 const TimeAgo = ({ timestamp }: { timestamp: number }) => {
     
     const getTimeAgoText = () => {

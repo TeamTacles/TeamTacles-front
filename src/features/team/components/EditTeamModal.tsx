@@ -1,4 +1,3 @@
-// src/components/EditTeamModal.tsx
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';
@@ -12,7 +11,7 @@ interface EditTeamModalProps {
   onClose: () => void;
   onSave: (updatedData: { title: string; description: string }) => void;
   onDelete: () => void;
-  isOwner: boolean; // Prop para saber se o usuário é o dono
+  isOwner: boolean; 
 }
 
 export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onClose, onSave, onDelete, isOwner }) => {
@@ -87,7 +86,6 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onC
                       <MainButton title="Salvar Alterações" onPress={handleSave} />
                     </View>
 
-                    {/* Botão de deletar só aparece para o Dono */}
                     {isOwner && (
                         <>
                             <View style={styles.divider} />

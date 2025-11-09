@@ -1,14 +1,10 @@
-// src/features/project/components/AddMembersModal.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList, Share, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { InputsField } from '../../../components/common/InputsField';
 import { MainButton } from '../../../components/common/MainButton';
-// --- INÍCIO DA CORREÇÃO ---
-// Importar TeamMemberDetail E getInitialsFromName
 import { TeamType, Member, TeamMemberDetail } from '../../../types/entities';
-import { getInitialsFromName } from '../../../utils/stringUtils'; // <--- Adicionar esta linha
-// --- FIM DA CORREÇÃO ---
+import { getInitialsFromName } from '../../../utils/stringUtils'; 
 import { InfoPopup } from '../../../components/common/InfoPopup';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import { useAppContext } from '../../../contexts/AppContext';
@@ -30,8 +26,8 @@ interface AddMembersModalProps {
   projectId?: number;
   isInviting?: boolean;
   isImporting?: boolean;
-  onRefreshTeams: () => void; // Manter para atualizar a lista de times
-  isRefreshingTeams: boolean; // Manter para desabilitar botões
+  onRefreshTeams: () => void; 
+  isRefreshingTeams: boolean; 
 }
 
 export const AddMembersModal: React.FC<AddMembersModalProps> = ({
@@ -44,22 +40,19 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
     projectId,
     isInviting = false,
     isImporting = false,
-    onRefreshTeams, // Recebe a função para atualizar lista de times
-    isRefreshingTeams, // Recebe o estado de atualização da lista de times
+    onRefreshTeams, 
+    isRefreshingTeams, 
 }) => {
   const { user } = useAppContext();
   const [activeTab, setActiveTab] = useState<ActiveTab>('invite');
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<MemberRole>('MEMBER');
-  const [selectedTeamSummary, setSelectedTeamSummary] = useState<TeamType | null>(null); // Renomeado para clareza
-  const [infoPopup, setInfoPopup] = useState({ visible: false, message: '', title: '' }); // Adicionado title
+  const [selectedTeamSummary, setSelectedTeamSummary] = useState<TeamType | null>(null); 
+  const [infoPopup, setInfoPopup] = useState({ visible: false, message: '', title: '' });
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const localNotificationRef = useRef<NotificationPopupRef>(null);
   const effectiveNotificationRef = notificationRef || localNotificationRef;
-
-  // Estado para membros detalhados da equipe selecionada
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<TeamMemberDetail[]>([]);
-  // Estado para loading dos membros detalhados
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
   useEffect(() => {
@@ -72,18 +65,17 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
 
   // Função para buscar membros detalhados quando um time é selecionado
   const handleSelectTeam = async (team: TeamType) => {
-    setSelectedTeamSummary(team); // Guarda o resumo do time selecionado
-    setIsLoadingMembers(true); // Ativa o loading de membros
-    setSelectedTeamMembers([]); // Limpa a lista anterior
+    setSelectedTeamSummary(team); 
+    setIsLoadingMembers(true); 
+    setSelectedTeamMembers([]); 
     try {
-      // Busca a primeira página (até 20 membros por padrão)
-      const response = await teamService.getTeamMembers(team.id, 0, 20); // Ajuste o 'size' se necessário
-      setSelectedTeamMembers(response.content); // Atualiza o estado com os membros detalhados
+      const response = await teamService.getTeamMembers(team.id, 0, 20); 
+      setSelectedTeamMembers(response.content); 
     } catch (error) {
       console.error("Erro ao buscar membros detalhados da equipe:", error);
       effectiveNotificationRef.current?.show({ type: 'error', message: 'Erro ao carregar membros da equipe.' });
     } finally {
-      setIsLoadingMembers(false); // Desativa o loading de membros
+      setIsLoadingMembers(false); 
     }
   };
 
@@ -97,7 +89,6 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
   };
 
   const handleImport = () => {
-      // Usa o ID do resumo do time selecionado
       if (!selectedTeamSummary) return;
       onImportTeam(String(selectedTeamSummary.id));
   };
@@ -109,8 +100,8 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
     }
     setIsGeneratingLink(true);
     try {
-      const response = await projectService.generateInviteLink(projectId); //
-      const linkToShare = response.inviteLink; //
+      const response = await projectService.generateInviteLink(projectId); 
+      const linkToShare = response.inviteLink; 
       if (linkToShare) {
         await Share.share({
           message: `Você foi convidado para um projeto! Junte-se através do link: ${linkToShare}`,
@@ -131,13 +122,12 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
 
 
   const handleClose = () => {
-      // Reseta todos os estados relevantes ao fechar
       setActiveTab('invite');
       setSelectedTeamSummary(null);
-      setSelectedTeamMembers([]); // Limpa membros detalhados
+      setSelectedTeamMembers([]); 
       setEmail('');
       setSelectedRole('MEMBER');
-      setIsLoadingMembers(false); // Garante que o loading seja resetado
+      setIsLoadingMembers(false); 
       onClose();
   }
 
@@ -189,12 +179,12 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
 
   const renderImportTab = () => (
     <View style={{flex: 1}}>
-        {isRefreshingTeams ? ( // Mostra loading se estiver atualizando a lista de times
+        {isRefreshingTeams ? ( 
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#EB5F1C" />
                 <Text style={styles.loadingText}>Atualizando equipes...</Text>
             </View>
-        ) : !selectedTeamSummary ? ( // Se nenhum time (resumo) estiver selecionado, mostra a lista de times
+        ) : !selectedTeamSummary ? ( 
              <FlatList
                 data={userTeams}
                 keyExtractor={(item) => item.id.toString()}
@@ -210,32 +200,28 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
                 ListHeaderComponent={<Text style={[styles.label, styles.labelSpaceSpecial]}>Selecione um time para importar:</Text>}
                 ListEmptyComponent={<Text style={styles.emptyListText}>Você não faz parte de nenhuma equipe.</Text>}
             />
-        ) : ( // Se um time (resumo) foi selecionado, mostra os detalhes e membros
+        ) : ( 
             <>
-                {/* Botão para voltar (limpa a seleção) */}
                 <TouchableOpacity
                     style={styles.backButton}
-                    // Limpa também os membros detalhados ao voltar
                     onPress={() => { setSelectedTeamSummary(null); setSelectedTeamMembers([]); }}
-                    disabled={isImporting || isRefreshingTeams || isGeneratingLink || isLoadingMembers} // Desabilita enquanto carrega membros
+                    disabled={isImporting || isRefreshingTeams || isGeneratingLink || isLoadingMembers} 
                  >
                     <Icon name="arrow-back-outline" size={20} color={(isImporting || isRefreshingTeams || isGeneratingLink || isLoadingMembers) ? "#555" : "#EB5F1C"} />
                     <Text style={[styles.backButtonText, (isImporting || isRefreshingTeams || isGeneratingLink || isLoadingMembers) && styles.disabledText]}>Voltar para a lista de times</Text>
                 </TouchableOpacity>
                 <Text style={styles.label}>Membros de "{selectedTeamSummary.title || selectedTeamSummary.name}":</Text>
 
-                {/* Mostra loading enquanto busca membros detalhados */}
                 {isLoadingMembers ? (
                     <View style={styles.loadingContainer}>
                          <ActivityIndicator size="large" color="#EB5F1C" />
                          <Text style={styles.loadingText}>Carregando membros...</Text>
                     </View>
                 ) : (
-                    // Lista de membros detalhados (buscados pela API)
                     <FlatList
                         style={styles.memberList}
-                        data={selectedTeamMembers} // Usa o estado com membros detalhados
-                        keyExtractor={(item) => item.userId.toString()} // Usa userId como chave
+                        data={selectedTeamMembers} 
+                        keyExtractor={(item) => item.userId.toString()}
                         renderItem={({item}) => (
                             <View style={styles.memberItemContainer}>
                                 <View style={styles.memberAvatar}>
@@ -251,14 +237,11 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
                 <MainButton
                     title={
                         isImporting ? "Importando..." :
-                        // Usa a lista detalhada para a verificação
                         isCurrentUserOnlyDetailedMember ? "Você já está no Projeto!" :
-                        // Usa a lista detalhada para a contagem
                         `Importar ${selectedTeamMembers.length} Membro(s)`
                     }
                     onPress={handleImport}
                     style={{marginTop: 20}}
-                    // Desabilita também se estiver carregando membros
                     disabled={isImporting || isInviting || isRefreshingTeams || isCurrentUserOnlyDetailedMember || isGeneratingLink || isLoadingMembers}
                  />
             </>
@@ -294,15 +277,14 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
       </Modal>
       <InfoPopup
         visible={infoPopup.visible}
-        title={infoPopup.title} // Usa o título do estado
+        title={infoPopup.title} 
         message={infoPopup.message}
-        onClose={() => setInfoPopup({ visible: false, message: '', title: '' })} // Limpa título também
+        onClose={() => setInfoPopup({ visible: false, message: '', title: '' })} 
       />
     </>
   );
 };
 
-// Estilos permanecem os mesmos...
 const styles = StyleSheet.create({
     centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.7)' },
     modalView: { height: '80%', width: '90%', backgroundColor: '#2A2A2A', borderRadius: 20, padding: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
@@ -323,7 +305,7 @@ const styles = StyleSheet.create({
     teamItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: '#3C3C3C', borderRadius: 8, marginBottom: 10 },
     teamTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
     teamMemberCount: { color: '#A9A9A9', fontSize: 12 },
-    memberList: { flex: 1, backgroundColor: '#3C3C3C', borderRadius: 8, paddingHorizontal: 10, paddingTop: 10, marginBottom: 10 }, // Adicionado marginBottom
+    memberList: { flex: 1, backgroundColor: '#3C3C3C', borderRadius: 8, paddingHorizontal: 10, paddingTop: 10, marginBottom: 10 }, 
     memberItemContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4A4A4A'},
     memberAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#555', justifyContent: 'center', alignItems: 'center', marginRight: 10, },
     memberAvatarText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12, },
@@ -332,7 +314,7 @@ const styles = StyleSheet.create({
     backButtonText: { color: '#EB5F1C', marginLeft: 8, fontSize: 16 },
     labelSpaceSpecial: { marginTop: 10},
     emptyListText: { color: '#A9A9A9', textAlign: 'center', marginTop: 20, marginBottom: 20, fontSize: 14, },
-    disabledText: { color: '#888' }, // Cor para texto desabilitado
+    disabledText: { color: '#888' }, 
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, },
     loadingText: { marginTop: 10, color: '#A9A9A9', fontSize: 14, },
 });

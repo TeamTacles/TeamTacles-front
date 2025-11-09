@@ -1,5 +1,3 @@
-// src/components/FilterPicker.tsx
-
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, StyleProp, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +16,7 @@ interface FilterPickerProps {
   selectedValue: string | number | null;
   onValueChange: (value: string | number) => void;
   placeholder?: string;
-  style?: StyleProp<ViewStyle>; // 1. PERMITIR RECEBER UM ESTILO EXTERNO
+  style?: StyleProp<ViewStyle>; 
 }
 
 export const FilterPicker: React.FC<FilterPickerProps> = ({ label, items, selectedValue, onValueChange, placeholder = "Selecione...", style }) => {
@@ -37,7 +35,6 @@ export const FilterPicker: React.FC<FilterPickerProps> = ({ label, items, select
 
   return (
     <>
-      {/* 2. APLICAR O ESTILO EXTERNO AO CONTAINER PRINCIPAL */}
       <View style={[styles.container, style]}>
         <Text style={styles.label}>{label}</Text>
         <TouchableOpacity 
@@ -52,7 +49,6 @@ export const FilterPicker: React.FC<FilterPickerProps> = ({ label, items, select
       </View>
 
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
-        {/* ... (o código do Modal não muda) ... */}
         <TouchableOpacity style={styles.bottomSheetOverlay} activeOpacity={1} onPressOut={() => setModalVisible(false)}>
           <View style={styles.bottomSheetView}>
             <Text style={styles.modalTitle}>{`Selecione um ${label}`}</Text>
@@ -78,7 +74,6 @@ export const FilterPicker: React.FC<FilterPickerProps> = ({ label, items, select
 
 const styles = StyleSheet.create({
     container: { 
-        // 3. REMOVER A LARGURA FIXA DAQUI
         marginBottom: 15 
     },
     label: { color: '#A9A9A9', fontSize: 14, marginBottom: 8 },

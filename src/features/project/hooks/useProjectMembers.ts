@@ -1,4 +1,3 @@
-// src/features/project/hooks/useProjectMembers.ts
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { projectService, ProjectMember } from '../services/projectService';
 import { useNotification } from '../../../contexts/NotificationContext';

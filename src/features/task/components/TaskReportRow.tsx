@@ -1,5 +1,3 @@
-// src/features/task/components/TaskReportRow.tsx
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { getInitialsFromName } from '../../../utils/stringUtils';
@@ -50,12 +48,10 @@ export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
 
     return (
         <View style={styles.row}>
-            {/* Coluna: Tarefa */}
             <Text style={[styles.col, styles.colTask]} numberOfLines={2}>
                 {task.title}
             </Text>
 
-            {/* Coluna: Responsável */}
             <View style={[styles.col, styles.colResponsible]}>
                 <View style={styles.avatar}>
                     <Text style={styles.avatarText}>{initials}</Text>
@@ -65,7 +61,6 @@ export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
                 </Text>
             </View>
 
-            {/* Coluna: Status */}
             <View style={[styles.col, styles.colStatus]}>
                 <View style={[styles.statusDot, { backgroundColor: statusInfo.color }]} />
                 <Text style={[styles.statusText, { color: statusInfo.color }]} numberOfLines={1}>
@@ -73,7 +68,6 @@ export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
                 </Text>
             </View>
 
-            {/* Coluna: Prazo */}
             <Text style={[styles.col, styles.colDueDate]} numberOfLines={1}>
                 {formatDate(task.dueDate)}
             </Text>

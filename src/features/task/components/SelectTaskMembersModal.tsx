@@ -1,6 +1,5 @@
-// src/features/task/components/SelectTaskMembersModal.tsx
 import React, { useState, useEffect } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native'; // Import ActivityIndicator
+import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native'; 
 import Icon from 'react-native-vector-icons/Ionicons';
 import { MainButton } from '../../../components/common/MainButton';
 import { ProjectMember } from '../../project/services/projectService';
@@ -10,7 +9,7 @@ interface SelectTaskMembersModalProps {
   projectMembers: ProjectMember[];
   onClose: () => void;
   onSave: (selectedMemberIds: number[]) => void;
-  isSaving?: boolean; // <-- PROPRIEDADE ADICIONADA
+  isSaving?: boolean; 
 }
 
 const MemberCheckbox = ({ member, isSelected, onSelect }: { member: ProjectMember, isSelected: boolean, onSelect: (id: number) => void }) => (
@@ -28,15 +27,15 @@ export const SelectTaskMembersModal: React.FC<SelectTaskMembersModalProps> = ({
     projectMembers,
     onClose,
     onSave,
-    isSaving = false // <-- Valor padrão adicionado
+    isSaving = false 
 }) => {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [isSaved, setIsSaved] = useState(false); // Estado para controlar se já foi salvo
+  const [isSaved, setIsSaved] = useState(false); 
 
   useEffect(() => {
     if (visible) {
       setSelectedIds([]);
-      setIsSaved(false); // Reseta o estado quando o modal abre
+      setIsSaved(false); 
     }
   }, [visible]);
 
@@ -47,7 +46,7 @@ export const SelectTaskMembersModal: React.FC<SelectTaskMembersModalProps> = ({
   };
 
   const handleSave = () => {
-    setIsSaved(true); // Marca como salvo
+    setIsSaved(true); 
     onSave(selectedIds);
   };
 
@@ -84,7 +83,7 @@ export const SelectTaskMembersModal: React.FC<SelectTaskMembersModalProps> = ({
                     <MainButton
                         title={isSaving ? "Salvando..." : `Concluir (${selectedIds.length})`}
                         onPress={handleSave}
-                        disabled={isSaving || selectedIds.length === 0} // Desabilita se salvando ou nenhum selecionado
+                        disabled={isSaving || selectedIds.length === 0} 
                     />
                 </View>
             </View>
@@ -93,7 +92,6 @@ export const SelectTaskMembersModal: React.FC<SelectTaskMembersModalProps> = ({
   );
 };
 
-// ... (seus estilos permanecem os mesmos)
 const styles = StyleSheet.create({
     centeredView: {
         flex: 1,

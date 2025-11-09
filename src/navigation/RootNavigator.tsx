@@ -17,7 +17,7 @@ import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScr
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// --- Navegador para o fluxo NÃO AUTENTICADO ---
+// Navegador para o fluxo NÃO AUTENTICADO 
 const AuthNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
@@ -27,7 +27,7 @@ const AuthNavigator = () => (
   </Stack.Navigator>
 );
 
-// --- Navegador para o fluxo AUTENTICADO (com menu e modais) ---
+// Navegador para o fluxo AUTENTICADO
 const AppNavigator = () => (
   <Stack.Navigator initialRouteName="Menu" screenOptions={{ headerShown: false }}>
     <Stack.Group screenOptions={{ headerShown: false }}>
@@ -44,7 +44,6 @@ const AppNavigator = () => (
   </Stack.Navigator>
 );
 
-// --- O "Porteiro" que decide qual navegador mostrar ---
 const RootNavigator = () => {
   const { signed, loading } = useAppContext();
 

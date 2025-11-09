@@ -1,9 +1,7 @@
-// src/components/common/DatePickerField.tsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, TouchableOpacity, Platform } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
-// Injeta CSS customizado para os inputs de data/hora no web
 const injectDateTimeStyles = () => {
     if (Platform.OS !== 'web') return;
 
@@ -35,13 +33,11 @@ export interface DatePickerFieldProps {
     onChange: (date: Date) => void;
     label?: string;
     disabled?: boolean;
-    editable?: boolean; // Para TaskDetailScreen (baseado em permissões)
+    editable?: boolean; 
     minDate?: Date;
-    isOverdue?: boolean; // Para mostrar em vermelho
+    isOverdue?: boolean; 
     placeholder?: string;
-    // Estilos customizados para web (inline)
     webInputStyle?: React.CSSProperties;
-    // Renderização inline (para TaskDetailScreen - sem label, sem wrapper View)
     inline?: boolean;
 }
 
@@ -61,12 +57,10 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
     const [showPicker, setShowPicker] = useState(false);
     const [internalValue, setInternalValue] = useState(value);
 
-    // Injeta estilos CSS customizados no web
     useEffect(() => {
         injectDateTimeStyles();
     }, []);
 
-    // Sincroniza valor interno quando prop value muda
     useEffect(() => {
         setInternalValue(value);
     }, [value]);
@@ -77,7 +71,6 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
         if (event.type === 'set' && selectedDate) {
             setInternalValue(selectedDate);
             if (Platform.OS !== 'ios') {
-                // No Android, atualiza imediatamente
                 onChange(selectedDate);
             }
         } else if (event.type !== 'set' && Platform.OS !== 'ios') {
@@ -191,7 +184,6 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
     return (
         <>
             {inline ? (
-                // Modo inline: Renderiza apenas texto clicável (SEM box ao redor)
                 <Pressable
                     onPress={() => editable && !disabled && setShowPicker(true)}
                     disabled={!editable || disabled}
@@ -205,7 +197,6 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
                     </Text>
                 </Pressable>
             ) : (
-                // Modo normal: Renderiza com label e box
                 <Pressable onPress={() => editable && !disabled && setShowPicker(true)}>
                     <View pointerEvents="none">
                         <Text style={styles.label}>{label}</Text>
@@ -228,7 +219,6 @@ export const DatePickerField: React.FC<DatePickerFieldProps> = ({
                 />
             )}
 
-            {/* Botões de confirmação/cancelamento para iOS */}
             {showPicker && Platform.OS === 'ios' && (
                 <View style={styles.iosPickerButtons}>
                     <TouchableOpacity style={styles.iosPickerButton} onPress={cancelIOSDate}>

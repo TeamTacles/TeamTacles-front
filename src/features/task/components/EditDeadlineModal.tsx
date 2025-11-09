@@ -1,5 +1,3 @@
-// src/features/task/components/EditDeadlineModal.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';

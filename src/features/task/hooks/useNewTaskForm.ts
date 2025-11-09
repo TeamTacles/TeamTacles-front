@@ -1,4 +1,3 @@
-// src/features/task/hooks/useNewTaskForm.ts
 import { useState } from 'react';
 
 interface NewTaskFormData {
@@ -8,19 +7,14 @@ interface NewTaskFormData {
 }
 
 export function useNewTaskForm() {
-  // Estados do formulário
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState(new Date());
   const [dueTime, setDueTime] = useState(new Date());
-
-  // Estados de validação/erro
   const [isInfoPopupVisible, setInfoPopupVisible] = useState(false);
   const [infoPopupMessage, setInfoPopupMessage] = useState('');
 
-  // Handler para validar e combinar data+hora
   const handleNext = (onNext: (data: NewTaskFormData) => void) => {
-    // Validação: título obrigatório
     if (!title.trim()) {
       setInfoPopupMessage('O título da tarefa é obrigatório.');
       setInfoPopupVisible(true);
@@ -38,7 +32,6 @@ export function useNewTaskForm() {
       0  // milissegundos
     );
 
-    // Validação: data e hora devem ser no futuro
     if (combinedDateTime <= new Date()) {
       setInfoPopupMessage('A data e hora devem ser no futuro.');
       setInfoPopupVisible(true);
@@ -57,7 +50,6 @@ export function useNewTaskForm() {
   };
 
   return {
-    // Estados
     title,
     setTitle,
     description,
@@ -70,7 +62,6 @@ export function useNewTaskForm() {
     setInfoPopupVisible,
     infoPopupMessage,
 
-    // Handlers
     handleNext,
     resetForm,
   };
