@@ -88,7 +88,7 @@ export function useProjectDetail() {
       }
       isFetchingTasks.current = false;
     }
-  }, [projectId, hasMoreTasks, showNotification]);
+  }, [projectId, showNotification]);
 
   const handleRefreshTasks = useCallback(() => {
       fetchTasks(0, false, true);

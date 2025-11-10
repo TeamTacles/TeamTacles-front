@@ -49,13 +49,14 @@ const MemberRow = ({ member, onRemove, canRemove }: { member: TaskMember, onRemo
 export const TaskDetailScreen = () => {
     const navigation = useNavigation<TaskDetailNavigationProp>();
     const route = useRoute<TaskDetailRouteProp>();
-    const { projectId, taskId, projectRole, onTaskUpdate, onTaskDelete } = route.params;
+    const { projectId, taskId, projectRole: projectRoleFromNav, onTaskUpdate, onTaskDelete } = route.params;
     const notificationRef = useRef<NotificationPopupRef>(null);
     const { user } = useAppContext();
     const { showNotification } = useNotification();
     const [loading, setLoading] = useState(true);
     const [task, setTask] = useState<TaskDetailsApiResponse | null>(null);
     const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
+    const [projectRole, setProjectRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER' | undefined>(projectRoleFromNav);
     const [isEditModalVisible, setEditModalVisible] = useState(false);
     const [isEditDeadlineModalVisible, setEditDeadlineModalVisible] = useState(false);
     const [isConfirmRemoveVisible, setConfirmRemoveVisible] = useState(false);
@@ -101,12 +102,19 @@ export const TaskDetailScreen = () => {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [taskData, membersResponse] = await Promise.all([
+            const [taskData, membersResponse, projectData] = await Promise.all([
                 taskService.getTaskById(projectId, taskId),
-                projectService.getProjectMembers(projectId, 0, 100) 
+                projectService.getProjectMembers(projectId, 0, 100),
+                // Busca o role do projeto se não foi passado por navigation
+                !projectRoleFromNav ? projectService.getProjectById(projectId) : Promise.resolve(null)
             ]);
             setTask(taskData);
             setProjectMembers(membersResponse.content);
+
+            // Se o role não veio por navigation, usa o role buscado do projeto
+            if (!projectRoleFromNav && projectData?.projectRole) {
+                setProjectRole(projectData.projectRole);
+            }
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: 'Erro ao carregar dados da tarefa.' });
             console.error(error);
@@ -114,7 +122,7 @@ export const TaskDetailScreen = () => {
         } finally {
             setLoading(false);
         }
-    }, [projectId, taskId, navigation]);
+    }, [projectId, taskId, projectRoleFromNav, navigation]);
 
 
     useEffect(() => {

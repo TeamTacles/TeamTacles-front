@@ -37,6 +37,7 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
       status: response.status,
       dueDate: response.dueDate,
       ownerId: response.ownerId,
+      projectId: projectId!,
       assignments: response.assignments.map(a => ({
         userId: a.userId,
         username: a.username,

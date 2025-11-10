@@ -16,9 +16,9 @@ export type RootStackParamList = {
     TaskDetail: {
         projectId: number;
         taskId: number;
-        projectRole: 'OWNER' | 'ADMIN' | 'MEMBER'; 
+        projectRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
         onTaskUpdate?: (taskId: number, updates: Partial<ProjectTask>) => void;
-        onTaskDelete?: (taskId: number) => void; 
+        onTaskDelete?: (taskId: number) => void;
     };
  
 };
