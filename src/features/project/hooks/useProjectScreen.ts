@@ -32,7 +32,7 @@ export function useProjectScreen({ addProject }: UseProjectScreenProps) {
         description: data.description,
       });
 
-      // Armazena o projeto recém-criado
+      // Armazena o projeto recem criado
       setNewlyCreatedProject(createdProject);
       setNewProjectModalVisible(false); 
       setAddMembersModalVisible(true); 

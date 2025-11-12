@@ -86,7 +86,6 @@ const removeMember = async (teamId: number | string, userId: number): Promise<vo
     await api.delete(`/team/${teamId}/member/${userId}`);
 };
 
-// --- ADICIONAR NOVA FUNÇÃO ---
 const leaveTeam = async (teamId: number | string): Promise<void> => {
     await api.delete(`/team/${teamId}/leave`);
 };

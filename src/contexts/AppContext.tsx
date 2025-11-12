@@ -8,7 +8,7 @@ import { getInitialsFromName } from '../utils/stringUtils';
 
 // Interface para o objeto do usuário
 interface User {
-  id: number; // <<< LINHA ADICIONADA
+  id: number; 
   name: string;
   initials: string;
 }
@@ -31,15 +31,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Função para carregar os dados do usuário da API
   const loadUserData = async () => {
     try {
-      // Supondo que userService.getCurrentUser() retorna { id, username, email }
       const userData = await userService.getCurrentUser();
       setUser({
-        id: userData.id, // <<< LINHA ADICIONADA: Armazena o ID
+        id: userData.id,
         name: userData.username,
         initials: getInitialsFromName(userData.username)
       });
     } catch (error) {
-      // Se falhar (ex: token inválido), desloga o usuário
+      // Se falhar  desloga o usuário
       console.error("Falha ao carregar dados do usuário, deslogando.", error);
       signOut();
     }
@@ -81,7 +80,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       value={{
         signed: !!token,
         loading,
-        user, // Disponibiliza o usuário no contexto
+        user, 
         signIn,
         signOut,
       }}

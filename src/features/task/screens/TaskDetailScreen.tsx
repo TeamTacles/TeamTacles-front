@@ -134,7 +134,7 @@ export const TaskDetailScreen = () => {
         if (!task || !canEditTask) return; 
         setIsUpdating(true);
         try {
-            // Converte para ISO 8601 UTC (formato padrão: "YYYY-MM-DDTHH:mm:ss.sssZ")
+            // Converte para ISO 8601 UTC 
             const formattedDueDate = newDate.toISOString();
             const updatedTask = await taskService.updateTaskDetails(projectId, taskId, { dueDate: formattedDueDate });
             setTask(updatedTask); 

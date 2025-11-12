@@ -6,7 +6,7 @@ const injectDateTimeStyles = () => {
     if (Platform.OS !== 'web') return;
 
     const styleId = 'datetime-picker-custom-styles';
-    if (typeof document !== 'undefined' && document.getElementById(styleId)) return; // Já foi injetado
+    if (typeof document !== 'undefined' && document.getElementById(styleId)) return; 
 
     if (typeof document !== 'undefined') {
         const style = document.createElement('style');

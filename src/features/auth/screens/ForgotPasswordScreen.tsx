@@ -50,12 +50,10 @@ export const ForgotPasswordScreen = () => {
         setLoading(true);
         try {
             await forgotPassword(trimmedEmail);
-            // Mensagem genérica por segurança
             setPopupTitle('Verifique seu E-mail');
             setPopupMessage('Caso seu e-mail esteja cadastrado em nosso sistema, você receberá um link para redefinição de senha.');
             setPopupVisible(true);
         } catch (error: any) {
-            // Lanço uma mensagem genérica para evitar vazamento de informações
             setPopupTitle('Verifique seu E-mail');
             setPopupMessage('Caso seu e-mail esteja cadastrado em nosso sistema, você receberá um link para redefinição de senha.');
             setPopupVisible(true);

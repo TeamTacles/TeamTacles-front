@@ -59,7 +59,7 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
     try {
       setCreatingTask(true);
 
-      // Formata a data/hora para ISO 8601 UTC (formato padrão: "YYYY-MM-DDTHH:mm:ss.sssZ")
+      // Formata a data/hora para ISO 8601 UTC 
       const formattedDueDate = newTaskData.dueDate.toISOString();
 
       // Chama a API para criar a task

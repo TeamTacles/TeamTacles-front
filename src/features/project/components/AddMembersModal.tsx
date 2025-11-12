@@ -56,7 +56,7 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
   useEffect(() => {
-    // Atualiza a lista de times quando o modal abre na aba 'import'
+    // Atualiza a lista de times quando o modal abre na aba import
     if (visible && activeTab === 'import') {
       onRefreshTeams();
     }

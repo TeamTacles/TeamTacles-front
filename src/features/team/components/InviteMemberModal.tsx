@@ -4,8 +4,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { InputsField } from '../../../components/common/InputsField';
 import { MainButton } from '../../../components/common/MainButton';
 import { InfoPopup } from '../../../components/common/InfoPopup';
-import { teamService } from '../services/teamService'; // Mantido para convite de time
-import { projectService } from '../../project/services/projectService'; // Importado para convite de projeto
+import { teamService } from '../services/teamService';
+import { projectService } from '../../project/services/projectService'; 
 import { getInviteErrorMessage } from '../../../utils/errorHandler';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 
@@ -14,7 +14,7 @@ type MemberRole = 'ADMIN' | 'MEMBER';
 interface InviteMemberModalProps {
   visible: boolean;
   teamId?: number | string | null;
-  projectId?: number | string | null; // Adicionado projectId
+  projectId?: number | string | null; 
   onClose: () => void;
   notificationRef?: React.RefObject<NotificationPopupRef | null>;
 }

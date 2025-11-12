@@ -1,5 +1,3 @@
-// src/screens/ProjectDetailScreen.tsx
-
 import React, { useState, useMemo, useRef, ElementRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

@@ -10,7 +10,7 @@ import { useAppContext } from '../../../contexts/AppContext';
 import { userService } from '../services/userService';
 import { useFocusEffect } from '@react-navigation/native'; 
 
-// Caro programador futuro, aqui podemos analisar o caso se é uma boa pratica carregar em tempo real os dados/nome do utilizador sempre que ele abre a aba ou se isso é uma má pratica por ficar dando GET demais na API.
+// Caro programador lauton futuro, aqui podemos analisar o caso se é uma boa pratica carregar em tempo real os dados/nome do utilizador sempre que ele abre a aba ou se isso é uma má pratica por ficar dando GET demais na API.
 
 export const ConfigurationScreen = () => {
     const { signOut } = useAppContext(); 

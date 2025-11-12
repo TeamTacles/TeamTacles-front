@@ -1,14 +1,13 @@
-// src/features/team/hooks/useTeamScreen.ts
 import { useState, useEffect, useRef } from 'react';
 import { TeamType } from '../../../types/entities';
 import { teamService, CreateTeamRequest } from '../services/teamService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { NotificationPopupRef } from '../../../components/common/NotificationPopup';
-import { useAppContext } from '../../../contexts/AppContext'; // Importa o useAppContext
+import { useAppContext } from '../../../contexts/AppContext';
 
 export function useTeamScreen() {
   const modalNotificationRef = useRef<NotificationPopupRef>(null);
-  const { user } = useAppContext(); // Pega o usuário do contexto
+  const { user } = useAppContext(); 
 
   const [isNewTeamModalVisible, setNewTeamModalVisible] = useState(false);
   const [isInviteModalVisible, setInviteModalVisible] = useState(false);

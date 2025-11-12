@@ -45,9 +45,7 @@ export const MOCK_TEAMS: Team[] = [
     }
 ];
 
-/**
- * Times simplificados para a tela de Projetos
- */
+
 export const MOCK_USER_TEAMS: Team[] = [
     {
         id: '1',

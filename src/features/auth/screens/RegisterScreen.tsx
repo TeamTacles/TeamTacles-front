@@ -51,7 +51,7 @@ export const RegisterScreen = () => {
 
         setLoading(true);
         try {
-            // Remove espaços em branco no início e fim dos campos
+            // trimmando os dados antes de enviar
             const trimmedData = {
                 username: username.trim(),
                 email: email.trim(),

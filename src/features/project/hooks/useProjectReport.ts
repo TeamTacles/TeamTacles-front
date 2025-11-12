@@ -14,9 +14,9 @@ export function useProjectReport(projectId: number) {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
-  const [filters, setFilters] = useState<TaskFilterReportDTO>({}); // State to hold current filters
+  const [filters, setFilters] = useState<TaskFilterReportDTO>({}); 
 
-  const fetchDashboard = useCallback(async (appliedFilters: TaskFilterReportDTO = filters) => { // Modified: Accept filters, default to internal state
+  const fetchDashboard = useCallback(async (appliedFilters: TaskFilterReportDTO = filters) => { 
     if (!projectId) return;
 
     setLoading(true); 
