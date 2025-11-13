@@ -56,7 +56,6 @@ export function useProjects(isAuthenticated: boolean) {
       setCurrentPage(page + 1);
       setHasMoreProjects(!response.last);
     } catch (error) {
-      console.error("Erro ao buscar projetos:", getErrorMessage(error));
       if (isRefreshing) {
         setProjects([]);
         setCurrentPage(0);
