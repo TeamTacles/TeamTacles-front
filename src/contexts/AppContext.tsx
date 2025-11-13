@@ -12,11 +12,11 @@ interface User {
   name: string;
   initials: string;
 }
-
+//Definindo o contrato pro restante do app
 interface AppContextType {
   signed: boolean;
   loading: boolean;
-  user: User | null; // Adiciona o usuário ao tipo do contexto
+  user: User | null; 
   signIn(credentials: LoginData): Promise<void>;
   signOut(): void;
 }
@@ -25,10 +25,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null); // Estado para os dados do usuário
+  const [user, setUser] = useState<User | null>(null); 
   const [loading, setLoading] = useState(true);
 
-  // Função para carregar os dados do usuário da API
+  // Função para carregar os dados do usuário da API / armazenado no AsyncStorage
   const loadUserData = async () => {
     try {
       const userData = await userService.getCurrentUser();
@@ -39,7 +39,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       });
     } catch (error) {
       // Se falhar  desloga o usuário
-      console.error("Falha ao carregar dados do usuário, deslogando.", error);
       signOut();
     }
   };
@@ -55,8 +54,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     }
     loadStorageData();
 
+    // caso o token expire (401), desloga o usuário automaticamente
     setOnUnauthorizedCallback(() => {
-      signOut(); // Usa a função signOut para limpar tudo
+      signOut(); 
     });
   }, []);
 
