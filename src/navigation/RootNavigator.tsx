@@ -13,7 +13,7 @@ import { ProjectDetailScreen } from '../features/project/screens/ProjectDetailSc
 import { ReportCenterScreen } from '../features/project/screens/ReportCenterScreen';
 import { TaskDetailScreen } from '../features/task/screens/TaskDetailScreen';
 import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen'; 
-
+import { OnboardingNavigator } from '../features/onboarding/navigation/OnboardingNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -45,20 +45,27 @@ const AppNavigator = () => (
 );
 
 const RootNavigator = () => {
-  const { signed, loading } = useAppContext();
+  // PEGUE OS NOVOS ESTADOS DO CONTEXTO
+  const { signed, loading, showOnboarding } = useAppContext();
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#EB5F1C" />
       </View>
     );
   }
 
-  // Comentar a linha abaixo para testar o fluxo autenticado
+  // ATUALIZE A LÓGICA DE RENDERIZAÇÃO
   return (
     <NavigationContainer>
-      {signed ? <AppNavigator /> : <AuthNavigator />}
+      {showOnboarding ? (
+        <OnboardingNavigator />
+      ) : signed ? (
+        <AppNavigator />
+      ) : (
+        <AuthNavigator />
+      )}
     </NavigationContainer>
   );
 };

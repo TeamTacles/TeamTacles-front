@@ -128,6 +128,10 @@ const leaveProject = async (projectId: number | string): Promise<void> => {
   await api.delete(`/project/${projectId}/leave`);
 };
 
+const joinProjectWithLink = async (token: string): Promise<ProjectMember> => {
+  const response = await api.post<ProjectMember>(`/project/join?token=${token}`);
+  return response.data;
+};
 
 export const projectService = {
   getProjects,

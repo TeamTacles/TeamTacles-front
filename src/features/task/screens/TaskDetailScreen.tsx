@@ -22,10 +22,6 @@ import { taskService, TaskDetailsApiResponse, TaskAssignmentRequest } from '../s
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { getInitialsFromName } from '../../../utils/stringUtils';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
-
 type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
 type TaskMember = TaskDetailsApiResponse['assignments'][0];
 

@@ -17,16 +17,22 @@ interface AppContextType {
   signed: boolean;
   loading: boolean;
   user: User | null; 
+  showOnboarding: boolean;
+  completeOnboarding(): void; 
   signIn(credentials: LoginData): Promise<void>;
   signOut(): void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const TOKEN_KEY = '@TeamTacles:token';
+const ONBOARDING_KEY = '@TeamTacles:hasOnboarded';
+
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null); 
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   // Função para carregar os dados do usuário da API / armazenado no AsyncStorage
   const loadUserData = async () => {
@@ -38,27 +44,47 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         initials: getInitialsFromName(userData.username)
       });
     } catch (error) {
-      // Se falhar  desloga o usuário
+      // Se falhar (ex: token expirou mas ainda existia), desloga o usuário
       signOut();
     }
   };
 
   useEffect(() => {
     async function loadStorageData() {
-      const storedToken = await AsyncStorage.getItem('@TeamTacles:token');
-      if (storedToken) {
-        setToken(storedToken);
-        await loadUserData(); // Carrega os dados do usuário se o token existir
+      try {
+        const [hasOnboarded, storedToken] = await Promise.all([
+            AsyncStorage.getItem(ONBOARDING_KEY),
+            AsyncStorage.getItem(TOKEN_KEY)
+        ]);
+
+        if (storedToken) {
+          setToken(storedToken);
+        }
+        if (!hasOnboarded) { 
+          setShowOnboarding(true);
+        }
+
+      } catch (e) {
+        console.error("Falha ao carregar dados do storage", e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
+    
     loadStorageData();
 
-    // caso o token expire (401), desloga o usuário automaticamente
     setOnUnauthorizedCallback(() => {
       signOut(); 
     });
-  }, []);
+  }, []); 
+
+  useEffect(() => {
+    if (token) {
+      loadUserData();
+    } else {
+      setUser(null);
+    }
+  }, [token]); 
 
   async function signIn(credentials: LoginData) {
     const response = await loginService(credentials);
@@ -66,13 +92,21 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     setToken(newToken);
     await AsyncStorage.setItem('@TeamTacles:token', newToken);
-    await loadUserData(); 
   }
 
   async function signOut() {
-    await AsyncStorage.clear();
+    await AsyncStorage.clear(); 
     setToken(null);
-    setUser(null); // Limpa o estado do usuário ao deslogar
+  }
+
+  async function completeOnboarding() {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+      setShowOnboarding(false);
+    } catch (e) {
+      console.error("Erro ao salvar flag de onboarding", e);
+      setShowOnboarding(false);
+    }
   }
 
   return (
@@ -81,6 +115,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         signed: !!token,
         loading,
         user, 
+        showOnboarding, 
+        completeOnboarding,
         signIn,
         signOut,
       }}

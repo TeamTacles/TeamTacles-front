@@ -4,9 +4,10 @@
     "userInterfaceStyle": "dark",
     "name": "TeamTacles",
     "slug": "TeamTacles",
+    "scheme": "teamtacles",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/icon.png",
+    "icon": "./src/assets/icon_app.png",
     "newArchEnabled": true,
     "splash": {
       "image": "./src/assets/splash-icon.png",

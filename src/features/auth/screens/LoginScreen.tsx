@@ -118,7 +118,7 @@ export const LoginScreen = () => {
             <FormCard>
                 <Image source={ logo } style={ style.logo } />
                 <Text style={ style.introductionText }>
-                    Organize seus projetos com a inteligência de um polvo.
+                    Organize seus projetos com a inteligência de um polvo
                 </Text>
                 <InputsField
                     label="Email" 
