@@ -18,7 +18,9 @@ interface AppContextType {
   loading: boolean;
   user: User | null; 
   showOnboarding: boolean;
+  showPostLoginOnboarding: boolean; 
   completeOnboarding(): void; 
+  completePostLoginOnboarding(): void; 
   signIn(credentials: LoginData): Promise<void>;
   signOut(): void;
 }
@@ -27,12 +29,14 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const TOKEN_KEY = '@TeamTacles:token';
 const ONBOARDING_KEY = '@TeamTacles:hasOnboarded';
+const POST_LOGIN_ONBOARDING_KEY = '@TeamTacles:hasCompletedPostLoginOnboarding'; 
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null); 
   const [loading, setLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showPostLoginOnboarding, setShowPostLoginOnboarding] = useState(false); 
 
   // Função para carregar os dados do usuário da API / armazenado no AsyncStorage
   const loadUserData = async () => {
@@ -52,9 +56,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     async function loadStorageData() {
       try {
-        const [hasOnboarded, storedToken] = await Promise.all([
+        // CORREÇÃO: Adicionando hasCompletedPostLoginOnboarding ao Promise.all
+        const [hasOnboarded, storedToken, hasCompletedPostLoginOnboarding] = await Promise.all([
             AsyncStorage.getItem(ONBOARDING_KEY),
-            AsyncStorage.getItem(TOKEN_KEY)
+            AsyncStorage.getItem(TOKEN_KEY),
+            AsyncStorage.getItem(POST_LOGIN_ONBOARDING_KEY)
         ]);
 
         if (storedToken) {
@@ -62,6 +68,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
         if (!hasOnboarded) { 
           setShowOnboarding(true);
+        } else if (storedToken && !hasCompletedPostLoginOnboarding) { 
+          // Se completou o pré-login E está logado E não completou o pós-login
+          setShowPostLoginOnboarding(true);
         }
 
       } catch (e) {
@@ -78,13 +87,28 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []); 
 
+  // CORREÇÃO: Este useEffect absorve a lógica de 'loadUserData' e a checagem do pós-login
   useEffect(() => {
     if (token) {
       loadUserData();
+      // Verifica se deve mostrar o Onboarding Pós-Login após o login
+      AsyncStorage.getItem(ONBOARDING_KEY).then(hasOnboarded => {
+        if (hasOnboarded) {
+          AsyncStorage.getItem(POST_LOGIN_ONBOARDING_KEY).then(hasCompleted => {
+            if (!hasCompleted) {
+              setShowPostLoginOnboarding(true);
+            }
+          });
+        }
+      });
+      
     } else {
       setUser(null);
+      // Garante que o onboarding pós-login não apareça na tela de login/registro
+      setShowPostLoginOnboarding(false);
     }
-  }, [token]); 
+  }, [token]);
+
 
   async function signIn(credentials: LoginData) {
     const response = await loginService(credentials);
@@ -92,6 +116,16 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
     setToken(newToken);
     await AsyncStorage.setItem('@TeamTacles:token', newToken);
+  }
+
+  async function completePostLoginOnboarding() { 
+    try {
+      await AsyncStorage.setItem(POST_LOGIN_ONBOARDING_KEY, 'true');
+      setShowPostLoginOnboarding(false);
+    } catch (e) {
+      console.error("Erro ao salvar flag de onboarding pós-login", e);
+      setShowPostLoginOnboarding(false);
+    }
   }
 
   async function signOut() {
@@ -103,6 +137,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
       setShowOnboarding(false);
+      // Se completar o pré-onboarding, exibe o pós-login se já estiver logado (o useEffect do [token] vai lidar com o hasCompleted)
+      if (token) {
+         setShowPostLoginOnboarding(true);
+      }
     } catch (e) {
       console.error("Erro ao salvar flag de onboarding", e);
       setShowOnboarding(false);
@@ -117,6 +155,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         user, 
         showOnboarding, 
         completeOnboarding,
+        completePostLoginOnboarding,
+        showPostLoginOnboarding, 
         signIn,
         signOut,
       }}

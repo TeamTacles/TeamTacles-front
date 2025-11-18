@@ -13,7 +13,7 @@ import { ProjectDetailScreen } from '../features/project/screens/ProjectDetailSc
 import { ReportCenterScreen } from '../features/project/screens/ReportCenterScreen';
 import { TaskDetailScreen } from '../features/task/screens/TaskDetailScreen';
 import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen'; 
-import { OnboardingNavigator } from '../features/onboarding/navigation/OnboardingNavigator';
+import { OnboardingNavigator, PostLoginNavigator } from '../features/onboarding/navigation/OnboardingNavigator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -46,7 +46,7 @@ const AppNavigator = () => (
 
 const RootNavigator = () => {
   // PEGUE OS NOVOS ESTADOS DO CONTEXTO
-  const { signed, loading, showOnboarding } = useAppContext();
+  const { signed, loading, showOnboarding, showPostLoginOnboarding} = useAppContext();
 
   if (loading) {
     return (
@@ -56,13 +56,16 @@ const RootNavigator = () => {
     );
   }
 
-  // ATUALIZE A LÓGICA DE RENDERIZAÇÃO
   return (
     <NavigationContainer>
       {showOnboarding ? (
         <OnboardingNavigator />
       ) : signed ? (
-        <AppNavigator />
+        showPostLoginOnboarding ? ( // NOVO CHECK: Se estiver logado e não tiver completado o pós-login, mostra o PostLoginNavigator
+          <PostLoginNavigator /> 
+        ) : (
+          <AppNavigator />
+        )
       ) : (
         <AuthNavigator />
       )}
