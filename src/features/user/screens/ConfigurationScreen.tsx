@@ -11,6 +11,7 @@ import { userService } from '../services/userService';
 import { useFocusEffect } from '@react-navigation/native'; 
 
 // Caro programador lauton futuro, aqui podemos analisar o caso se é uma boa pratica carregar em tempo real os dados/nome do utilizador sempre que ele abre a aba ou se isso é uma má pratica por ficar dando GET demais na API.
+// Caro programador Caiao, acredito que seja interresante colocar algo armazenado em cache para evitar multiplas chamada ao backend. isso piora a usabilidade do usuario e deixar e sobrecarregado o back-end.
 
 export const ConfigurationScreen = () => {
     const { signOut } = useAppContext(); 
@@ -113,6 +114,12 @@ export const ConfigurationScreen = () => {
                     </View>
 
                     <Text style={styles.sectionTitle}>Geral</Text>
+                    <BaseCard onPress={() => navigation.navigate('PostLoginTutorial', { isManualView: true })} style={[styles.cardOverride, styles.cardContainer]}>
+                        <View style={styles.menuItemContent}>
+                            <Icon name="school-outline" size={24} color="#fff" />
+                            <Text style={styles.menuItemText}>Ver Tutorial (Onboarding)</Text>
+                        </View>
+                    </BaseCard>
                     <BaseCard style={[styles.cardOverride, styles.disabledMenuItem]} disabled>
                         <View style={styles.menuItemContent}>
                             <Icon name="notifications-outline" size={24} color="#888" />
@@ -211,6 +218,9 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         overflow: 'hidden',
         backgroundColor: '#2A2A2A',
+    },
+    cardContainer: {
+        marginBottom: 12
     },
     cardOverride: {
         marginBottom: 0,

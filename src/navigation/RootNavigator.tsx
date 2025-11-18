@@ -14,6 +14,7 @@ import { ReportCenterScreen } from '../features/project/screens/ReportCenterScre
 import { TaskDetailScreen } from '../features/task/screens/TaskDetailScreen';
 import { ForgotPasswordScreen } from '../features/auth/screens/ForgotPasswordScreen'; 
 import { OnboardingNavigator, PostLoginNavigator } from '../features/onboarding/navigation/OnboardingNavigator';
+import { PostLoginOnboardingScreen } from '../features/onboarding/screens/PostLoginOnboardingScreen'; // Importado
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -40,6 +41,7 @@ const AppNavigator = () => (
       <Stack.Screen name="ProjectDetail" component={ProjectDetailScreen} />
       <Stack.Screen name="ReportCenter" component={ReportCenterScreen} />
       <Stack.Screen name="TaskDetail" component={TaskDetailScreen} /> 
+      <Stack.Screen name="PostLoginTutorial" component={PostLoginOnboardingScreen} />
     </Stack.Group>
   </Stack.Navigator>
 );

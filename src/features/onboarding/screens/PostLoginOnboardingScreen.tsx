@@ -4,6 +4,12 @@ import AppIntroSlider from 'react-native-app-intro-slider';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useAppContext } from '../../../contexts/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRoute, useNavigation, RouteProp } from '@react-navigation/native'; 
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../types/Navigation';
+
+type PostLoginTutorialRouteProp = RouteProp<RootStackParamList, 'PostLoginTutorial'>;
+type PostLoginTutorialNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const videoCreateProject = require('../../../assets/onboarding_pos_1.gif'); 
 const videoCreateTeam = require('../../../assets/onboarding_pos_2.gif'); 
@@ -56,7 +62,22 @@ const slides = [
 
 export const PostLoginOnboardingScreen = () => {
  const { completePostLoginOnboarding } = useAppContext(); 
+ const route = useRoute<PostLoginTutorialRouteProp>();
+ const navigation = useNavigation<PostLoginTutorialNavigationProp>();
+ 
+ // Verifica se é uma visualização manual. Se não houver params (fluxo root), é a visualização obrigatória (false).
+ const isManualView = route.params?.isManualView ?? false;
 
+  const handleDone = () => {
+    if (isManualView) {
+        // Fluxo Manual: Apenas fecha a tela de onboarding sem chamar o backend
+        navigation.goBack();
+    } else {
+        // Fluxo Obrigatório: Marca como concluído no contexto (e backend)
+        completePostLoginOnboarding(); 
+    }
+ }
+ 
  const renderItem = ({ item }: { item: typeof slides[0] }) => {
 
   const APP_ORANGE_COLOR = '#EB5F1C'; 
@@ -108,8 +129,8 @@ export const PostLoginOnboardingScreen = () => {
    <AppIntroSlider
     renderItem={renderItem}
     data={slides}
-    onDone={completePostLoginOnboarding} 
-    onSkip={completePostLoginOnboarding} 
+    onDone={handleDone} 
+    onSkip={handleDone} 
     renderNextButton={() => renderButton('arrow-forward-outline')}
     renderDoneButton={() => renderButton('checkmark-outline')}
     renderSkipButton={() => renderButton('close-outline')}

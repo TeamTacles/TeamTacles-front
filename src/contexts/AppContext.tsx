@@ -6,13 +6,13 @@ import { LoginData } from '../types/auth';
 import { userService } from '../features/user/services/userService';
 import { getInitialsFromName } from '../utils/stringUtils';
 
-// Interface para o objeto do usuário
 interface User {
   id: number; 
   name: string;
   initials: string;
+  onboardingCompleted: boolean; 
 }
-//Definindo o contrato pro restante do app
+
 interface AppContextType {
   signed: boolean;
   loading: boolean;
@@ -29,7 +29,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const TOKEN_KEY = '@TeamTacles:token';
 const ONBOARDING_KEY = '@TeamTacles:hasOnboarded';
-const POST_LOGIN_ONBOARDING_KEY = '@TeamTacles:hasCompletedPostLoginOnboarding'; 
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null);
@@ -38,17 +37,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showPostLoginOnboarding, setShowPostLoginOnboarding] = useState(false); 
 
-  // Função para carregar os dados do usuário da API / armazenado no AsyncStorage
   const loadUserData = async () => {
     try {
       const userData = await userService.getCurrentUser();
-      setUser({
+      
+      const hasOnboardedPreLogin = await AsyncStorage.getItem(ONBOARDING_KEY); 
+
+      const mappedUser: User = {
         id: userData.id,
         name: userData.username,
-        initials: getInitialsFromName(userData.username)
-      });
+        initials: getInitialsFromName(userData.username),
+        onboardingCompleted: userData.onboardingCompleted 
+      };
+      
+      setUser(mappedUser);
+
+      const shouldShowPostLogin = mappedUser.onboardingCompleted === false;
+      
+      setShowPostLoginOnboarding(shouldShowPostLogin);
+
     } catch (error) {
-      // Se falhar (ex: token expirou mas ainda existia), desloga o usuário
       signOut();
     }
   };
@@ -56,21 +64,17 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     async function loadStorageData() {
       try {
-        // CORREÇÃO: Adicionando hasCompletedPostLoginOnboarding ao Promise.all
-        const [hasOnboarded, storedToken, hasCompletedPostLoginOnboarding] = await Promise.all([
+        const [hasOnboarded, storedToken] = await Promise.all([
             AsyncStorage.getItem(ONBOARDING_KEY),
             AsyncStorage.getItem(TOKEN_KEY),
-            AsyncStorage.getItem(POST_LOGIN_ONBOARDING_KEY)
         ]);
 
         if (storedToken) {
           setToken(storedToken);
         }
+        
         if (!hasOnboarded) { 
           setShowOnboarding(true);
-        } else if (storedToken && !hasCompletedPostLoginOnboarding) { 
-          // Se completou o pré-login E está logado E não completou o pós-login
-          setShowPostLoginOnboarding(true);
         }
 
       } catch (e) {
@@ -87,24 +91,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []); 
 
-  // CORREÇÃO: Este useEffect absorve a lógica de 'loadUserData' e a checagem do pós-login
   useEffect(() => {
     if (token) {
       loadUserData();
-      // Verifica se deve mostrar o Onboarding Pós-Login após o login
-      AsyncStorage.getItem(ONBOARDING_KEY).then(hasOnboarded => {
-        if (hasOnboarded) {
-          AsyncStorage.getItem(POST_LOGIN_ONBOARDING_KEY).then(hasCompleted => {
-            if (!hasCompleted) {
-              setShowPostLoginOnboarding(true);
-            }
-          });
-        }
-      });
-      
     } else {
       setUser(null);
-      // Garante que o onboarding pós-login não apareça na tela de login/registro
       setShowPostLoginOnboarding(false);
     }
   }, [token]);
@@ -120,16 +111,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   async function completePostLoginOnboarding() { 
     try {
-      await AsyncStorage.setItem(POST_LOGIN_ONBOARDING_KEY, 'true');
+      const updatedUser = await userService.completeOnboarding();
+      
+      setUser(prev => ({ 
+          ...prev!, 
+          onboardingCompleted: true, 
+          name: updatedUser.username,
+          initials: getInitialsFromName(updatedUser.username)
+      }));
+
       setShowPostLoginOnboarding(false);
+
     } catch (e) {
-      console.error("Erro ao salvar flag de onboarding pós-login", e);
+      console.error("Erro ao completar/salvar flag de onboarding pós-login", e);
       setShowPostLoginOnboarding(false);
     }
   }
 
   async function signOut() {
-    await AsyncStorage.clear(); 
+    await AsyncStorage.removeItem(TOKEN_KEY); 
     setToken(null);
   }
 
@@ -137,9 +137,9 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     try {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
       setShowOnboarding(false);
-      // Se completar o pré-onboarding, exibe o pós-login se já estiver logado (o useEffect do [token] vai lidar com o hasCompleted)
+      
       if (token) {
-         setShowPostLoginOnboarding(true);
+        loadUserData();
       }
     } catch (e) {
       console.error("Erro ao salvar flag de onboarding", e);

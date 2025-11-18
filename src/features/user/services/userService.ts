@@ -30,9 +30,15 @@ const deleteAccount = async () => {
   return response.data;
 };
 
+const completeOnboarding = async () => {
+    const response = await api.patch('/user/complete-onboarding');
+    return response.data;
+}
+
 export const userService = {
   updateProfile,
   getCurrentUser,
   changePassword,
   deleteAccount,
+  completeOnboarding,
 };

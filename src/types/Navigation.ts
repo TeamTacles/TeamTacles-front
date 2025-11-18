@@ -20,7 +20,7 @@ export type RootStackParamList = {
         onTaskUpdate?: (taskId: number, updates: Partial<ProjectTask>) => void;
         onTaskDelete?: (taskId: number) => void;
     };
- 
+    PostLoginTutorial: { isManualView: boolean };
 };
 
 export type RootTabParamList = {
