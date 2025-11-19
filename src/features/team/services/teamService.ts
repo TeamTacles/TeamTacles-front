@@ -18,7 +18,7 @@ export interface InviteByEmailRequest {
 }
 
 export interface InviteLinkResponse {
-  inviteLink: string;
+  inviteToken: string;
   expiresAt: string;
 }
 
@@ -90,6 +90,11 @@ const leaveTeam = async (teamId: number | string): Promise<void> => {
     await api.delete(`/team/${teamId}/leave`);
 };
 
+const joinTeamWithLink = async (token: string): Promise<TeamMemberDetail> => {
+  const response = await api.post<TeamMemberDetail>(`/team/join?token=${token}`);
+  return response.data;
+};
+
 export const teamService = {
   getTeams,
   createTeam,
@@ -102,4 +107,5 @@ export const teamService = {
   updateMemberRole,
   removeMember,
   leaveTeam,
+  joinTeamWithLink,
 };

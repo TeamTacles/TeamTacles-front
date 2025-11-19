@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Header } from "../../../components/common/Header";
-import { View, StyleSheet, FlatList, ActivityIndicator } from "react-native";
+import { View, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Text } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../../../components/common/SearchBar";
 import { NewItemButton } from "../../../components/common/NewItemButton";
@@ -13,10 +13,12 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types/Navigation';
 import { NewTeamModal } from "../components/NewTeamModal";
 import { InviteMemberModal } from "../components/InviteMemberModal";
+import { JoinTeamModal } from "../components/JoinTeamModal";
 import { InfoPopup } from "../../../components/common/InfoPopup";
 import { useTeamScreen } from "../hooks/useTeamScreen";
 import { useTeams } from "../hooks/useTeams";
 import { useAppContext } from "../../../contexts/AppContext";
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const mascot_isEmpty = require('../../../assets/polvo_bau.png');
 
@@ -54,6 +56,7 @@ export const TeamScreen = () => {
     } = useTeamScreen();
 
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
+    const [isJoinModalVisible, setJoinModalVisible] = useState(false);
     
     useFocusEffect(
       useCallback(() => {
@@ -98,6 +101,15 @@ export const TeamScreen = () => {
                 </View>
                 <FilterButton style={styles.filterButtonPosition} onPress={() => setFilterModalVisible(true)} />
             </View>
+
+            <TouchableOpacity 
+                style={styles.joinButtonContainer} 
+                onPress={() => setJoinModalVisible(true)}
+            >
+                <Icon name="enter-outline" size={20} color="#EB5F1C" />
+                <Text style={styles.joinButtonText}>Entrar com código</Text>
+            </TouchableOpacity>
+
             <FlatList
                 data={teams}
                 keyExtractor={(item) => item.id.toString()}
@@ -144,6 +156,12 @@ export const TeamScreen = () => {
               notificationRef={modalNotificationRef}
             />
 
+            <JoinTeamModal 
+                visible={isJoinModalVisible}
+                onClose={() => setJoinModalVisible(false)}
+                onSuccess={() => refreshTeams()} 
+            />
+
             <InfoPopup visible={infoPopup.visible} title={infoPopup.title} message={infoPopup.message} onClose={() => setInfoPopup({ visible: false, title: '', message: '' })} />
         </SafeAreaView>
     );
@@ -156,6 +174,24 @@ const styles = StyleSheet.create({
     listContainer: { flexGrow: 1, paddingHorizontal: 15, paddingBottom: 80 },
     addButtonContainer: { position: 'absolute', right: 25, bottom: 25 },
     loadingFooter: { padding: 20, alignItems: 'center' },
+    joinButtonContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#2A2A2A',
+        paddingVertical: 12,
+        marginHorizontal: 15,
+        marginBottom: 15,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#3C3C3C',
+    },
+    joinButtonText: {
+        color: '#EB5F1C',
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginLeft: 10,
+    },
 });
 
 export default TeamScreen;

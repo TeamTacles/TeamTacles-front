@@ -117,7 +117,7 @@ export const ReportCenterScreen = () => {
                 const members = membersResponse.content.map(m => ({ label: m.username, value: m.userId }));
                 setMemberItems([{ label: 'Todos Membros', value: 0 }, ...members]);
             } catch (error) {
-                console.error('Erro ao carregar dados iniciais:', error);
+                // Erro silencioso - não precisa exibir para o usuário
             }
         };
 
@@ -147,7 +147,6 @@ export const ReportCenterScreen = () => {
 
             setTasks(mappedTasks);
         } catch (error) {
-            console.error('Erro ao buscar tarefas para relatório:', error);
             setTasks([]);
         } finally {
             setLoadingTasks(false);

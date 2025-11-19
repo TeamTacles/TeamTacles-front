@@ -34,7 +34,7 @@ export interface ProjectTask {
 
 
 export interface InviteLinkResponse {
-    inviteLink: string;
+  inviteToken: string;
   expiresAt: string;
 }
 const formatDateForApi = (date: Date | undefined): string | undefined => {
@@ -147,4 +147,5 @@ export const projectService = {
   generateInviteLink,
   deleteProject,
   leaveProject,
+  joinProjectWithLink,
 };

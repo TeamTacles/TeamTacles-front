@@ -50,8 +50,6 @@ export const LoginScreen = () => {
             await signIn(credentials);
 
         } catch (error) {
-            console.log('💬 Erro capturado no login:', error);
-
             // Verifica se é erro de conta não verificada
             if (isAxiosError(error) && error.response?.data?.errorCode === ErrorCode.ACCOUNT_NOT_VERIFIED) {
                 setShowVerificationPopup(true);
@@ -75,7 +73,6 @@ export const LoginScreen = () => {
             setShowVerificationPopup(false);
             setShowResendSuccessPopup(true);
         } catch (error) {
-            console.error('Erro ao reenviar verificação:', error);
             setShowVerificationPopup(false);
             setErrorMessage('Erro ao reenviar e-mail de verificação. Tente novamente.');
             setShowErrorPopup(true);

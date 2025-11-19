@@ -78,7 +78,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         }
 
       } catch (e) {
-        console.error("Falha ao carregar dados do storage", e);
+        // Erro silencioso ao carregar dados do storage
       } finally {
         setLoading(false);
       }
@@ -123,7 +123,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       setShowPostLoginOnboarding(false);
 
     } catch (e) {
-      console.error("Erro ao completar/salvar flag de onboarding pós-login", e);
       setShowPostLoginOnboarding(false);
     }
   }
@@ -142,7 +141,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         loadUserData();
       }
     } catch (e) {
-      console.error("Erro ao salvar flag de onboarding", e);
       setShowOnboarding(false);
     }
   }

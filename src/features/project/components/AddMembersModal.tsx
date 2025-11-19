@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList, Share, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import * as Clipboard from 'expo-clipboard'; 
+
 import { InputsField } from '../../../components/common/InputsField';
 import { MainButton } from '../../../components/common/MainButton';
-import { TeamType, Member, TeamMemberDetail } from '../../../types/entities';
+import { TeamType, TeamMemberDetail } from '../../../types/entities';
 import { getInitialsFromName } from '../../../utils/stringUtils'; 
 import { InfoPopup } from '../../../components/common/InfoPopup';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import { useAppContext } from '../../../contexts/AppContext';
 import { projectService } from '../services/projectService';
 import { teamService } from '../../team/services/teamService';
-import { getInviteErrorMessage } from '../../../utils/errorHandler';
-
 
 type ActiveTab = 'invite' | 'import';
 type MemberRole = 'ADMIN' | 'MEMBER';
@@ -49,21 +49,21 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
   const [selectedRole, setSelectedRole] = useState<MemberRole>('MEMBER');
   const [selectedTeamSummary, setSelectedTeamSummary] = useState<TeamType | null>(null); 
   const [infoPopup, setInfoPopup] = useState({ visible: false, message: '', title: '' });
+  
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+  
   const localNotificationRef = useRef<NotificationPopupRef>(null);
   const effectiveNotificationRef = notificationRef || localNotificationRef;
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<TeamMemberDetail[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
 
   useEffect(() => {
-    // Atualiza a lista de times quando o modal abre na aba import
     if (visible && activeTab === 'import') {
       onRefreshTeams();
     }
   }, [visible, activeTab, onRefreshTeams]);
 
-
-  // Função para buscar membros detalhados quando um time é selecionado
   const handleSelectTeam = async (team: TeamType) => {
     setSelectedTeamSummary(team); 
     setIsLoadingMembers(true); 
@@ -72,7 +72,6 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
       const response = await teamService.getTeamMembers(team.id, 0, 20); 
       setSelectedTeamMembers(response.content); 
     } catch (error) {
-      console.error("Erro ao buscar membros detalhados da equipe:", error);
       effectiveNotificationRef.current?.show({ type: 'error', message: 'Erro ao carregar membros da equipe.' });
     } finally {
       setIsLoadingMembers(false); 
@@ -81,7 +80,7 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
 
   const handleInvite = () => {
     if (!email || !email.includes('@')) {
-      setInfoPopup({ visible: true, title: "Atenção", message: "Por favor, insira um endereço de e-mail válido para continuar." });
+      setInfoPopup({ visible: true, title: "Atenção", message: "E-mail inválido." });
       return;
     }
     onInviteByEmail(email, selectedRole);
@@ -93,33 +92,32 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
       onImportTeam(String(selectedTeamSummary.id));
   };
 
-  const handleGenerateAndShareLink = async () => {
-    if (!projectId) {
-        effectiveNotificationRef.current?.show({ type: 'error', message: 'ID do projeto não encontrado.' });
-        return;
-    }
+  const handleLoadToken = async () => {
+    if (!projectId) return;
+    
     setIsGeneratingLink(true);
+    
     try {
-      const response = await projectService.generateInviteLink(projectId); 
-      const linkToShare = response.inviteLink; 
-      if (linkToShare) {
-        await Share.share({
-          message: `Você foi convidado para um projeto! Junte-se através do link: ${linkToShare}`,
-          url: linkToShare,
-        });
+      const response = await projectService.generateInviteLink(projectId);
+      
+      if (response.inviteToken) {
+        setGeneratedToken(response.inviteToken);
       } else {
-        throw new Error("Link não recebido da API.");
+        throw new Error("Token vazio na resposta da API");
       }
     } catch (error) {
-      if (!(error instanceof Error && error.message.includes('Share Canceled'))) {
-        console.error("Erro ao gerar/compartilhar link do projeto:", error);
-        effectiveNotificationRef.current?.show({ type: 'error', message: 'Não foi possível gerar o link de convite.' });
-      }
+      effectiveNotificationRef.current?.show({ type: 'error', message: 'Erro ao carregar código.' });
     } finally {
       setIsGeneratingLink(false);
     }
   };
 
+  const handleCopyToken = async () => {
+    if (generatedToken) {
+      await Clipboard.setStringAsync(generatedToken);
+      effectiveNotificationRef.current?.show({ type: 'success', message: 'Copiado!' });
+    }
+  };
 
   const handleClose = () => {
       setActiveTab('invite');
@@ -127,18 +125,18 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
       setSelectedTeamMembers([]); 
       setEmail('');
       setSelectedRole('MEMBER');
-      setIsLoadingMembers(false); 
+      setIsLoadingMembers(false);
+      setGeneratedToken(null); // Reset
       onClose();
   }
 
-  // Verifica se o único membro (baseado nos detalhes buscados) é o usuário atual
   const isCurrentUserOnlyDetailedMember = selectedTeamMembers.length === 1 && selectedTeamMembers[0]?.username === user?.name;
 
   const renderInviteTab = () => (
-    <>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.inviteScrollContent}>
       <InputsField
           label="Convidar por E-mail"
-          placeholder="Digite o e-mail do novo membro"
+          placeholder="Digite o e-mail"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
@@ -158,31 +156,47 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
         onPress={handleInvite}
         disabled={isInviting || isImporting || isRefreshingTeams || isGeneratingLink}
       />
+      
       <View style={styles.divider} />
-      <Text style={styles.label}>Ou compartilhe o link de convite</Text>
-      <TouchableOpacity
-          style={styles.linkContainer}
-          onPress={handleGenerateAndShareLink}
-          disabled={isGeneratingLink || isInviting || isImporting || isRefreshingTeams}
-      >
-          {isGeneratingLink ? (
-              <ActivityIndicator color="#EB5F1C" />
-          ) : (
-              <>
-                  <Text style={styles.linkText} numberOfLines={1}>Gerar e compartilhar link</Text>
-                  <Icon name="share-social-outline" size={24} color="#EB5F1C" />
-              </>
-          )}
-      </TouchableOpacity>
-    </>
+      
+      <Text style={styles.label}>Ou compartilhe o código de acesso</Text>
+
+      {!generatedToken ? (
+          <TouchableOpacity
+              style={styles.linkContainer}
+              onPress={handleLoadToken}
+              disabled={isGeneratingLink || isInviting || isImporting || isRefreshingTeams}
+          >
+              {isGeneratingLink ? (
+                  <ActivityIndicator color="#EB5F1C" />
+              ) : (
+                  <>
+                      <Text style={styles.linkText}>Gerar Código de Convite</Text>
+                      <Icon name="key-outline" size={18} color="#EB5F1C" />
+                  </>
+              )}
+          </TouchableOpacity>
+      ) : (
+          <View style={styles.tokenDisplayContainer}>
+              <View style={{flex: 1}}>
+                  <Text style={styles.tokenLabel}>Código do Projeto:</Text>
+                  <Text style={styles.tokenValue} selectable>{generatedToken}</Text>
+              </View>
+              <TouchableOpacity style={styles.copyButton} onPress={handleCopyToken}>
+                  <Icon name="copy-outline" size={18} color="#fff" />
+                  <Text style={styles.copyButtonText}>Copiar</Text>
+              </TouchableOpacity>
+          </View>
+      )}
+    </ScrollView>
   );
 
   const renderImportTab = () => (
-    <View style={{flex: 1}}>
+    <View> 
         {isRefreshingTeams ? ( 
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#EB5F1C" />
-                <Text style={styles.loadingText}>Atualizando equipes...</Text>
+                <Text style={styles.loadingText}>Carregando...</Text>
             </View>
         ) : !selectedTeamSummary ? ( 
              <FlatList
@@ -197,8 +211,8 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
                         <Icon name="chevron-forward-outline" size={20} color="#fff" />
                     </TouchableOpacity>
                 )}
-                ListHeaderComponent={<Text style={[styles.label, styles.labelSpaceSpecial]}>Selecione um time para importar:</Text>}
-                ListEmptyComponent={<Text style={styles.emptyListText}>Você não faz parte de nenhuma equipe.</Text>}
+                ListHeaderComponent={<Text style={[styles.label, styles.labelSpaceSpecial]}>Selecione um time:</Text>}
+                ListEmptyComponent={<Text style={styles.emptyListText}>Você não tem equipes.</Text>}
             />
         ) : ( 
             <>
@@ -207,15 +221,14 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
                     onPress={() => { setSelectedTeamSummary(null); setSelectedTeamMembers([]); }}
                     disabled={isImporting || isRefreshingTeams || isGeneratingLink || isLoadingMembers} 
                  >
-                    <Icon name="arrow-back-outline" size={20} color={(isImporting || isRefreshingTeams || isGeneratingLink || isLoadingMembers) ? "#555" : "#EB5F1C"} />
-                    <Text style={[styles.backButtonText, (isImporting || isRefreshingTeams || isGeneratingLink || isLoadingMembers) && styles.disabledText]}>Voltar para a lista de times</Text>
+                    <Icon name="arrow-back-outline" size={20} color="#EB5F1C" />
+                    <Text style={[styles.backButtonText, (isImporting || isRefreshingTeams || isGeneratingLink || isLoadingMembers) && styles.disabledText]}>Voltar</Text>
                 </TouchableOpacity>
                 <Text style={styles.label}>Membros de "{selectedTeamSummary.title || selectedTeamSummary.name}":</Text>
 
                 {isLoadingMembers ? (
                     <View style={styles.loadingContainer}>
                          <ActivityIndicator size="large" color="#EB5F1C" />
-                         <Text style={styles.loadingText}>Carregando membros...</Text>
                     </View>
                 ) : (
                     <FlatList
@@ -230,16 +243,12 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
                                 <Text style={styles.memberItem}>{item.username}</Text>
                             </View>
                         )}
-                        ListEmptyComponent={<Text style={styles.emptyListText}>Esta equipe não possui membros.</Text>}
+                        ListEmptyComponent={<Text style={styles.emptyListText}>Sem membros.</Text>}
                     />
                 )}
 
                 <MainButton
-                    title={
-                        isImporting ? "Importando..." :
-                        isCurrentUserOnlyDetailedMember ? "Você já está no Projeto!" :
-                        `Importar ${selectedTeamMembers.length} Membro(s)`
-                    }
+                    title={isImporting ? "Importando..." : "Importar Membros"}
                     onPress={handleImport}
                     style={{marginTop: 20}}
                     disabled={isImporting || isInviting || isRefreshingTeams || isCurrentUserOnlyDetailedMember || isGeneratingLink || isLoadingMembers}
@@ -254,21 +263,21 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
       <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={handleClose}>
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-              <TouchableOpacity style={styles.closeButton} onPress={handleClose} disabled={isImporting || isInviting || isRefreshingTeams || isGeneratingLink || isLoadingMembers}>
-                  <Icon name="close-outline" size={30} color={(isImporting || isInviting || isRefreshingTeams || isGeneratingLink || isLoadingMembers) ? "#555" : "#fff"} />
+              <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+                  <Icon name="close-outline" size={30} color="#fff" />
               </TouchableOpacity>
               <Text style={styles.modalTitle}>Adicionar Membros</Text>
 
               <View style={styles.tabContainer}>
-                  <TouchableOpacity style={[styles.tabButton, activeTab === 'invite' && styles.tabButtonActive]} onPress={() => setActiveTab('invite')} disabled={isImporting || isInviting || isRefreshingTeams || isGeneratingLink || isLoadingMembers}>
-                      <Text style={[styles.tabText, (isImporting || isInviting || isRefreshingTeams || isGeneratingLink || isLoadingMembers) && styles.disabledText]}>Convidar</Text>
+                  <TouchableOpacity style={[styles.tabButton, activeTab === 'invite' && styles.tabButtonActive]} onPress={() => setActiveTab('invite')}>
+                      <Text style={styles.tabText}>Convidar</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.tabButton, activeTab === 'import' && styles.tabButtonActive]} onPress={() => setActiveTab('import')} disabled={isImporting || isInviting || isRefreshingTeams || isGeneratingLink || isLoadingMembers}>
-                      <Text style={[styles.tabText, (isImporting || isInviting || isRefreshingTeams || isGeneratingLink || isLoadingMembers) && styles.disabledText]}>Importar Time</Text>
+                  <TouchableOpacity style={[styles.tabButton, activeTab === 'import' && styles.tabButtonActive]} onPress={() => setActiveTab('import')}>
+                      <Text style={styles.tabText}>Importar Time</Text>
                   </TouchableOpacity>
               </View>
 
-              <View style={{flex: 1}}>
+              <View style={activeTab === 'import' ? {flex: 1} : {}}>
                 {activeTab === 'invite' ? renderInviteTab() : renderImportTab()}
               </View>
           </View>
@@ -286,35 +295,88 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
 };
 
 const styles = StyleSheet.create({
-    centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.7)' },
-    modalView: { height: '80%', width: '90%', backgroundColor: '#2A2A2A', borderRadius: 20, padding: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
-    closeButton: { position: 'absolute', top: 10, right: 10, padding: 5, zIndex: 1 },
-    modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20, textAlign: 'center' },
-    tabContainer: { flexDirection: 'row', marginBottom: 20, backgroundColor: '#3C3C3C', borderRadius: 10, padding: 4},
-    tabButton: { flex: 1, paddingVertical: 10, borderRadius: 8 },
-    tabButtonActive: { backgroundColor: '#555' },
-    tabText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
-    label: { fontSize: 16, color: '#E0E0E0', alignSelf: 'flex-start', marginBottom: 15, },
-    roleSelectorContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20, },
-    roleButton: { backgroundColor: '#555', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 20 },
-    roleButtonSelected: { backgroundColor: '#EB5F1C' },
-    roleButtonText: { color: '#fff', fontWeight: 'bold' },
-    divider: { height: 1, backgroundColor: '#4A4A4A', marginVertical: 25 },
-    linkContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#3C3C3C', borderRadius: 8, paddingVertical: 12, paddingHorizontal: 15 },
-    linkText: { color: '#A9A9A9', fontSize: 14, flex: 1, marginRight: 10 },
-    teamItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: '#3C3C3C', borderRadius: 8, marginBottom: 10 },
-    teamTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-    teamMemberCount: { color: '#A9A9A9', fontSize: 12 },
-    memberList: { flex: 1, backgroundColor: '#3C3C3C', borderRadius: 8, paddingHorizontal: 10, paddingTop: 10, marginBottom: 10 }, 
-    memberItemContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4A4A4A'},
-    memberAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#555', justifyContent: 'center', alignItems: 'center', marginRight: 10, },
-    memberAvatarText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12, },
-    memberItem: { color: '#E0E0E0', fontSize: 16 },
-    backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-    backButtonText: { color: '#EB5F1C', marginLeft: 8, fontSize: 16 },
-    labelSpaceSpecial: { marginTop: 10},
-    emptyListText: { color: '#A9A9A9', textAlign: 'center', marginTop: 20, marginBottom: 20, fontSize: 14, },
-    disabledText: { color: '#888' }, 
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, },
-    loadingText: { marginTop: 10, color: '#A9A9A9', fontSize: 14, },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  modalView: {
+    maxHeight: '85%',
+    width: '90%',
+    backgroundColor: '#2A2A2A',
+    borderRadius: 20,
+    padding: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  closeButton: { position: 'absolute', top: 10, right: 10, padding: 5, zIndex: 1 },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 20, textAlign: 'center' },
+  tabContainer: { flexDirection: 'row', marginBottom: 20, backgroundColor: '#3C3C3C', borderRadius: 10, padding: 4 },
+  tabButton: { flex: 1, paddingVertical: 10, borderRadius: 8 },
+  tabButtonActive: { backgroundColor: '#555' },
+  tabText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
+  label: { fontSize: 16, color: '#E0E0E0', alignSelf: 'flex-start', marginBottom: 15 },
+  roleSelectorContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 },
+  roleButton: { backgroundColor: '#555', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 20 },
+  roleButtonSelected: { backgroundColor: '#EB5F1C' },
+  roleButtonText: { color: '#fff', fontWeight: 'bold' },
+  divider: { height: 1, backgroundColor: '#4A4A4A', marginVertical: 25 },
+  linkContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#3C3C3C', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, minHeight: 44 },
+  linkText: { color: '#A9A9A9', fontSize: 13, flex: 1, marginRight: 8 },
+  teamItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: '#3C3C3C', borderRadius: 8, marginBottom: 10 },
+  teamTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  teamMemberCount: { color: '#A9A9A9', fontSize: 12 },
+  memberList: { flex: 1, backgroundColor: '#3C3C3C', borderRadius: 8, paddingHorizontal: 10, paddingTop: 10, marginBottom: 10 },
+  memberItemContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4A4A4A' },
+  memberAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#555', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  memberAvatarText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12 },
+  memberItem: { color: '#E0E0E0', fontSize: 16 },
+  backButton: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  backButtonText: { color: '#EB5F1C', marginLeft: 8, fontSize: 16 },
+  labelSpaceSpecial: { marginTop: 10 },
+  emptyListText: { color: '#A9A9A9', textAlign: 'center', marginTop: 20, marginBottom: 20, fontSize: 14 },
+  disabledText: { color: '#888' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  loadingText: { marginTop: 10, color: '#A9A9A9', fontSize: 14 },
+  inviteScrollContent: { paddingVertical: 5 },
+  tokenDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3C3C3C',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#555',
+  },
+  tokenLabel: {
+    color: '#A9A9A9',
+    fontSize: 11,
+    marginBottom: 4,
+  },
+  tokenValue: {
+    color: '#EB5F1C',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+    fontFamily: 'monospace',
+    flexWrap: 'wrap',
+  },
+  copyButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingLeft: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: '#555',
+    marginLeft: 8,
+    minWidth: 50,
+  },
+  copyButtonText: {
+    color: '#fff',
+    fontSize: 9,
+    marginTop: 2,
+  },
 });

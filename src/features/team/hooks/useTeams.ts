@@ -47,7 +47,6 @@ export function useTeams(isAuthenticated: boolean) {
       setCurrentPage(page + 1);
       setHasMoreTeams(!response.last);
     } catch (error) {
-      console.error("Erro ao buscar times:", getErrorMessage(error));
       if (isRefreshing) {
         setTeams([]);
         setCurrentPage(0);

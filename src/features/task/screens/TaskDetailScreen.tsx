@@ -113,7 +113,6 @@ export const TaskDetailScreen = () => {
             }
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: 'Erro ao carregar dados da tarefa.' });
-            console.error(error);
              setTimeout(() => navigation.goBack(), 1500);
         } finally {
             setLoading(false);

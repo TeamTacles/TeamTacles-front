@@ -24,7 +24,6 @@ export function useProjectReport(projectId: number) {
       const data = await projectReportService.getProjectDashboard(projectId, appliedFilters);
       setReport(data);
     } catch (error) {
-      console.error('Erro ao buscar dashboard:', error);
       showNotification({
         type: 'error',
         message: getErrorMessage(error),
@@ -68,8 +67,6 @@ export function useProjectReport(projectId: number) {
                     encoding: 'base64', 
                 });
 
-                console.log('📄 PDF salvo em:', pdfUri);
-
                 // Compartilhar PDF
                 if (!(await Sharing.isAvailableAsync())) {
                     showNotification({
@@ -86,7 +83,6 @@ export function useProjectReport(projectId: number) {
                 });
 
             } catch (err: any) {
-                console.error('Erro ao salvar/compartilhar PDF:', err);
                 // Evita mostrar erro se o usuário apenas cancelou o compartilhamento
                 if (err.code !== 'ERR_SHARING_CANCELLED' && err.message !== 'Operation canceled' && err.message !== 'User dismissed modal view controller') {
                     showNotification({
@@ -98,7 +94,6 @@ export function useProjectReport(projectId: number) {
         };
 
         reader.onerror = (error) => {
-          console.error('Erro ao ler o Blob:', error);
           showNotification({
             type: 'error',
             message: 'Erro ao processar o conteúdo do PDF.',
@@ -106,7 +101,6 @@ export function useProjectReport(projectId: number) {
         };
       }
     } catch (error) {
-       console.error('Erro ao exportar PDF:', error);
        showNotification({ type: 'error', message: getErrorMessage(error), });
     } finally {
         setIsExportingPdf(false);

@@ -20,6 +20,8 @@ import NotificationPopup from '../../../components/common/NotificationPopup';
 import { InfoPopup } from "../../../components/common/InfoPopup"; 
 import { useProjectScreen } from "../hooks/useProjectScreen"; 
 import { useTeams } from '../../team/hooks/useTeams'; 
+import { JoinProjectModal } from '../components/JoinProjectModal';
+import Icon from 'react-native-vector-icons/Ionicons'; // <--- ADICIONE ESTA LINHA
 
 const polvo_pescando = require('../../../assets/polvo_pescando.png'); 
 
@@ -71,6 +73,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
 
     const [search, setSearch] = useState('');
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
+    const [isJoinModalVisible, setJoinModalVisible] = useState(false);
 
     const userProfileForHeader = user ? { initials: user.initials, name: user.name } : { initials: '?', name: ''}; 
 
@@ -137,6 +140,14 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 <FilterButton style={styles.filterButtonPosition} onPress={() => setFilterModalVisible(true)} />
             </View>
 
+            <TouchableOpacity 
+                style={styles.joinButtonContainer} 
+                onPress={() => setJoinModalVisible(true)}
+            >
+                <Icon name="enter-outline" size={20} color="#EB5F1C" />
+                <Text style={styles.joinButtonText}>Entrar com código</Text>
+            </TouchableOpacity>
+
             <FlatList
                 data={projects} //
                 keyExtractor={(item) => item.id.toString()}
@@ -202,6 +213,12 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 onRefreshTeams={refreshTeams} 
                 isRefreshingTeams={refreshingTeams} 
             />
+
+            <JoinProjectModal 
+                visible={isJoinModalVisible}
+                onClose={() => setJoinModalVisible(false)}
+                onSuccess={() => refreshProjects()} 
+            />
             <NotificationPopup ref={notificationRef} />
 
             <InfoPopup
@@ -214,7 +231,6 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
     );
 };
 
-// Estilos permanecem os mesmos...
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#191919' },
     searchContainer: { flexDirection: 'row', alignItems: 'flex-start', paddingRight: 15 },
@@ -233,5 +249,23 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '600',
+    },
+    joinButtonContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#2A2A2A', 
+        paddingVertical: 12,
+        marginHorizontal: 15,
+        marginBottom: 15,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#3C3C3C',
+    },
+    joinButtonText: {
+        color: '#EB5F1C', 
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginLeft: 10,
     },
 });

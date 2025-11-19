@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import * as Clipboard from 'expo-clipboard';
+
 import { InputsField } from '../../../components/common/InputsField';
 import { MainButton } from '../../../components/common/MainButton';
 import { InfoPopup } from '../../../components/common/InfoPopup';
@@ -32,9 +34,9 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
   const [email, setEmail] = useState('');
   const [selectedRole, setSelectedRole] = useState<MemberRole>('MEMBER');
   const [infoPopup, setInfoPopup] = useState({ visible: false, message: '' });
-
   const [isInviting, setIsInviting] = useState(false);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
 
   const resourceType = projectId ? 'project' : 'team';
   const resourceId = projectId || teamId;
@@ -62,46 +64,47 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
     }
   };
 
-  const handleGenerateAndShareLink = async () => {
+  const handleLoadToken = async () => {
     if (!resourceId) {
-        effectiveNotificationRef.current?.show({ type: 'error', message: `ID do ${resourceType === 'project' ? 'projeto' : 'time'} não encontrado.` });
+        effectiveNotificationRef.current?.show({ type: 'error', message: `ID não encontrado.` });
         return;
     }
 
     setIsGeneratingLink(true);
     try {
-      let linkToShare = '';
-      let entityName = resourceType === 'project' ? 'projeto' : 'time'; 
+      let token = ''; 
 
       if (resourceType === 'project') {
         const response = await projectService.generateInviteLink(Number(resourceId));
-        linkToShare = response.inviteLink;
+        token = response.inviteToken; 
       } else if (resourceType === 'team') {
         const response = await teamService.generateInviteLink(resourceId);
-        linkToShare = response.inviteLink;
+        token = response.inviteToken; 
       }
 
-      if (linkToShare) {
-        await Share.share({
-          message: `Você foi convidado para um ${entityName}! Junte-se através do link: ${linkToShare}`,
-          url: linkToShare, 
-        });
+      if (token) {
+        setGeneratedToken(token);
       } else {
-        throw new Error("Link não recebido da API.");
+        throw new Error("Token vazio recebido da API");
       }
     } catch (error) {
-      if (!(error instanceof Error && error.message.includes('Share Canceled'))) {
-        console.error(`Erro ao gerar/compartilhar link do ${resourceType}:`, error);
-        effectiveNotificationRef.current?.show({ type: 'error', message: 'Não foi possível gerar o link de convite.' });
-      }
+        effectiveNotificationRef.current?.show({ type: 'error', message: 'Não foi possível carregar o código.' });
     } finally {
       setIsGeneratingLink(false);
+    }
+  };
+
+  const handleCopyToken = async () => {
+    if (generatedToken) {
+      await Clipboard.setStringAsync(generatedToken);
+      effectiveNotificationRef.current?.show({ type: 'success', message: 'Código copiado!' });
     }
   };
 
   const handleClose = () => {
       setEmail('');
       setSelectedRole('MEMBER');
+      setGeneratedToken(null); // Limpa o token ao fechar
       onClose();
   }
 
@@ -148,21 +151,37 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({
 
             <View style={styles.divider} />
 
-            <Text style={styles.label}>Ou compartilhe o link de convite</Text>
-            <TouchableOpacity
-              style={styles.linkContainer}
-              onPress={handleGenerateAndShareLink}
-              disabled={isGeneratingLink || isInviting} 
-            >
-                {isGeneratingLink ? (
-                  <ActivityIndicator color="#EB5F1C" />
-                ) : (
-                  <>
-                    <Text style={styles.linkText} numberOfLines={1}>Gerar e compartilhar link</Text>
-                    <Icon name="share-social-outline" size={24} color="#EB5F1C" />
-                  </>
-                )}
-            </TouchableOpacity>
+            <Text style={styles.label}>Ou compartilhe o código de acesso</Text>
+            
+            {!generatedToken ? (
+                <TouchableOpacity
+                  style={styles.linkContainer}
+                  onPress={handleLoadToken}
+                  disabled={isGeneratingLink || isInviting} 
+                >
+                    {isGeneratingLink ? (
+                      <ActivityIndicator color="#EB5F1C" />
+                    ) : (
+                      <>
+                        <Text style={styles.linkText}>Gerar Código de Convite</Text>
+                        <Icon name="key-outline" size={18} color="#EB5F1C" />
+                      </>
+                    )}
+                </TouchableOpacity>
+            ) : (
+                <View style={styles.tokenDisplayContainer}>
+                    <View style={{flex: 1}}>
+                        <Text style={styles.tokenLabel}>Código do {resourceType === 'project' ? 'Projeto' : 'Time'}:</Text>
+                        <Text style={styles.tokenValue} selectable>{generatedToken}</Text>
+                    </View>
+                    
+                    <TouchableOpacity style={styles.copyButton} onPress={handleCopyToken}>
+                        <Icon name="copy-outline" size={18} color="#fff" />
+                        <Text style={styles.copyButtonText}>Copiar</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
           </View>
           {visible && <NotificationPopup ref={effectiveNotificationRef} />}
         </View>
@@ -227,14 +246,15 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between', 
         backgroundColor: '#3C3C3C',
         borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 15,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        minHeight: 44,
     },
     linkText: {
         color: '#A9A9A9',
-        fontSize: 14,
+        fontSize: 13,
         flex: 1, 
-        marginRight: 10, 
+        marginRight: 8, 
     },
     roleSelectorContainer: {
       flexDirection: 'row',
@@ -253,5 +273,41 @@ const styles = StyleSheet.create({
     roleButtonText: {
       color: '#fff',
       fontWeight: 'bold',
+    },
+    tokenDisplayContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#3C3C3C',
+        borderRadius: 8,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#555',
+    },
+    tokenLabel: {
+        color: '#A9A9A9',
+        fontSize: 11,
+        marginBottom: 4,
+    },
+    tokenValue: {
+        color: '#EB5F1C',
+        fontSize: 14,
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+        fontFamily: 'monospace',
+        flexWrap: 'wrap',
+    },
+    copyButton: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingLeft: 10,
+        borderLeftWidth: 1,
+        borderLeftColor: '#555',
+        marginLeft: 8,
+        minWidth: 50,
+    },
+    copyButtonText: {
+        color: '#fff',
+        fontSize: 9,
+        marginTop: 2,
     },
 });

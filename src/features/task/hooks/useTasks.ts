@@ -30,12 +30,10 @@ export function useTasks(isAuthenticated: boolean) {
     const isRefreshing = page === 0;
     
     if (!isRefreshing && !hasMoreTasks) {
-        console.log("No more tasks to load.");
         return; // Sai se não for refresh e não houver mais páginas
     }
   
      if (loadingTasks || refreshingTasks) {
-         console.log("Already fetching tasks.");
          return;
      }
 
@@ -58,7 +56,6 @@ export function useTasks(isAuthenticated: boolean) {
       setCurrentPage(pageToFetch + 1);
 
     } catch (error) {
-      console.error("Erro ao buscar tarefas:", getErrorMessage(error));
       if (isRefreshing) {
           setTasks([]);
           setCurrentPage(0);

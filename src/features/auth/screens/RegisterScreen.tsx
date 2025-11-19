@@ -62,8 +62,6 @@ export const RegisterScreen = () => {
             await register(trimmedData);
             setSuccessPopupVisible(true);
         } catch (error) {
-            console.error('❌ Erro ao registrar:', error);
-            
             if (isAxiosError(error) && error.response) {
                 const errorCode = error.response.data?.errorCode;
                 

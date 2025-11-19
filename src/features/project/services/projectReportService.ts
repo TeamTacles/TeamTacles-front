@@ -87,7 +87,6 @@ const exportProjectToPdf = async (
              try {
                 filename = decodeURIComponent(filenameMatch[1]);
             } catch (e) {
-                console.warn("Could not decode filename, using raw value:", filenameMatch[1]);
                 filename = filenameMatch[1];
             }
         }
