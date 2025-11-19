@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { MainButton } from '../../../components/common/MainButton';
 import { DatePickerField } from '../../../components/common/DatePickerField';
@@ -8,7 +8,10 @@ import Icon from 'react-native-vector-icons/Ionicons';
 export interface Filters {
     createdAtAfter?: Date;
     createdAtBefore?: Date;
-    status?: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+    // NOVOS CAMPOS
+    dueDateAfter?: Date;
+    dueDateBefore?: Date;
+    status?: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE'; // Adicionado OVERDUE
 }
 
 interface FilterModalProps {
@@ -26,7 +29,8 @@ const formatDate = (date: Date | null | undefined) => {
 
 export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, onClose, onApply, onClear }) => {
     const [localFilters, setLocalFilters] = useState<Filters>({});
-    const [showPickerFor, setShowPickerFor] = useState<'createdAtAfter' | 'createdAtBefore' | null>(null);
+    // Atualizado para incluir os novos campos de data
+    const [showPickerFor, setShowPickerFor] = useState<'createdAtAfter' | 'createdAtBefore' | 'dueDateAfter' | 'dueDateBefore' | null>(null);
 
     const handleApply = () => onApply(localFilters);
 
@@ -35,21 +39,20 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
         onClear();
     };
 
-    const handleDateChange = (field: 'createdAtAfter' | 'createdAtBefore', date: Date) => {
+    // Tipagem genérica para aceitar qualquer campo de data do Filters
+    const handleDateChange = (field: keyof Filters, date: Date) => {
         setLocalFilters(prev => ({ ...prev, [field]: date }));
         if (Platform.OS !== 'web') {
             setShowPickerFor(null); 
         }
     };
 
-    // Handler para DateTimePicker no mobile
     const onDateChangeMobile = (event: DateTimePickerEvent, selectedDate?: Date) => {
         const currentDate = selectedDate;
-
         if (event.type === 'set' && currentDate && showPickerFor) {
+             // @ts-ignore
             setLocalFilters(prev => ({ ...prev, [showPickerFor]: currentDate }));
         }
-
         setShowPickerFor(null); 
     };
 
@@ -58,6 +61,30 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
             ...prev,
             status: prev.status === status ? undefined : status,
         }));
+    };
+
+    // Helper para renderizar inputs de data
+    const renderDateInput = (label: string, field: 'createdAtAfter' | 'createdAtBefore' | 'dueDateAfter' | 'dueDateBefore') => {
+        if (Platform.OS === 'web') {
+            return (
+                <DatePickerField
+                    mode="date"
+                    value={localFilters[field] || new Date()}
+                    onChange={(date) => handleDateChange(field, date)}
+                    label={label}
+                />
+            );
+        }
+
+        return (
+            <>
+                <Text style={styles.label}>{label}</Text>
+                <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickerFor(field)}>
+                    <Text style={styles.dateText}>{formatDate(localFilters[field])}</Text>
+                    <Icon name="calendar-outline" size={24} color="#A9A9A9" />
+                </TouchableOpacity>
+            </>
+        );
     };
 
     return (
@@ -70,61 +97,48 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
 
                     <Text style={styles.modalTitle}>Filtrar {filterType === 'projects' ? 'Projetos' : filterType === 'tasks' ? 'Tarefas' : 'Equipes'}</Text>
 
-                    {filterType === 'tasks' && (
-                        <>
-                            <Text style={styles.label}>Status:</Text>
-                            <View style={styles.statusContainer}>
-                                <TouchableOpacity onPress={() => toggleStatus('TO_DO')} style={[styles.statusButton, localFilters.status === 'TO_DO' && styles.statusSelected]}>
-                                    <Text style={styles.statusText}>A Fazer</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => toggleStatus('IN_PROGRESS')} style={[styles.statusButton, localFilters.status === 'IN_PROGRESS' && styles.statusSelected]}>
-                                    <Text style={styles.statusText}>Em Progresso</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={() => toggleStatus('DONE')} style={[styles.statusButton, localFilters.status === 'DONE' && styles.statusSelected]}>
-                                    <Text style={styles.statusText}>Concluído</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </>
-                    )}
+                    <ScrollView contentContainerStyle={styles.scrollContent}>
+                        {filterType === 'tasks' && (
+                            <>
+                                <Text style={styles.label}>Status:</Text>
+                                <View style={styles.statusRow}>
+                                    <TouchableOpacity onPress={() => toggleStatus('TO_DO')} style={[styles.statusButton, localFilters.status === 'TO_DO' && styles.statusSelected_ToDo, styles.ToDo_Button]}>
+                                        <Text style={[styles.statusText, localFilters.status === 'TO_DO' && {color: '#000'}]}>A Fazer</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => toggleStatus('IN_PROGRESS')} style={[styles.statusButton, localFilters.status === 'IN_PROGRESS' && styles.statusSelected_InProgress, styles.In_ProgressButton]}>
+                                        <Text style={[styles.statusText, localFilters.status === 'IN_PROGRESS' && {color: '#000'}]}>Em Progresso</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.statusRow}>
+                                    <TouchableOpacity onPress={() => toggleStatus('DONE')} style={[styles.statusButton, localFilters.status === 'DONE' && styles.statusSelected_Done, styles.DoneButton]}>
+                                        <Text style={[styles.statusText, localFilters.status === 'DONE' && {color: '#000'}]}>Concluído</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => toggleStatus('OVERDUE')} style={[styles.statusButton, localFilters.status === 'OVERDUE' && styles.statusSelected_Overdue, styles.overdueButton]}>
+                                        <Text style={[styles.statusText, localFilters.status === 'OVERDUE' && {color: '#000'}]}>Atrasado</Text>
+                                    </TouchableOpacity>
+                                </View>
 
-                    {Platform.OS === 'web' ? (
-                        <>
-                            <DatePickerField
-                                mode="date"
-                                value={localFilters.createdAtAfter || new Date()}
-                                onChange={(date) => handleDateChange('createdAtAfter', date)}
-                                label="Criado Após:"
-                            />
-                            <DatePickerField
-                                mode="date"
-                                value={localFilters.createdAtBefore || new Date()}
-                                onChange={(date) => handleDateChange('createdAtBefore', date)}
-                                label="Criado Antes de:"
-                            />
-                        </>
-                    ) : (
-                        <>
-                            <Text style={styles.label}>Criado Após:</Text>
-                            <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickerFor('createdAtAfter')}>
-                                <Text style={styles.dateText}>{formatDate(localFilters.createdAtAfter)}</Text>
-                                <Icon name="calendar-outline" size={24} color="#A9A9A9" />
-                            </TouchableOpacity>
+                                <View style={styles.divider} />
+                                <Text style={styles.sectionHeader}>Prazo</Text>
+                                {renderDateInput("Prazo após:", 'dueDateAfter')}
+                                {renderDateInput("Prazo antes de:", 'dueDateBefore')}
+                            </>
+                        )}
+                        {filterType !== 'tasks' && (
+                            <>
+                                {renderDateInput("Criado Após:", 'createdAtAfter')}
+                                {renderDateInput("Criado Antes de:", 'createdAtBefore')}
+                            </>
+                        )}
+                    </ScrollView>
 
-                            <Text style={styles.label}>Criado Antes de:</Text>
-                            <TouchableOpacity style={styles.dateInput} onPress={() => setShowPickerFor('createdAtBefore')}>
-                                <Text style={styles.dateText}>{formatDate(localFilters.createdAtBefore)}</Text>
-                                <Icon name="calendar-outline" size={24} color="#A9A9A9" />
-                            </TouchableOpacity>
-
-                            {showPickerFor && (
-                                <DateTimePicker
-                                    mode="date"
-                                    display="default"
-                                    value={localFilters[showPickerFor] || new Date()}
-                                    onChange={onDateChangeMobile}
-                                />
-                            )}
-                        </>
+                    {showPickerFor && Platform.OS !== 'web' && (
+                        <DateTimePicker
+                            mode="date"
+                            display="default"
+                            value={localFilters[showPickerFor] || new Date()}
+                            onChange={onDateChangeMobile}
+                        />
                     )}
 
                     <View style={styles.buttonContainer}>
@@ -138,78 +152,38 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
 };
 
 const styles = StyleSheet.create({
-    centeredView: { 
-        flex: 1, 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        backgroundColor: 'rgba(0, 0, 0, 0.7)' 
-    },
+    centeredView: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0, 0, 0, 0.7)' },
     modalView: { 
         margin: 20, 
         backgroundColor: '#2A2A2A', 
         borderRadius: 20, padding: 25, 
-        alignItems: 'stretch', 
         shadowColor: '#000', 
         shadowOffset: { width: 0, height: 2 }, 
         shadowOpacity: 0.25, 
         shadowRadius: 4, 
         elevation: 5, 
-        width: '90%' 
+        width: '90%',
+        maxHeight: '85%'
     },
-    modalTitle: { 
-        fontSize: 22, 
-        fontWeight: 'bold', 
-        color: '#FFFFFF', 
-        marginBottom: 25, 
-        textAlign: 'center' 
-    },
-    label: { 
-        fontSize: 16, 
-        color: '#E0E0E0', 
-        marginBottom: 8, 
-        marginTop: 10 
-    },
-    closeButton: { 
-        position: 'absolute', 
-        top: 10, right: 10, 
-        padding: 5 
-    },
-    dateInput: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        backgroundColor: '#3C3C3C', 
-        borderRadius: 8, 
-        paddingVertical: 12, 
-        paddingHorizontal: 15, 
-        marginBottom: 10
-    },
-    dateText: { 
-        color: '#fff', 
-        fontSize: 16 
-    },
-    buttonContainer: { 
-        marginTop: 20 
-    },
-    clearButton: {
-        backgroundColor: '#888', 
-    },
-    statusContainer: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-around', 
-        marginBottom: 15 
-    },
-    statusButton: { 
-        paddingVertical: 8, 
-        paddingHorizontal: 12, 
-        borderRadius: 20, 
-        backgroundColor: '#555' 
-    },
-    statusSelected: { 
-        backgroundColor: '#EB5F1C' 
-    },
-    statusText: { 
-        color: '#fff', 
-        fontWeight: 'bold' 
-    }
+    scrollContent: { paddingBottom: 10 },
+    modalTitle: { fontSize: 22, fontWeight: 'bold', color: '#FFFFFF', marginBottom: 15, textAlign: 'center' },
+    label: { fontSize: 14, color: '#A9A9A9', marginBottom: 8, marginTop: 10 },
+    sectionHeader: { fontSize: 16, fontWeight: 'bold', color: '#EB5F1C', marginTop: 10, marginBottom: 5 },
+    closeButton: { position: 'absolute', top: 10, right: 10, padding: 5, zIndex: 10 },
+    dateInput: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#3C3C3C', borderRadius: 8, paddingVertical: 12, paddingHorizontal: 15, marginBottom: 10 },
+    dateText: { color: '#fff', fontSize: 16 },
+    buttonContainer: { marginTop: 20, gap: 10 },
+    clearButton: { backgroundColor: '#555' },
+    statusRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, gap: 10 },
+    statusButton: { flex: 1, paddingVertical: 10, borderRadius: 8, backgroundColor: '#3C3C3C', alignItems: 'center', borderWidth: 1, borderColor: '#555' },
+    statusSelected_ToDo: { backgroundColor: '#FFA500', borderColor: '#FFA500' },
+    statusSelected_InProgress: { backgroundColor: '#FFD700', borderColor: '#FFD700' },
+    statusSelected_Done: { backgroundColor: '#3CB371', borderColor: '#3CB371' },
+    statusSelected_Overdue: { backgroundColor: '#ff4545', borderColor: '#ff4545' },
+    ToDo_Button: { borderColor: '#FFA500' },
+    In_ProgressButton: { borderColor: '#FFD700' }, 
+    DoneButton: { borderColor: '#3CB371' }, 
+    overdueButton: { borderColor: '#ff4545' }, 
+    statusText: { color: '#E0E0E0', fontWeight: 'bold', fontSize: 14 },
+    divider: { height: 1, backgroundColor: '#444', marginVertical: 15 }
 });

@@ -7,7 +7,7 @@ export interface UserTaskApiResponse {
   id: number;
   title: string;
   description: string;
-  taskStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+  taskStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
   dueDate: string; 
   project: {
     id: number;
@@ -68,9 +68,6 @@ export interface TaskAssignmentsBulkDeleteRequest {
     userIds: number[];
 }
 
-
-
-
 export interface TaskCreateResponse {
   id: number;
   title: string;
@@ -111,13 +108,26 @@ const getMyTasks = async (
   });
 
   if (title) params.append('title', title);
-  if (filters.status) params.append('status', filters.status);
+  
+  if (filters.status) {
+      if (filters.status === 'OVERDUE') {
+          params.append('isOverdue', 'true');
+      } else {
+          params.append('status', filters.status);
+      }
+  }
 
   const createdAtAfter = formatDateForApi(filters.createdAtAfter);
   if (createdAtAfter) params.append('createdAtAfter', createdAtAfter);
 
   const createdAtBefore = formatDateForApi(filters.createdAtBefore);
   if (createdAtBefore) params.append('createdAtBefore', createdAtBefore);
+
+  const dueDateAfter = formatDateForApi(filters.dueDateAfter);
+  if (dueDateAfter) params.append('dueDateAfter', dueDateAfter);
+
+  const dueDateBefore = formatDateForApi(filters.dueDateBefore);
+  if (dueDateBefore) params.append('dueDateBefore', dueDateBefore);
 
 
   const response = await api.get<PagedResponse<UserTaskApiResponse>>(`/tasks?${params.toString()}`);
@@ -179,8 +189,6 @@ const leaveTask = async (projectId: number, taskId: number): Promise<void> => {
     await api.delete(`/project/${projectId}/tasks/${taskId}/leave`);
 };
 
-
-
 export const taskService = {
   getMyTasks,
   createTask,
@@ -193,10 +201,9 @@ export const taskService = {
   leaveTask,
 };
 
-
 export interface TaskFilterReportDTO {
     title?: string;
-    status?: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+    taskStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
     assignedUserId?: number;
     updatedAtAfter?: string;
     updatedAtBefore?: string;
