@@ -99,6 +99,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 30,
+    paddingVertical: 80,
   },
   logoImage: {
     marginBottom: 10,

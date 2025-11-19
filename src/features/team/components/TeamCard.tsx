@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { BaseCard } from "../../../components/common/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
 import { TeamType } from '../../../types/entities';
@@ -39,7 +39,7 @@ export const TeamCard = ({ team, onPress }: TeamCardProps) => {
                     </View>
                     <View style={styles.teamContainer}>
                         {members.slice(0, 4).map((member, index) => (
-                            <View key={index} style={[styles.avatar, { right: index * 15 }]}>
+                            <View key={index} style={[styles.avatar, { marginLeft: index > 0 ? -10 : 0 }]}>
                                 <Text style={styles.avatarText}>{member.initials}</Text>
                             </View>
                         ))}
@@ -84,8 +84,8 @@ const styles = StyleSheet.create({
         marginLeft: 6,
     },
     teamContainer: {
-        flexDirection: 'row-reverse',
-        paddingLeft: 45, 
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     avatar: {
         width: 30,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         borderColor: '#2A2A2A',
-        position: 'relative',
+        zIndex: 1,
     },
     avatarText: {
         color: '#FFFFFF',

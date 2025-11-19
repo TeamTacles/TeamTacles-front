@@ -81,8 +81,14 @@ export const PostLoginOnboardingScreen = () => {
  const renderItem = ({ item }: { item: typeof slides[0] }) => {
 
   const APP_ORANGE_COLOR = '#EB5F1C'; 
-  const MEDIA_WIDTH_PERCENTAGE = 80;
-  const MEDIA_ASPECT_RATIO = 0.75; 
+  const windowWidth = Dimensions.get('window').width;
+  const isWeb = Platform.OS === 'web';
+  
+  // no mobile usa 80% da largura da tela, no web usa 50% com maximo de 400px
+  const mediaWidth = isWeb ? 
+    Math.min(windowWidth * 0.5, 400) : 
+    windowWidth * 0.8;
+  const mediaAspectRatio = 0.75;
 
   return (
    <ScrollView contentContainerStyle={[styles.slide, { backgroundColor: item.backgroundColor }]}>
@@ -96,8 +102,8 @@ export const PostLoginOnboardingScreen = () => {
       <View style={[
        styles.mediaContainer, 
        { 
-        width: `${MEDIA_WIDTH_PERCENTAGE}%`, 
-        aspectRatio: MEDIA_ASPECT_RATIO, 
+        width: mediaWidth, 
+        aspectRatio: mediaAspectRatio, 
         borderColor: APP_ORANGE_COLOR, 
         borderWidth: 2, 
         borderRadius: 12, 

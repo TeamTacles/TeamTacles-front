@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { BaseCard } from "../../../components/common/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Project, Member } from "../../../types/entities"; 
@@ -28,16 +28,16 @@ export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
 
                 
                     <View style={styles.teamContainer}>
-                        {teamMembers.slice(0, 3).map((member: Member, index: number) => (
-                            <View key={`${member.name}-${index}`} style={[styles.avatar, { right: index * 15 }]}>
-                                <Text style={styles.avatarText}>{member.initials}</Text>
-                            </View>
-                        ))}
                          {teamMembers.length > 3 && (
-                            <View style={[styles.avatar, styles.moreAvatar, { right: 3 * 15 }]}>
+                            <View style={[styles.avatar, styles.moreAvatar, { marginLeft: 0 }]}>
                                 <Text style={styles.avatarText}>+{teamMembers.length - 3}</Text>
                             </View>
                          )}
+                        {teamMembers.slice(0, 3).map((member: Member, index: number) => (
+                            <View key={`${member.name}-${index}`} style={[styles.avatar, { marginLeft: -10 }]}>
+                                <Text style={styles.avatarText}>{member.initials}</Text>
+                            </View>
+                        ))}
                     </View>
                 </View>
             </View>
@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
         marginLeft: 5,
     },
     teamContainer: {
-        flexDirection: 'row-reverse',
+        flexDirection: 'row',
         alignItems: 'center',
     },
     avatar: {
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 2,
         borderColor: '#2A2A2A',
-        position: 'relative',
+        zIndex: 1,
     },
      moreAvatar: {
         backgroundColor: '#3C3C3C',
