@@ -11,7 +11,8 @@ const mapApiResponseToTask = (apiTask: UserTaskApiResponse): Task => ({
   dueDate: apiTask.dueDate,
   projectId: apiTask.project.id,
   projectName: apiTask.project.title,
-  status: apiTask.taskStatus,
+  status: apiTask.status, 
+  originalStatus: apiTask.originalStatus, 
   createdAt: apiTask.createdAt ? new Date(apiTask.createdAt).getTime() : Date.now(),
   assignments: [],
 });

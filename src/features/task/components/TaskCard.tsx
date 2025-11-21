@@ -9,49 +9,41 @@ interface TaskCardProps {
     onPress: () => void;
 }
 
+const getLifecycleStatusConfig = (status: string) => {
+    switch (status) {
+        case 'DONE':
+            return { label: 'Concluído', style: styles.statusDone, textStyle: styles.statusTextDone };
+        case 'IN_PROGRESS':
+            return { label: 'Em Andamento', style: styles.statusInProgress, textStyle: styles.statusTextInProgress };
+        case 'TO_DO':
+        default:
+            return { label: 'A Fazer', style: styles.statusToDo, textStyle: styles.statusTextToDo };
+    }
+};
+
 export const TaskCard = ({ task, onPress }: TaskCardProps) => {
-    const { title, projectName, dueDate, status } = task;
+    const { title, projectName, dueDate, status, originalStatus } = task;
     const isOverdue = status === 'OVERDUE';
 
-    const getStatusInfo = () => {
-        switch (status) {
-            case 'OVERDUE':
-                return {
-                    label: 'Atrasado',
-                    containerStyle: styles.statusOverdue,
-                    textStyle: styles.statusTextOverdue,
-                };
-            case 'IN_PROGRESS':
-                return {
-                    label: 'Em Andamento',
-                    containerStyle: styles.statusInProgress,
-                    textStyle: styles.statusTextInProgress,
-                };
-            case 'DONE':
-                return {
-                    label: 'Concluído',
-                    containerStyle: styles.statusDone,
-                    textStyle: styles.statusTextDone,
-                };
-            case 'TO_DO':
-            default:
-                return {
-                    label: 'A Fazer',
-                    containerStyle: styles.statusToDo,
-                    textStyle: styles.statusTextToDo,
-                };
-        }
-    };
-
-    const statusInfo = getStatusInfo();
+    const lifecycleConfig = getLifecycleStatusConfig(originalStatus || 'TO_DO');
 
     return (
         <BaseCard onPress={onPress}>
             <View style={styles.contentContainer}>
+                
                 <View style={styles.header}>
                     <Text style={styles.projectName} numberOfLines={1}>{projectName}</Text>
-                    <View style={[styles.statusBadge, statusInfo.containerStyle]}>
-                        <Text style={statusInfo.textStyle}>{statusInfo.label}</Text>
+                    
+                    <View style={styles.badgesContainer}>
+                        <View style={[styles.statusBadge, lifecycleConfig.style]}>
+                            <Text style={lifecycleConfig.textStyle}>{lifecycleConfig.label}</Text>
+                        </View>
+
+                        {isOverdue && (
+                            <View style={[styles.statusBadge, styles.statusOverdue]}>
+                                <Text style={styles.statusTextOverdue}>Atrasado</Text>
+                            </View>
+                        )}
                     </View>
                 </View>
                 
@@ -73,9 +65,9 @@ const styles = StyleSheet.create({
         padding: 15,
     },
     header: {
-        flexDirection: 'row',
+        flexDirection: 'row', 
         justifyContent: 'space-between',
-        alignItems: 'center',
+        alignItems: 'flex-start', 
         marginBottom: 8,
     },
     projectName: {
@@ -83,19 +75,31 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
         textTransform: 'uppercase',
-        flex: 1,
+        flex: 1, 
         marginRight: 10,
+        marginTop: 4, 
     },
+    
+    badgesContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end', 
+        gap: 6,
+        maxWidth: '60%', 
+    },
+
     statusBadge: {
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 12,
+        marginBottom: 2, 
     },
     title: {
         color: '#FFFFFF',
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 15,
+        marginTop: 4,
     },
     footer: {
         flexDirection: 'row',

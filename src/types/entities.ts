@@ -33,6 +33,7 @@ export interface Task {
   projectId: number;
   projectName: string;
   status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
+  originalStatus?: 'TO_DO' | 'IN_PROGRESS' | 'DONE'; 
   createdAt: number;
   assignments: TaskAssignment[];
 }
