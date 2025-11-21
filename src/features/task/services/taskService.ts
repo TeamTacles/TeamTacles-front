@@ -108,6 +108,10 @@ const getMyTasks = async (
   });
 
   if (title) params.append('title', title);
+
+  if (filters.projectId) {
+      params.append('projectId', filters.projectId.toString());
+  }
   
   if (filters.status) {
       if (filters.status === 'OVERDUE') {

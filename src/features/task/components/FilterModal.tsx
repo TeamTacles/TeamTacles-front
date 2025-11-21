@@ -4,19 +4,19 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { MainButton } from '../../../components/common/MainButton';
 import { DatePickerField } from '../../../components/common/DatePickerField';
 import Icon from 'react-native-vector-icons/Ionicons';
-
+import { ProjectSelectorModal } from '../../project/components/ProjectSelectorModal'; 
 export interface Filters {
     createdAtAfter?: Date;
     createdAtBefore?: Date;
-    // NOVOS CAMPOS
     dueDateAfter?: Date;
     dueDateBefore?: Date;
-    status?: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE'; // Adicionado OVERDUE
+    status?: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
+    projectId?: number; 
 }
 
 interface FilterModalProps {
     visible: boolean;
-    filterType: 'projects' | 'tasks' | 'teams'; 
+    filterType: 'projects' | 'tasks' | 'teams';
     onClose: () => void;
     onApply: (filters: Filters) => void;
     onClear: () => void;
@@ -29,31 +29,32 @@ const formatDate = (date: Date | null | undefined) => {
 
 export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, onClose, onApply, onClear }) => {
     const [localFilters, setLocalFilters] = useState<Filters>({});
-    // Atualizado para incluir os novos campos de data
     const [showPickerFor, setShowPickerFor] = useState<'createdAtAfter' | 'createdAtBefore' | 'dueDateAfter' | 'dueDateBefore' | null>(null);
+    
+    const [isProjectSelectorVisible, setIsProjectSelectorVisible] = useState(false);
+    const [selectedProjectName, setSelectedProjectName] = useState('Todos os Projetos');
 
     const handleApply = () => onApply(localFilters);
 
     const handleClear = () => {
         setLocalFilters({});
+        setSelectedProjectName('Todos os Projetos'); 
         onClear();
     };
 
-    // Tipagem genérica para aceitar qualquer campo de data do Filters
     const handleDateChange = (field: keyof Filters, date: Date) => {
         setLocalFilters(prev => ({ ...prev, [field]: date }));
         if (Platform.OS !== 'web') {
-            setShowPickerFor(null); 
+            setShowPickerFor(null);
         }
     };
 
     const onDateChangeMobile = (event: DateTimePickerEvent, selectedDate?: Date) => {
         const currentDate = selectedDate;
         if (event.type === 'set' && currentDate && showPickerFor) {
-             // @ts-ignore
             setLocalFilters(prev => ({ ...prev, [showPickerFor]: currentDate }));
         }
-        setShowPickerFor(null); 
+        setShowPickerFor(null);
     };
 
     const toggleStatus = (status: Filters['status']) => {
@@ -63,7 +64,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
         }));
     };
 
-    // Helper para renderizar inputs de data
     const renderDateInput = (label: string, field: 'createdAtAfter' | 'createdAtBefore' | 'dueDateAfter' | 'dueDateBefore') => {
         if (Platform.OS === 'web') {
             return (
@@ -95,11 +95,27 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
                         <Icon name="close-outline" size={30} color="#fff" />
                     </TouchableOpacity>
 
-                    <Text style={styles.modalTitle}>Filtrar {filterType === 'projects' ? 'Projetos' : filterType === 'tasks' ? 'Tarefas' : 'Equipes'}</Text>
+                    <Text style={styles.modalTitle}>
+                        Filtrar {filterType === 'projects' ? 'Projetos' : filterType === 'tasks' ? 'Tarefas' : 'Equipes'}
+                    </Text>
 
                     <ScrollView contentContainerStyle={styles.scrollContent}>
                         {filterType === 'tasks' && (
                             <>
+                                <Text style={styles.label}>Filtrar por Projeto:</Text>
+                                <TouchableOpacity 
+                                    style={styles.dateInput} 
+                                    onPress={() => setIsProjectSelectorVisible(true)}
+                                >
+                                    <Text style={[
+                                        styles.dateText, 
+                                        selectedProjectName !== 'Todos os Projetos' ? { color: '#EB5F1C', fontWeight: 'bold' } : {}
+                                    ]}>
+                                        {selectedProjectName}
+                                    </Text>
+                                    <Icon name="chevron-down-outline" size={24} color="#A9A9A9" />
+                                </TouchableOpacity>
+
                                 <Text style={styles.label}>Status:</Text>
                                 <View style={styles.statusRow}>
                                     <TouchableOpacity onPress={() => toggleStatus('TO_DO')} style={[styles.statusButton, localFilters.status === 'TO_DO' && styles.statusSelected_ToDo, styles.ToDo_Button]}>
@@ -124,6 +140,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
                                 {renderDateInput("Prazo antes de:", 'dueDateBefore')}
                             </>
                         )}
+                        
                         {filterType !== 'tasks' && (
                             <>
                                 {renderDateInput("Criado Após:", 'createdAtAfter')}
@@ -147,6 +164,17 @@ export const FilterModal: React.FC<FilterModalProps> = ({ visible, filterType, o
                     </View>
                 </View>
             </View>
+
+            <ProjectSelectorModal
+                visible={isProjectSelectorVisible}
+                onClose={() => setIsProjectSelectorVisible(false)}
+                selectedProjectId={localFilters.projectId}
+                onSelect={(id, title) => {
+                    setLocalFilters(prev => ({ ...prev, projectId: id }));
+                    if (title) setSelectedProjectName(title);
+                    else if (!id) setSelectedProjectName('Todos os Projetos');
+                }}
+            />
         </Modal>
     );
 };
