@@ -7,7 +7,8 @@ export interface UserTaskApiResponse {
   id: number;
   title: string;
   description: string;
-  taskStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
+  status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
+  originalStatus?: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
   dueDate: string; 
   project: {
     id: number;

@@ -22,11 +22,12 @@ export interface ProjectTask {
   title: string;
   description: string;
   status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
+  originalStatus?: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
   dueDate: string;
   ownerId: number;
   assignments: {
-    userId: number;
-    username: string;
+  userId: number;
+  username: string;
   }[];
   projectId: number;
   createdAt?: string;

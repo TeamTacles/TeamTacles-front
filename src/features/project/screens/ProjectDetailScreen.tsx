@@ -6,7 +6,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { RootStackParamList } from '../../../types/Navigation';
 import { Header } from '../../../components/common/Header';
-import { ProjectTask, ProjectMember } from '../services/projectService';
 import { MemberListItem } from '../../team/components/MemberListItem';
 import { useProjectDetail } from '../hooks/useProjectDetail';
 import { EditMemberRoleModal } from '../../team/components/EditMemberRoleModal';
@@ -20,6 +19,7 @@ import { InviteMemberModal } from '../../team/components/InviteMemberModal';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useTaskCreation } from '../../task/hooks/useTaskCreation';
 import { useAppContext } from '../../../contexts/AppContext';
+
 
 type ProjectDetailNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -100,13 +100,30 @@ export const ProjectDetailScreen = () => {
         { label: 'Em atraso', value: 'OVERDUE', color: '#ff4545' },
     ];
 
+    //mudar abrodagem dessa funcao !!!!
     const sortedTasks = useMemo(() => {
-        let currentTasks = [...projectTasks];
-        if (sortOption === 'DEFAULT') return currentTasks;
-        if (sortOption === 'OVERDUE') {
-            return currentTasks.filter(task => task.status === 'OVERDUE');
-        }
-        return currentTasks.filter(task => task.status === sortOption);
+        // Cria uma cópia para não mutar o estado original
+        let tasksCopy = [...projectTasks];
+        
+        if (sortOption === 'DEFAULT') return tasksCopy;
+
+        return tasksCopy.sort((a, b) => {
+            // Lógica: Se a tarefa 'a' corresponde ao critério, ela vem antes (-1)
+            // Se a tarefa 'b' corresponde, ela vem antes (1)
+            
+            const isAMatch = (sortOption === 'OVERDUE') 
+                ? a.status === 'OVERDUE'
+                : (a.originalStatus || a.status) === sortOption;
+
+            const isBMatch = (sortOption === 'OVERDUE')
+                ? b.status === 'OVERDUE'
+                : (b.originalStatus || b.status) === sortOption;
+
+            if (isAMatch && !isBMatch) return -1; // 'a' sobe
+            if (!isAMatch && isBMatch) return 1;  // 'b' sobe
+            return 0; // Mantém a ordem relativa se ambos forem iguais
+        });
+        
     }, [sortOption, projectTasks]);
 
     const handleSort = (option: SortOption) => {
@@ -214,7 +231,6 @@ export const ProjectDetailScreen = () => {
                     />
                 </View>
             )}
-
 
             <View style={styles.addButtonContainer}>
                 <NewItemButton onPress={() => setNewTaskModalVisible(true)} />
