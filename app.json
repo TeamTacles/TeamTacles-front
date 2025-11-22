@@ -1,11 +1,11 @@
 {
   "expo": {
-    "backgroundColor": "#191919",
-    "userInterfaceStyle": "dark",
     "name": "TeamTacles",
     "slug": "TeamTacles",
-    "scheme": "teamtacles",
     "version": "1.0.0",
+    "backgroundColor": "#191919",
+    "userInterfaceStyle": "dark",
+    "scheme": "teamtacles",
     "orientation": "portrait",
     "icon": "./src/assets/icon_app.png",
     "newArchEnabled": true,
@@ -18,19 +18,19 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.caio.teamtacles",
+      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "com.lauton.TeamTacles"
+      }
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "2d11fae3-8e28-4de1-b4bb-38e859aa52ef"
+        "projectId": "e1095c75-dd67-4964-81bb-f53b24283bc2"
       }
     }
   }
