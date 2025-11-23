@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../../types/Navigation';
 import { getInitialsFromName } from '../../../utils/stringUtils';
 
 interface TaskAssignment {
@@ -13,6 +16,7 @@ interface Task {
     description: string;
     status: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
     dueDate: string; // ISO 8601 string
+    projectId: number;
     assignments: TaskAssignment[];
 }
 
@@ -27,7 +31,10 @@ const statusConfig = {
     OVERDUE: { label: 'Atrasado', color: '#ff4545' },
 };
 
+type TaskReportNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
 export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
+    const navigation = useNavigation<TaskReportNavigationProp>();
     // Pega o primeiro responsável ou mostra "N/A"
     const responsible = task.assignments && task.assignments.length > 0
         ? task.assignments[0].username
@@ -46,8 +53,15 @@ export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
         }
     };
 
+    const handlePress = () => {
+        navigation.navigate('TaskDetail', {
+            projectId: task.projectId,
+            taskId: task.id,
+        });
+    };
+
     return (
-        <View style={styles.row}>
+        <TouchableOpacity style={styles.row} onPress={handlePress} activeOpacity={0.7}>
             <Text style={[styles.col, styles.colTask]} numberOfLines={2}>
                 {task.title}
             </Text>
@@ -71,7 +85,7 @@ export const TaskReportRow: React.FC<TaskReportRowProps> = ({ task }) => {
             <Text style={[styles.col, styles.colDueDate]} numberOfLines={1}>
                 {formatDate(task.dueDate)}
             </Text>
-        </View>
+        </TouchableOpacity>
     );
 };
 
