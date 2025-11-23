@@ -87,6 +87,9 @@ export const TaskDetailScreen = () => {
     };
 
     const isOverdue = task?.status === 'OVERDUE';
+    const overdueStatusDisplay = isOverdue
+        ? baseStatusItems.find(item => item.value === task?.originalStatus)
+        : undefined;
     const isTaskOwner = task?.ownerId === user?.id;
     const isAdminOrOwnerOfProject = projectRole === 'ADMIN' || projectRole === 'OWNER';
     const isAssignee = task?.assignments.some(a => a.userId === user?.id && a.taskRole === 'ASSIGNEE');
@@ -389,6 +392,8 @@ export const TaskDetailScreen = () => {
                         selectedValue={task.status}
                         onValueChange={handleUpdateStatus}
                         style={isUpdating || !canChangeStatus ? styles.pickerDisabled : null}
+                        selectedLabelOverride={overdueStatusDisplay?.label}
+                        selectedColorOverride={overdueStatusDisplay?.color}
                     />
                     {!canChangeStatus && <Text style={styles.disabledReasonText}>Você não pode alterar o status.</Text>}
                 </View>

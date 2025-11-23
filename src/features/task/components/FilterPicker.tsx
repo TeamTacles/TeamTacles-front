@@ -17,14 +17,25 @@ interface FilterPickerProps {
   onValueChange: (value: string | number) => void;
   placeholder?: string;
   style?: StyleProp<ViewStyle>; 
+  selectedLabelOverride?: string;
+  selectedColorOverride?: string;
 }
 
-export const FilterPicker: React.FC<FilterPickerProps> = ({ label, items, selectedValue, onValueChange, placeholder = "Selecione...", style }) => {
+export const FilterPicker: React.FC<FilterPickerProps> = ({
+  label,
+  items,
+  selectedValue,
+  onValueChange,
+  placeholder = "Selecione...",
+  style,
+  selectedLabelOverride,
+  selectedColorOverride,
+}) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   const selectedItem = items.find(item => item.value === selectedValue);
-  const selectedItemLabel = selectedItem?.label || placeholder;
-  const selectedItemColor = selectedItem?.color;
+  const selectedItemLabel = selectedLabelOverride ?? selectedItem?.label ?? placeholder;
+  const selectedItemColor = selectedColorOverride ?? selectedItem?.color;
 
   const handleSelect = (value: string | number) => {
     onValueChange(value);
