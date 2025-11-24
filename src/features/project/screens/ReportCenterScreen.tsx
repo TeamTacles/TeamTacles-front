@@ -176,7 +176,7 @@ export const ReportCenterScreen = () => {
             if (selectedStatus === 'OVERDUE') {
                 newFilters.isOverdue = true;
             } else {
-                newFilters.status = selectedStatus as 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+                newFilters.taskStatus = selectedStatus as 'TO_DO' | 'IN_PROGRESS' | 'DONE';
             }
         }
 

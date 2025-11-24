@@ -30,7 +30,7 @@ interface PdfExportResult {
 const getProjectDashboard = async (projectId: number, filter?: TaskFilterReportDTO): Promise<ProjectReportDTO> => {
     const params = new URLSearchParams();
     if (filter?.title) params.append('title', filter.title);
-    if (filter?.status) params.append('status', filter.status);
+    if (filter?.taskStatus) params.append('status', filter.taskStatus);
     if (filter?.assignedUserId) params.append('assignedUserId', filter.assignedUserId.toString());
     if (filter?.dueDateAfter) params.append('dueDateAfter', filter.dueDateAfter);
     if (filter?.dueDateBefore) params.append('dueDateBefore', filter.dueDateBefore);
@@ -54,7 +54,7 @@ const exportProjectToPdf = async (
 ): Promise<PdfExportResult> => {
     const params = new URLSearchParams();
     if (filter?.title) params.append('title', filter.title);
-    if (filter?.status) params.append('status', filter.status);
+    if (filter?.taskStatus) params.append('status', filter.taskStatus);
     if (filter?.assignedUserId) params.append('assignedUserId', filter.assignedUserId.toString());
     if (filter?.dueDateAfter) params.append('dueDateAfter', filter.dueDateAfter);
     if (filter?.dueDateBefore) params.append('dueDateBefore', filter.dueDateBefore);
@@ -118,7 +118,7 @@ const getProjectTasksForReport = async (
 ): Promise<any[]> => {
     const params = new URLSearchParams();
     if (filter?.title) params.append('title', filter.title);
-    if (filter?.status) params.append('status', filter.status);
+    if (filter?.taskStatus) params.append('status', filter.taskStatus);
     if (filter?.assignedUserId) params.append('assignedUserId', filter.assignedUserId.toString());
     if (filter?.dueDateAfter) params.append('dueDateAfter', filter.dueDateAfter);
     if (filter?.dueDateBefore) params.append('dueDateBefore', filter.dueDateBefore);
