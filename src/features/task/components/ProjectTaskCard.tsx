@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { BaseCard } from "../../../components/common/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ProjectTask } from '../../project/services/projectService';
+import { getInitialsFromName } from '../../../utils/stringUtils';
 
 interface ProjectTaskCardProps {
     task: ProjectTask;
@@ -61,7 +62,7 @@ export const ProjectTaskCard = ({ task, onPress }: ProjectTaskCardProps) => {
                         {assignments.slice(0, 3).map((assignment) => (
                             <View key={assignment.userId} style={styles.avatar}>
                                 <Text style={styles.avatarText}>
-                                    {assignment.username ? assignment.username.substring(0, 2).toUpperCase() : 'U'}
+                                    {getInitialsFromName(assignment.username || 'Usuário')}
                                 </Text>
                             </View>
                         ))}
