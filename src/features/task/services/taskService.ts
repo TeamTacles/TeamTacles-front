@@ -209,7 +209,8 @@ export const taskService = {
 
 export interface TaskFilterReportDTO {
     title?: string;
-    taskStatus: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
+    taskStatus?: 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
+    status?: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
     assignedUserId?: number;
     updatedAtAfter?: string;
     updatedAtBefore?: string;
