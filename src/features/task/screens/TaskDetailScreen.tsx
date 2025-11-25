@@ -152,7 +152,12 @@ export const TaskDetailScreen = () => {
             const formattedDueDate = newDate.toISOString();
             const updatedTask = await taskService.updateTaskDetails(projectId, taskId, { dueDate: formattedDueDate });
             
-            updateLocalCache((old) => ({ ...old, dueDate: updatedTask.dueDate }));
+            updateLocalCache((old) => ({ 
+                ...old, 
+                dueDate: updatedTask.dueDate,
+                status: updatedTask.status,
+                originalStatus: updatedTask.originalStatus 
+            }));
             setEditDeadlineModalVisible(false); 
             
             notificationRef.current?.show({ type: 'success', message: 'Prazo atualizado com sucesso!' });
