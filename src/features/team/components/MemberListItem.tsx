@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { getInitialsFromName } from '../../../utils/stringUtils';
 
 interface MemberListItemProps {
   name: string;
@@ -33,7 +34,7 @@ export const MemberListItem: React.FC<MemberListItemProps> = ({ name, role, onPr
       onPress={onPress}
       disabled={disabled}
     >
-      <View style={styles.avatar}><Text style={styles.avatarText}>{name.substring(0, 2).toUpperCase()}</Text></View>
+      <View style={styles.avatar}><Text style={styles.avatarText}>{getInitialsFromName(name)}</Text></View>
       <View style={styles.memberInfo}><Text style={styles.name}>{name}</Text><Text style={styles.role}>{roleTranslations[role] || role}</Text></View>
       <Icon name={getRoleIcon(role)} size={24} color="#A9A9A9" />
     </TouchableOpacity>

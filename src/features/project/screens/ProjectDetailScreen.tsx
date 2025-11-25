@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, ElementRef } from 'react';
+import React, { useState, useMemo, useRef, ElementRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -31,6 +31,7 @@ export const ProjectDetailScreen = () => {
         navigation,
         project,
         loadingProject,
+        isError,
         isDeleting,
         members,
         loadingMembers,
@@ -139,6 +140,16 @@ export const ProjectDetailScreen = () => {
     const userProfileForHeader = user ? { initials: user.initials } : { initials: '?' };
     const handleProfilePress = () => navigation.navigate('EditProfile');
 
+    // Tratamento de erro com cleanup adequado
+    useEffect(() => {
+        if (isError) {
+            const timer = setTimeout(() => {
+                navigation.goBack();
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [isError, navigation]);
+
     if (loadingProject) {
         return (
             <SafeAreaView style={styles.container}>
@@ -146,6 +157,22 @@ export const ProjectDetailScreen = () => {
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#EB5F1C" />
                     <Text style={styles.loadingText}>Carregando projeto...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // Early return se projeto não existir ou houver erro
+    if (isError || !project) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <Header userProfile={userProfileForHeader} onPressProfile={handleProfilePress} notificationCount={0} onPressNotifications={() => {}} />
+                <View style={styles.loadingContainer}>
+                    <Icon name="alert-circle-outline" size={50} color="#EB5F1C" />
+                    <Text style={styles.loadingText}>Projeto não encontrado ou erro ao carregar.</Text>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={{marginTop: 20}}>
+                        <Text style={{color: '#EB5F1C', fontWeight: 'bold'}}>Voltar</Text>
+                    </TouchableOpacity>
                 </View>
             </SafeAreaView>
         );

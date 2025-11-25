@@ -20,7 +20,7 @@ export function useProjectDetail() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditModalVisible, setEditModalVisible] = useState(false);
 
-  const { data: project, isLoading: loadingProject } = useQuery({
+  const { data: project, isLoading: loadingProject, isError } = useQuery({
     queryKey: ['project', projectId],
     queryFn: async () => {
       try {
@@ -30,7 +30,6 @@ export function useProjectDetail() {
           type: 'error',
           message: 'Erro ao carregar o projeto. Tente novamente.'
         });
-        setTimeout(() => navigation.goBack(), 1500);
         throw error;
       }
     },
@@ -69,11 +68,16 @@ export function useProjectDetail() {
   } = useInfiniteQuery({
     queryKey: ['projectTasks', projectId],
     queryFn: async ({ pageParam = 0 }) => {
-      const response = await projectService.getProjectTasks(projectId, pageParam, 10);
-      return {
-        tasks: response.content,
-        nextPage: response.last ? undefined : pageParam + 1,
-      };
+      try {
+        const response = await projectService.getProjectTasks(projectId, pageParam, 10);
+        return {
+          tasks: response.content,
+          nextPage: response.last ? undefined : pageParam + 1,
+        };
+      } catch (error) {
+        console.error('[ProjectDetail] Failed to load tasks:', error);
+        throw error;
+      }
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
@@ -201,6 +205,7 @@ export function useProjectDetail() {
     navigation,
     project,
     loadingProject,
+    isError,
     isDeleting,
     
     members,
