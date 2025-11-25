@@ -60,7 +60,7 @@ export const EditProfileScreen = () => {
             showNotification({ type: 'error', message: "O nome deve ter pelo menos 3 caracteres." });
             return;
         }
-        updateProfileMutation.mutate({ username: name });
+        updateProfileMutation.mutate({ username: name.trim() });
     };
     
     const handleChangePassword = () => setChangePasswordModalVisible(true);
