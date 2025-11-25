@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { teamService, InviteByEmailRequest } from '../services/teamService';
 import { Team, TeamMemberDetail } from '../../../types/entities';
 import { getErrorMessage, getInviteErrorMessage } from '../../../utils/errorHandler';
@@ -16,17 +17,10 @@ export function useTeamDetail() {
   const route = useRoute<TeamDetailRouteProp>();
   const { team: initialTeam } = route.params;
   const { showNotification } = useNotification();
+  const queryClient = useQueryClient();
   const modalNotificationRef = useRef<NotificationPopupRef>(null);
 
-  const [team, setTeam] = useState<Team>(initialTeam);
-  const [members, setMembers] = useState<TeamMemberDetail[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-
   const [isEditTeamModalVisible, setEditTeamModalVisible] = useState(false);
   const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
@@ -35,78 +29,71 @@ export function useTeamDetail() {
   const [isConfirmRemoveMemberVisible, setConfirmRemoveMemberVisible] = useState(false);
   const [isConfirmLeaveVisible, setConfirmLeaveVisible] = useState(false);
 
-  const isFetching = useRef(false);
+  const { data: team } = useQuery({
+    queryKey: ['team', initialTeam.id],
+    queryFn: async () => {
+        try {
+            return await teamService.getTeamById(initialTeam.id); 
+        } catch (e) {
+            return initialTeam; 
+        }
+    },
+    initialData: initialTeam, 
+    staleTime: 1000 * 60 * 5, // 5 min
+  });
 
   const currentUserRole = team.teamRole;
   const isOwner = currentUserRole === 'OWNER';
   const isAdmin = currentUserRole === 'ADMIN' || isOwner;
 
-  const fetchMembers = useCallback(async (page: number, isInitialLoad = false, isRefresh = false) => {
-    if (isFetching.current) return;
-    if (!hasMore && !isInitialLoad && !isRefresh) return;
+  const {
+    data: membersData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: initialLoadingMembers,
+    isRefetching: refreshingMembers,
+    refetch: refetchMembers
+  } = useInfiniteQuery({
+    queryKey: ['team-members', team.id],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await teamService.getTeamMembers(team.id, pageParam, 10);
+      return {
+        members: response.content,
+        nextPage: response.last ? undefined : pageParam + 1,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    gcTime: 1000 * 60 * 10,   // 10 minutos
+  });
 
-    isFetching.current = true;
+  const members = useMemo(() => {
+    const allMembers = membersData?.pages.flatMap(page => page.members) ?? [];
+    return [...new Map(allMembers.map(m => [m.userId, m])).values()];
+  }, [membersData]);
 
-    if (isInitialLoad) {
-      setInitialLoading(true);
-    } else if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-
-    try {
-      const pageToFetch = isInitialLoad || isRefresh ? 0 : page;
-      const response = await teamService.getTeamMembers(team.id, pageToFetch, 10);
-      const membersFromApi = response.content;
-
-      setMembers(prev => {
-        const currentMembers = (isInitialLoad || isRefresh) ? [] : prev;
-        const existingIds = new Set(currentMembers.map(m => m.userId));
-        const newMembers = membersFromApi.filter(m => !existingIds.has(m.userId));
-        return [...currentMembers, ...newMembers];
-      });
-
-      setHasMore(!response.last);
-      setCurrentPage(pageToFetch + 1);
-
-    } catch (error) {
-      showNotification({ type: 'error', message: 'Erro ao carregar membros.' });
-      if(isInitialLoad || isRefresh){
-           setMembers([]);
-           setCurrentPage(0);
-           setHasMore(true);
-      }
-    } finally {
-      if (isInitialLoad) {
-        setInitialLoading(false);
-      } else if (isRefresh) {
-        setRefreshing(false);
-      } else {
-        setLoading(false);
-      }
-      isFetching.current = false;
-    }
-  }, [team.id, hasMore, showNotification]);
-
-  useEffect(() => {
-    fetchMembers(0, true);
-  }, [team.id]);
 
   const handleRefresh = useCallback(() => {
-      fetchMembers(0, false, true);
-  }, [fetchMembers]);
+    refetchMembers();
+    queryClient.invalidateQueries({ queryKey: ['team', team.id] });
+  }, [refetchMembers, queryClient, team.id]);
 
   const handleLoadMore = useCallback(() => {
-      if (hasMore && !loading && !refreshing && !initialLoading && !isFetching.current) {
-          fetchMembers(currentPage);
-      }
-  }, [hasMore, loading, refreshing, initialLoading, currentPage, fetchMembers]);
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleUpdateTeam = async (data: { title: string; description: string }) => {
     try {
       const updatedTeam = await teamService.updateTeam(team.id, { name: data.title, description: data.description });
-      setTeam(prev => ({ ...prev!, title: updatedTeam.name, description: updatedTeam.description }));
+      
+      queryClient.setQueryData(['team', team.id], (old: Team) => ({ ...old, title: updatedTeam.name, description: updatedTeam.description }));
+      
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      
       setEditTeamModalVisible(false);
       showNotification({ type: 'success', message: 'Equipe atualizada com sucesso!' });
     } catch (error) {
@@ -118,11 +105,15 @@ export function useTeamDetail() {
     setIsDeleting(true);
     try {
       await teamService.deleteTeam(team.id);
+      
+      queryClient.invalidateQueries({ queryKey: ['teams'] }); 
+      queryClient.removeQueries({ queryKey: ['team', team.id] }); 
+
       setConfirmDeleteVisible(false);
       setEditTeamModalVisible(false);
       navigation.goBack();
       setTimeout(() => {
-        showNotification({ type: 'success', message: `Equipe "${team.title || (team as any).name}" excluída com sucesso!` });
+        showNotification({ type: 'success', message: `Equipe excluída com sucesso!` });
       }, 500);
     } catch (error) {
       setConfirmDeleteVisible(false);
@@ -132,17 +123,13 @@ export function useTeamDetail() {
     }
   };
 
-  const handleSelectMember = (member: TeamMemberDetail) => {
-    if (!isAdmin) return;
-    setSelectedMember(member);
-    setEditMemberModalVisible(true);
-  };
-
   const handleUpdateMemberRole = async (newRole: 'OWNER' | 'ADMIN' | 'MEMBER') => {
     if (!selectedMember) return;
     try {
       await teamService.updateMemberRole(team.id, selectedMember.userId, { newRole });
-      setMembers(prev => prev.map(m => m.userId === selectedMember.userId ? { ...m, teamRole: newRole } : m));
+      
+      queryClient.invalidateQueries({ queryKey: ['team-members', team.id] });
+      
       setEditMemberModalVisible(false);
       showNotification({ type: 'success', message: 'Cargo atualizado com sucesso!' });
     } catch (error) {
@@ -154,7 +141,9 @@ export function useTeamDetail() {
     if (!selectedMember) return;
     try {
       await teamService.removeMember(team.id, selectedMember.userId);
-      setMembers(prev => prev.filter(m => m.userId !== selectedMember.userId));
+      
+      queryClient.invalidateQueries({ queryKey: ['team-members', team.id] });
+      
       setConfirmRemoveMemberVisible(false);
       setEditMemberModalVisible(false);
       showNotification({ type: 'success', message: 'Membro removido com sucesso.' });
@@ -179,9 +168,12 @@ export function useTeamDetail() {
     setConfirmLeaveVisible(false);
     try {
       await teamService.leaveTeam(team.id);
+      
+      queryClient.invalidateQueries({ queryKey: ['teams'] }); 
+      
       navigation.goBack();
       setTimeout(() => {
-        showNotification({ type: 'success', message: `Você saiu da equipe "${team.title || (team as any).name}"` });
+        showNotification({ type: 'success', message: `Você saiu da equipe` });
       }, 500);
     } catch (error) {
       showNotification({ type: 'error', message: getErrorMessage(error) });
@@ -190,13 +182,21 @@ export function useTeamDetail() {
     }
   };
 
+  const handleSelectMember = (member: TeamMemberDetail) => {
+    if (!isAdmin) return;
+    setSelectedMember(member);
+    setEditMemberModalVisible(true);
+  };
+
   return {
     navigation,
     team,
+    
     members,
-    loading,
-    refreshing,
-    initialLoading,
+    loadingMembers: isFetchingNextPage, 
+    refreshingMembers: !!refreshingMembers, 
+    initialLoading: initialLoadingMembers, 
+    
     isDeleting,
     modalNotificationRef,
     currentUserRole,

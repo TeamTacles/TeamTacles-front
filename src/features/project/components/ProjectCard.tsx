@@ -28,12 +28,12 @@ export const ProjectCard = ({ project, onPress }: ProjectCardProps) => {
 
                 
                     <View style={styles.teamContainer}>
-                         {teamMembers.length > 3 && (
+                         {(teamMembers?.length ?? 0) > 3 && (
                             <View style={[styles.avatar, styles.moreAvatar, { marginLeft: 0 }]}>
-                                <Text style={styles.avatarText}>+{teamMembers.length - 3}</Text>
+                                <Text style={styles.avatarText}>+{(teamMembers?.length ?? 0) - 3}</Text>
                             </View>
                          )}
-                        {teamMembers.slice(0, 3).map((member: Member, index: number) => (
+                        {(teamMembers ?? []).slice(0, 3).map((member: Member, index: number) => (
                             <View key={`${member.name}-${index}`} style={[styles.avatar, { marginLeft: -10 }]}>
                                 <Text style={styles.avatarText}>{member.initials}</Text>
                             </View>

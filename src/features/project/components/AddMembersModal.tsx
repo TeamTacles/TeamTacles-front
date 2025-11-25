@@ -192,7 +192,7 @@ export const AddMembersModal: React.FC<AddMembersModalProps> = ({
   );
 
   const renderImportTab = () => (
-    <View> 
+    <View style={{flex: 1}}> 
         {isRefreshingTeams ? ( 
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#EB5F1C" />
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   teamItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: '#3C3C3C', borderRadius: 8, marginBottom: 10 },
   teamTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   teamMemberCount: { color: '#A9A9A9', fontSize: 12 },
-  memberList: { flex: 1, backgroundColor: '#3C3C3C', borderRadius: 8, paddingHorizontal: 10, paddingTop: 10, marginBottom: 10 },
+  memberList: { flex: 1, minHeight: 250, backgroundColor: '#3C3C3C', borderRadius: 8, paddingHorizontal: 10, paddingTop: 10, marginBottom: 10 },
   memberItemContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#4A4A4A' },
   memberAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#555', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
   memberAvatarText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 12 },

@@ -1,20 +1,18 @@
 import React, { useState, useCallback, useEffect } from "react"; 
 import { Header } from "../../../components/common/Header";
-import { View, StyleSheet, FlatList, ActivityIndicator } from "react-native"; 
+import { View, StyleSheet, FlatList, ActivityIndicator, Text } from "react-native"; // Adicionei Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../../../components/common/SearchBar";
-import { CompositeScreenProps, useFocusEffect } from '@react-navigation/native'; 
+import { CompositeScreenProps } from '@react-navigation/native'; 
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, RootTabParamList } from "../../../types/Navigation";
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { EmptyState } from '../../../components/common/EmptyState';
 import { useAppContext } from "../../../contexts/AppContext";
-import { Task } from "../../../types/entities"; 
 import { TaskCard } from "../components/TaskCard";
 import { FilterModal, Filters } from "../components/FilterModal";
 import { FilterButton } from "../components/FilterButton";
 import { useTasks } from "../hooks/useTasks"; 
-
 
 const polvo_tasks = require('../../../assets/polvo_tasks.png');
 
@@ -28,6 +26,7 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
 
     const {
         tasks,
+        initialLoading, 
         loadingTasks,
         refreshingTasks,
         hasMoreTasks,
@@ -43,9 +42,7 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
     const userProfileForHeader = user ? { initials: user.initials } : { initials: '?' };
 
     const handleProfilePress = () => navigation.navigate('EditProfile');
-    const handleNotificationsPress = () => { /* Lógica futura para notificações */ };
-
- 
+    const handleNotificationsPress = () => {};
 
     const handleApplyFilters = (newFilters: Filters) => {
         applyFilters(newFilters);
@@ -67,21 +64,11 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
       };
     }, [search, searchByTitle]);
 
-    useFocusEffect(
-      useCallback(() => {
-        if (signed) {
-          refreshTasks(); 
-        }
-      }, [signed, refreshTasks]) 
-    );
-
     const handleEndReached = useCallback(() => {
         if (hasMoreTasks && !loadingTasks && !refreshingTasks && tasks.length > 0) {
             loadMoreTasks(); 
         }
     }, [hasMoreTasks, loadingTasks, refreshingTasks, tasks.length, loadMoreTasks]); 
-
-   
 
     return (
         <SafeAreaView style={styles.safeAreaView} edges={['top', 'left', 'right']}>
@@ -102,42 +89,46 @@ export const TaskScreen = ({ navigation }: TaskScreenNavigationProp) => {
                 </View>
                 <FilterButton style={styles.filterButtonPosition} onPress={() => setFilterModalVisible(true)} />
             </View>
-            <FlatList
-                data={tasks} 
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <TaskCard
-                        task={item}
-                        onPress={() => navigation.navigate('TaskDetail', { projectId: item.projectId, taskId: item.id })}
-                    />
-                )}
-                contentContainerStyle={styles.listContainer}
-                ListEmptyComponent={
-                    (loadingTasks || refreshingTasks) ? null : (
+
+            {initialLoading ? (
+                <View style={styles.centeredLoading}>
+                    <ActivityIndicator size="large" color="#EB5F1C" />
+                    <Text style={styles.loadingText}>Carregando suas tarefas...</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={tasks} 
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                        <TaskCard
+                            task={item}
+                            onPress={() => navigation.navigate('TaskDetail', { projectId: item.projectId, taskId: item.id })}
+                        />
+                    )}
+                    contentContainerStyle={styles.listContainer}
+                    ListEmptyComponent={
                         <EmptyState
                             imageSource={polvo_tasks}
                             title="Nenhuma tarefa por aqui!"
                             subtitle="Crie tarefas dentro de um projeto ou verifique seus filtros."
                         />
-                    )
-                }
-                onRefresh={refreshTasks} 
-                refreshing={refreshingTasks} 
-                onEndReached={handleEndReached} 
-                onEndReachedThreshold={0.5} 
-                ListFooterComponent={() => {
-                    
-                    if (loadingTasks && !refreshingTasks) {
-                        return (
-                            <View style={styles.loadingFooter}>
-                                <ActivityIndicator size="large" color="#EB5F1C" />
-                            </View>
-                        );
                     }
-                    return null;
-                }}
-            />
-            
+                    onRefresh={refreshTasks} 
+                    refreshing={refreshingTasks} 
+                    onEndReached={handleEndReached} 
+                    onEndReachedThreshold={0.5} 
+                    ListFooterComponent={() => {
+                        if (loadingTasks && !refreshingTasks) {
+                            return (
+                                <View style={styles.loadingFooter}>
+                                    <ActivityIndicator size="large" color="#EB5F1C" />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
+                />
+            )}
 
             <FilterModal
                 visible={isFilterModalVisible}
@@ -171,9 +162,18 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingBottom: 20 
     },
-   
     loadingFooter: { 
         padding: 20,
         alignItems: 'center',
+    },
+    centeredLoading: { 
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    },
+    loadingText: { 
+        color: '#888', 
+        marginTop: 10, 
+        fontSize: 14 
     },
 });

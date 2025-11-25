@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService, CreateProjectRequest, ProjectDetails } from '../services/projectService'; 
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { Project, Member } from '../../../types/entities'; 
@@ -12,25 +13,23 @@ interface ProjectApiResponse extends ProjectDetails {
 }
 
 export function useProjects(isAuthenticated: boolean) {
-  const { user } = useAppContext(); 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMoreProjects, setHasMoreProjects] = useState(true);
-  const [loadingProjects, setLoadingProjects] = useState(false);
-  const [refreshingProjects, setRefreshingProjects] = useState(false);
+  const { user } = useAppContext();
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState<Filters>({});
   const [titleFilter, setTitleFilter] = useState('');
 
-  const fetchProjects = useCallback(async (page: number, currentFilters: Filters, currentTitle: string) => {
-    const isRefreshing = page === 0;
-    if (isRefreshing) {
-      setRefreshingProjects(true);
-    } else {
-      setLoadingProjects(true);
-    }
-
-    try {
-      const response = await projectService.getProjects(page, 20, currentFilters, currentTitle);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ['projects', filters, titleFilter],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await projectService.getProjects(pageParam, 20, filters, titleFilter);
       const projectsFromApiRaw = response.content as unknown as ProjectApiResponse[];
 
       const projectsFromApi: Project[] = projectsFromApiRaw.map(project => ({
@@ -39,60 +38,40 @@ export function useProjects(isAuthenticated: boolean) {
         description: project.description,
         projectRole: project.projectRole,
         teamMembers: project.memberNames.map(name => ({
-             name: name,
-             initials: getInitialsFromName(name)
+          name: name,
+          initials: getInitialsFromName(name)
         })),
         createdAt: Date.now(),
         taskCount: project.taskCount,
       }));
 
+      return {
+        projects: projectsFromApi,
+        nextPage: response.last ? undefined : pageParam + 1,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 5, // 5 minutos para evitar refetch desnecessário
+    gcTime: 1000 * 60 * 10,   // 10 minutos para manter o cache na memória
+  });
 
-      if (isRefreshing) {
-        setProjects(projectsFromApi);
-      } else {
-        setProjects(prev => [...prev, ...projectsFromApi]);
-      }
+  const projects = useMemo(() => {
+    const allProjects = data?.pages.flatMap(page => page.projects) ?? [];
+    return [...new Map(allProjects.map(p => [p.id, p])).values()];
+  }, [data]);
 
-      setCurrentPage(page + 1);
-      setHasMoreProjects(!response.last);
-    } catch (error) {
-      if (isRefreshing) {
-        setProjects([]);
-        setCurrentPage(0);
-        setHasMoreProjects(false);
-      }
-    } finally {
-      if (isRefreshing) {
-        setRefreshingProjects(false);
-      } else {
-        setLoadingProjects(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchProjects(0, filters, titleFilter);
-    } else {
-      setProjects([]);
-      setCurrentPage(0);
-      setHasMoreProjects(true);
-    }
-  }, [isAuthenticated, filters, titleFilter, fetchProjects]);
-
-  const refreshProjects = useCallback(() => {
-    fetchProjects(0, filters, titleFilter);
-  }, [fetchProjects, filters, titleFilter]);
-
-  const loadMoreProjects = useCallback(() => {
-    if (hasMoreProjects && !loadingProjects && !refreshingProjects) {
-      fetchProjects(currentPage, filters, titleFilter);
-    }
-  }, [hasMoreProjects, loadingProjects, refreshingProjects, currentPage, filters, titleFilter, fetchProjects]);
+  const createProjectMutation = useMutation({
+    mutationFn: (projectData: CreateProjectRequest) => projectService.createProject(projectData),
+    onSuccess: (createdProject) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    },
+  });
 
   const addProject = async (projectData: CreateProjectRequest): Promise<Project> => {
     try {
-      const createdProject = await projectService.createProject(projectData);
+      const createdProject = await createProjectMutation.mutateAsync(projectData);
 
       const newProject: Project = {
         id: createdProject.id,
@@ -103,7 +82,7 @@ export function useProjects(isAuthenticated: boolean) {
         createdAt: Date.now(),
         taskCount: 0
       };
-      setProjects(currentProjects => [newProject, ...currentProjects]);
+      
       return newProject;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
@@ -111,27 +90,39 @@ export function useProjects(isAuthenticated: boolean) {
     }
   };
 
+  const refreshProjects = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const loadMoreProjects = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage && !isRefetching) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, isRefetching, fetchNextPage]);
+
   const applyFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
-    setCurrentPage(0);
   }, []);
 
   const clearFilters = useCallback(() => {
     setFilters({});
     setTitleFilter('');
-    setCurrentPage(0);
   }, []);
 
   const searchByTitle = useCallback((title: string) => {
     setTitleFilter(title);
-    setCurrentPage(0);
   }, []);
 
   return {
     projects,
-    loadingProjects,
-    refreshingProjects,
-    hasMoreProjects,
+    
+    initialLoading: isLoading,
+    
+    loadingProjects: isFetchingNextPage,
+    
+    refreshingProjects: isRefetching && !isLoading && !isFetchingNextPage,
+    
+    hasMoreProjects: hasNextPage ?? false,
     addProject,
     loadMoreProjects,
     refreshProjects,

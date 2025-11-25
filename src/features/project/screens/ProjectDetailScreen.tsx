@@ -100,9 +100,7 @@ export const ProjectDetailScreen = () => {
         { label: 'Em atraso', value: 'OVERDUE', color: '#ff4545' },
     ];
 
-    //mudar abrodagem dessa funcao !!!!
     const sortedTasks = useMemo(() => {
-        // Cria uma cópia para não mutar o estado original
         let tasksCopy = [...projectTasks];
         
         if (sortOption === 'DEFAULT') return tasksCopy;
@@ -121,7 +119,7 @@ export const ProjectDetailScreen = () => {
 
             if (isAMatch && !isBMatch) return -1; // 'a' sobe
             if (!isAMatch && isBMatch) return 1;  // 'b' sobe
-            return 0; // Mantém a ordem relativa se ambos forem iguais
+            return 0; 
         });
         
     }, [sortOption, projectTasks]);
@@ -192,7 +190,7 @@ export const ProjectDetailScreen = () => {
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.infoButton} onPress={() => setMembersListModalVisible(true)}>
                         <Icon name="people-outline" size={20} color="#ffffffff" />
-                        <Text style={styles.infoTitle}>Membros ({members.length})</Text>
+                        <Text style={styles.infoTitle}>Membros ({members?.length ?? 0})</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -317,7 +315,7 @@ export const ProjectDetailScreen = () => {
             {isOwner && (
                 <EditProjectModal
                     visible={isEditModalVisible}
-                    project={project}
+                    project={project ?? null} 
                     onClose={() => setEditModalVisible(false)}
                     onSave={handleUpdateProject}
                     onDelete={() => setConfirmDeleteVisible(true)}
@@ -366,7 +364,7 @@ export const ProjectDetailScreen = () => {
             <SelectTaskMembersModal
                 visible={isSelectMembersModalVisible}
                 onClose={handleCloseSelectMembersModal}
-                projectMembers={members.filter(m => m.userId !== user?.id)}
+                projectMembers={(members ?? []).filter(m => m.userId !== user?.id)}
                 onSave={handleFinalizeTaskCreation}
                 isSaving={isCreatingTask}
             />

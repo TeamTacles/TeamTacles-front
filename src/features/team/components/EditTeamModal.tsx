@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
@@ -18,11 +18,13 @@ export const EditTeamModal: React.FC<EditTeamModalProps> = ({ visible, team, onC
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [errors, setErrors] = useState<{ [key: string]: string | undefined }>({});
+    const isInitialized = useRef(false);
 
     useEffect(() => {
-        if (team) {
+        if (team && !isInitialized.current) {
             setTitle(team.title || '');
             setDescription(team.description || '');
+            isInitialized.current = true;
         }
     }, [team]);
 

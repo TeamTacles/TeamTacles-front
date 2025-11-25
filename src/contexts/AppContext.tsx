@@ -1,173 +1,144 @@
-import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setOnUnauthorizedCallback } from '../api/api';
-import { login as loginService } from '../features/auth/services/authService';
-import { LoginData } from '../types/auth';
-import { userService } from '../features/user/services/userService';
-import { getInitialsFromName } from '../utils/stringUtils';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { User } from '../types/entities';
+import api, { setOnUnauthorizedCallback } from '../api/api'; 
 
-interface User {
-  id: number; 
-  name: string;
-  initials: string;
-  onboardingCompleted: boolean; 
-}
-
-interface AppContextType {
+interface AppContextData {
+  user: User | null;
   signed: boolean;
   loading: boolean;
-  user: User | null; 
   showOnboarding: boolean;
-  showPostLoginOnboarding: boolean; 
-  completeOnboarding(): void; 
-  completePostLoginOnboarding(): void; 
-  signIn(credentials: LoginData): Promise<void>;
-  signOut(): void;
+  showPostLoginOnboarding: boolean;
+  signIn: (user: User, token: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  updateUser: (updatedUser: User) => Promise<void>; 
+  completeOnboarding: () => Promise<void>;
+  completePostLoginOnboarding: () => Promise<void>;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<AppContextData>({} as AppContextData);
 
-const TOKEN_KEY = '@TeamTacles:token';
-const ONBOARDING_KEY = '@TeamTacles:hasOnboarded';
-
-export const AppProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<User | null>(null); 
+export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showPostLoginOnboarding, setShowPostLoginOnboarding] = useState(false); 
+  const [showOnboarding, setShowOnboarding] = useState(true);
+  const [showPostLoginOnboarding, setShowPostLoginOnboarding] = useState(false);
+  
+  const queryClient = useQueryClient(); 
 
-  const loadUserData = async () => {
+  const signOut = useCallback(async () => {
     try {
-      const userData = await userService.getCurrentUser();
+      // 1. Limpa o header de Authorization (síncrono)
+      delete api.defaults.headers.Authorization;
       
-      const hasOnboardedPreLogin = await AsyncStorage.getItem(ONBOARDING_KEY); 
-
-      const mappedUser: User = {
-        id: userData.id,
-        name: userData.username,
-        initials: getInitialsFromName(userData.username),
-        onboardingCompleted: userData.onboardingCompleted 
-      };
+      // 2. Limpa storage
+      await AsyncStorage.removeItem('@TeamTacles:user');
+      await AsyncStorage.removeItem('@TeamTacles:token');
       
-      setUser(mappedUser);
-
-      const shouldShowPostLogin = mappedUser.onboardingCompleted === false;
-      
-      setShowPostLoginOnboarding(shouldShowPostLogin);
-
+      // 3. Limpa cache do React Query
+      queryClient.clear(); 
+      await AsyncStorage.removeItem('REACT_QUERY_OFFLINE_CACHE');
     } catch (error) {
-      signOut();
+      console.error("Erro ao fazer logout:", error);
+    } finally {
+      setUser(null);
     }
-  };
+  }, [queryClient]);
+
+  useEffect(() => {
+    setOnUnauthorizedCallback(signOut);
+  }, [signOut]);
 
   useEffect(() => {
     async function loadStorageData() {
       try {
-        const [hasOnboarded, storedToken] = await Promise.all([
-            AsyncStorage.getItem(ONBOARDING_KEY),
-            AsyncStorage.getItem(TOKEN_KEY),
-        ]);
-
-        if (storedToken) {
-          setToken(storedToken);
-        }
+        const storedUser = await AsyncStorage.getItem('@TeamTacles:user');
+        const storedToken = await AsyncStorage.getItem('@TeamTacles:token');
         
-        if (!hasOnboarded) { 
-          setShowOnboarding(true);
-        }
+        const onboardingComplete = await AsyncStorage.getItem('@TeamTacles:onboardingComplete');
+        const postLoginOnboardingComplete = await AsyncStorage.getItem('@TeamTacles:postLoginOnboardingComplete');
 
-      } catch (e) {
-        // Erro silencioso ao carregar dados do storage
+        if (storedUser && storedToken) {
+          api.defaults.headers.Authorization = `Bearer ${storedToken}`;
+          setUser(JSON.parse(storedUser));
+          setShowPostLoginOnboarding(postLoginOnboardingComplete !== 'true');
+        }
+        setShowOnboarding(onboardingComplete !== 'true');
+      } catch (error) {
+        console.error("Erro ao carregar dados do storage:", error);
       } finally {
         setLoading(false);
       }
     }
-    
+
     loadStorageData();
+  }, []);
 
-    setOnUnauthorizedCallback(() => {
-      signOut(); 
-    });
-  }, []); 
-
-  useEffect(() => {
-    if (token) {
-      loadUserData();
-    } else {
-      setUser(null);
-      setShowPostLoginOnboarding(false);
-    }
-  }, [token]);
-
-
-  async function signIn(credentials: LoginData) {
-    const response = await loginService(credentials);
-    const { token: newToken } = response;
-
-    setToken(newToken);
-    await AsyncStorage.setItem('@TeamTacles:token', newToken);
-  }
-
-  async function completePostLoginOnboarding() { 
+  const signIn = async (userData: User, token: string) => {
     try {
-      const updatedUser = await userService.completeOnboarding();
+      // 1. Salva no disco PRIMEIRO (garante persistência)
+      await AsyncStorage.setItem('@TeamTacles:token', token);
+      await AsyncStorage.setItem('@TeamTacles:user', JSON.stringify(userData));
       
-      setUser(prev => ({ 
-          ...prev!, 
-          onboardingCompleted: true, 
-          name: updatedUser.username,
-          initials: getInitialsFromName(updatedUser.username)
-      }));
-
-      setShowPostLoginOnboarding(false);
-
-    } catch (e) {
-      setShowPostLoginOnboarding(false);
+      // 2. Seta o header (síncrono - todas as requests futuras usarão)
+      api.defaults.headers.Authorization = `Bearer ${token}`;
+      
+      // 3. Verifica onboarding
+      const postLoginOnboardingComplete = await AsyncStorage.getItem('@TeamTacles:postLoginOnboardingComplete');
+      setShowPostLoginOnboarding(postLoginOnboardingComplete !== 'true');
+      
+      // 4. Dispara re-render POR ÚLTIMO (após tudo estar pronto)
+      setUser(userData);
+    } catch (error) {
+      console.error("Erro ao salvar dados de login:", error);
+      throw error; 
     }
-  }
+  };
 
-  async function signOut() {
-    await AsyncStorage.removeItem(TOKEN_KEY); 
-    setToken(null);
-  }
-
-  async function completeOnboarding() {
+  const updateUser = async (updatedUser: User) => {
+    setUser(updatedUser); 
     try {
-      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
-      setShowOnboarding(false);
-      
-      if (token) {
-        loadUserData();
-      }
-    } catch (e) {
-      setShowOnboarding(false);
+      await AsyncStorage.setItem('@TeamTacles:user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Falha crítica ao persistir atualização do usuário:", error);
     }
-  }
+  };
+
+  const completeOnboarding = async () => {
+    try {
+      await AsyncStorage.setItem('@TeamTacles:onboardingComplete', 'true');
+      setShowOnboarding(false);
+    } catch (error) {
+      console.error("Erro ao salvar onboarding:", error);
+    }
+  };
+
+  const completePostLoginOnboarding = async () => {
+    try {
+      await AsyncStorage.setItem('@TeamTacles:postLoginOnboardingComplete', 'true');
+      setShowPostLoginOnboarding(false);
+    } catch (error) {
+      console.error("Erro ao salvar tutorial pós-login:", error);
+    }
+  };
 
   return (
-    <AppContext.Provider
-      value={{
-        signed: !!token,
-        loading,
-        user, 
-        showOnboarding, 
-        completeOnboarding,
-        completePostLoginOnboarding,
-        showPostLoginOnboarding, 
-        signIn,
-        signOut,
-      }}
-    >
+    <AppContext.Provider value={{ 
+      user, 
+      signed: !!user, 
+      loading, 
+      showOnboarding, 
+      showPostLoginOnboarding, 
+      signIn, 
+      signOut, 
+      updateUser, 
+      completeOnboarding, 
+      completePostLoginOnboarding 
+    }}>
       {children}
     </AppContext.Provider>
   );
 };
 
-export const useAppContext = () => {
-  const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('o useAppContext deve ser usado dentro de um AppProvider.');
-  }
-  return context;
-};
+export const useAppContext = () => useContext(AppContext);

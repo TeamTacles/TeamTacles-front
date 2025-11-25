@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { projectService, ProjectDetails, ProjectTask, UpdateProjectRequest } from '../services/projectService';
+import { useQueryClient, useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { projectService, ProjectTask } from '../services/projectService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { RootStackParamList } from '../../../types/Navigation';
@@ -14,19 +15,29 @@ export function useProjectDetail() {
   const route = useRoute<ProjectDetailRouteProp>();
   const { projectId, projectRole } = route.params;
   const { showNotification } = useNotification();
+  const queryClient = useQueryClient();
 
-  const [project, setProject] = useState<ProjectDetails | null>(null);
-  const [loadingProject, setLoadingProject] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
-
-  const [projectTasks, setProjectTasks] = useState<ProjectTask[]>([]);
-  const [loadingTasks, setLoadingTasks] = useState(false);
-  const [refreshingTasks, setRefreshingTasks] = useState(false);
-  const [initialLoadingTasks, setInitialLoadingTasks] = useState(true);
-  const [currentPageTasks, setCurrentPageTasks] = useState(0);
-  const [hasMoreTasks, setHasMoreTasks] = useState(true);
-
   const [isEditModalVisible, setEditModalVisible] = useState(false);
+
+  const { data: project, isLoading: loadingProject } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: async () => {
+      try {
+        return await projectService.getProjectById(projectId);
+      } catch (error) {
+        showNotification({
+          type: 'error',
+          message: 'Erro ao carregar o projeto. Tente novamente.'
+        });
+        setTimeout(() => navigation.goBack(), 1500);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+
   const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [isEditMemberModalVisible, setEditMemberModalVisible] = useState(false);
   const [isInviteMemberModalVisible, setInviteMemberModalVisible] = useState(false);
@@ -38,122 +49,73 @@ export function useProjectDetail() {
   const isOwner = currentUserRole === 'OWNER';
   const isAdmin = currentUserRole === 'ADMIN' || isOwner;
 
-  const { members, setMembers, loadingMembers, refreshingMembers, handleRefresh: handleRefreshMembers, handleLoadMore: handleLoadMoreMembers, initialLoading: initialLoadingMembers } = useProjectMembers(projectId);
+  const { 
+    members, 
+    loadingMembers, 
+    refreshingMembers, 
+    handleRefresh: handleRefreshMembers, 
+    handleLoadMore: handleLoadMoreMembers, 
+    initialLoading: initialLoadingMembers 
+  } = useProjectMembers(projectId);
 
-  const isFetchingTasks = useRef(false);
+  const {
+    data: tasksData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isRefetching,
+    refetch: refetchTasks,
+    isLoading: initialLoadingTasks,
+  } = useInfiniteQuery({
+    queryKey: ['projectTasks', projectId],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await projectService.getProjectTasks(projectId, pageParam, 10);
+      return {
+        tasks: response.content,
+        nextPage: response.last ? undefined : pageParam + 1,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+    enabled: !!projectId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+  });
 
-  const fetchTasks = useCallback(async (page: number, isInitialLoad = false, isRefresh = false) => {
-    if (isFetchingTasks.current) return;
-    if (!hasMoreTasks && !isInitialLoad && !isRefresh) return;
-
-    isFetchingTasks.current = true;
-
-    if (isInitialLoad) {
-      setInitialLoadingTasks(true);
-    } else if (isRefresh) {
-      setRefreshingTasks(true);
-    } else {
-      setLoadingTasks(true);
-    }
-
-    try {
-      const pageToFetch = isInitialLoad || isRefresh ? 0 : page;
-      const response = await projectService.getProjectTasks(projectId, pageToFetch, 10);
-      const tasksFromApi = response.content;
-
-      setProjectTasks(prev => {
-        const currentTasks = (isInitialLoad || isRefresh) ? [] : prev;
-        const existingIds = new Set(currentTasks.map(t => t.id));
-        const newTasks = tasksFromApi.filter(t => !existingIds.has(t.id));
-        return [...currentTasks, ...newTasks];
-      });
-
-      setHasMoreTasks(!response.last);
-      setCurrentPageTasks(pageToFetch + 1);
-
-    } catch (error) {
-      showNotification({ type: 'error', message: 'Erro ao carregar tarefas.' });
-       if(isInitialLoad || isRefresh){
-           setProjectTasks([]);
-           setCurrentPageTasks(0);
-           setHasMoreTasks(true);
-       }
-    } finally {
-      if (isInitialLoad) {
-        setInitialLoadingTasks(false);
-      } else if (isRefresh) {
-        setRefreshingTasks(false);
-      } else {
-        setLoadingTasks(false);
-      }
-      isFetchingTasks.current = false;
-    }
-  }, [projectId, showNotification]);
+  const projectTasks = useMemo(() => {
+    const allTasks = tasksData?.pages.flatMap(page => page.tasks) ?? [];
+    return [...new Map(allTasks.map(t => [t.id, t])).values()];
+  }, [tasksData]);
 
   const handleRefreshTasks = useCallback(() => {
-      fetchTasks(0, false, true);
-  }, [fetchTasks]);
+    refetchTasks();
+  }, [refetchTasks]);
 
   const handleLoadMoreTasks = useCallback(() => {
-      if (hasMoreTasks && !loadingTasks && !refreshingTasks && !initialLoadingTasks && !isFetchingTasks.current) {
-          fetchTasks(currentPageTasks);
-      }
-  }, [hasMoreTasks, loadingTasks, refreshingTasks, initialLoadingTasks, currentPageTasks, fetchTasks]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadInitialData = async () => {
-      try {
-        setLoadingProject(true);
-        const projectData = await projectService.getProjectById(projectId);
-        if (isMounted) {
-          setProject(projectData);
-        }
-      } catch (error) {
-         if (isMounted) {
-            showNotification({
-                type: 'error',
-                message: 'Erro ao carregar o projeto. Tente novamente.'
-            });
-            setTimeout(() => {
-                if (isMounted) navigation.goBack();
-            }, 1500);
-         }
-      } finally {
-        if (isMounted) setLoadingProject(false);
-      }
-    };
-
-    loadInitialData();
-    fetchTasks(0, true);
-
-    return () => { isMounted = false; };
-
-  }, [projectId, navigation, showNotification, fetchTasks]);
+    if (hasNextPage && !isFetchingNextPage && !isRefetching) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, isRefetching, fetchNextPage]);
 
   const handleUpdateProject = async (data: { title: string; description: string }) => {
     if (!project) return;
-
     try {
       const updatedProject = await projectService.updateProject(project.id, data);
-      setProject(updatedProject);
+      queryClient.setQueryData(['project', projectId], updatedProject);
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       setEditModalVisible(false);
       showNotification({ type: 'success', message: 'Projeto atualizado com sucesso!' });
     } catch (error) {
-      showNotification({
-        type: 'error',
-        message: getErrorMessage(error)
-      });
+      showNotification({ type: 'error', message: getErrorMessage(error) });
     }
   };
 
   const handleDeleteProject = async () => {
     if (!project) return;
-
     setIsDeleting(true);
     try {
       await projectService.deleteProject(project.id);
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
       setConfirmDeleteVisible(false);
       setEditModalVisible(false);
       navigation.goBack();
@@ -176,9 +138,11 @@ export function useProjectDetail() {
 
   const handleUpdateMemberRole = async (newRole: 'OWNER' | 'ADMIN' | 'MEMBER') => {
     if (!selectedMember) return;
-
     try {
       await projectService.updateMemberRole(projectId, selectedMember.userId, { newRole });
+      
+      queryClient.invalidateQueries({ queryKey: ['project-members', projectId] });
+      
       setEditMemberModalVisible(false);
       handleRefreshMembers();
       showNotification({ type: 'success', message: 'Cargo atualizado com sucesso!' });
@@ -191,7 +155,9 @@ export function useProjectDetail() {
     if (!selectedMember) return;
     try {
       await projectService.removeMember(projectId, selectedMember.userId);
-      setMembers(prev => prev.filter(m => m.userId !== selectedMember.userId));
+      
+      queryClient.invalidateQueries({ queryKey: ['project-members', projectId] });
+      
       setConfirmRemoveMemberVisible(false);
       setEditMemberModalVisible(false);
       showNotification({ type: 'success', message: 'Membro removido com sucesso.' });
@@ -203,11 +169,11 @@ export function useProjectDetail() {
 
   const handleLeaveProject = async () => {
     if (!project) return;
-
     setIsDeleting(true);
     setConfirmLeaveVisible(false);
     try {
       await projectService.leaveProject(project.id);
+      queryClient.invalidateQueries({ queryKey: ['projects'] }); 
       navigation.goBack();
       setTimeout(() => {
         showNotification({ type: 'success', message: `Você saiu do projeto "${project.title}"` });
@@ -220,57 +186,54 @@ export function useProjectDetail() {
   };
 
   const addTaskLocally = (newTask: ProjectTask) => {
-    setProjectTasks(prev => [newTask, ...prev]);
+    queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] });
   };
 
   const updateTaskInList = useCallback((taskId: number, updates: Partial<ProjectTask>) => {
-    setProjectTasks(prev =>
-      prev.map(task =>
-        task.id === taskId ? { ...task, ...updates } : task
-      )
-    );
-  }, []);
+    queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] });
+  }, [queryClient, projectId]);
 
   const removeTaskFromList = useCallback((taskId: number) => {
-    setProjectTasks(prev => prev.filter(task => task.id !== taskId));
-  }, []);
+    queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] });
+  }, [queryClient, projectId]);
 
   return {
     navigation,
     project,
     loadingProject,
     isDeleting,
+    
     members,
     loadingMembers,
     refreshingMembers,
     initialLoadingMembers,
     handleRefreshMembers,
     handleLoadMoreMembers,
+    
     projectTasks,
-    loadingTasks,
-    refreshingTasks,
+    loadingTasks: isFetchingNextPage,
+    refreshingTasks: isRefetching && !isFetchingNextPage,
     initialLoadingTasks,
     handleRefreshTasks,
     handleLoadMoreTasks,
+    
     addTaskLocally,
     updateTaskInList,
     removeTaskFromList,
+    
     currentUserRole,
     isOwner,
     isAdmin,
-    isEditModalVisible,
-    setEditModalVisible,
-    isConfirmDeleteVisible,
-    setConfirmDeleteVisible,
-    isEditMemberModalVisible,
-    setEditMemberModalVisible,
-    isInviteMemberModalVisible,
-    setInviteMemberModalVisible,
-    isConfirmRemoveMemberVisible,
-    setConfirmRemoveMemberVisible,
-    isConfirmLeaveVisible,
-    setConfirmLeaveVisible,
+    
+    isEditModalVisible, setEditModalVisible,
+    isConfirmDeleteVisible, setConfirmDeleteVisible,
+    isEditMemberModalVisible, setEditMemberModalVisible,
+    isInviteMemberModalVisible, setInviteMemberModalVisible,
+    isConfirmRemoveMemberVisible, setConfirmRemoveMemberVisible,
+    isConfirmLeaveVisible, setConfirmLeaveVisible,
+    
     selectedMember,
+    
     handleUpdateProject,
     handleDeleteProject,
     handleSelectMember,

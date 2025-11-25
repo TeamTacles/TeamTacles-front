@@ -4,7 +4,7 @@ import { View, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Text }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SearchBar } from "../../../components/common/SearchBar";
 import { NewItemButton } from "../../../components/common/NewItemButton";
-import { CompositeScreenProps, useFocusEffect } from '@react-navigation/native';
+import { CompositeScreenProps } from '@react-navigation/native';
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList, RootTabParamList } from "../../../types/Navigation";
 import { BottomTabScreenProps } from "@react-navigation/bottom-tabs";
@@ -21,9 +21,9 @@ import { InfoPopup } from "../../../components/common/InfoPopup";
 import { useProjectScreen } from "../hooks/useProjectScreen"; 
 import { useTeams } from '../../team/hooks/useTeams'; 
 import { JoinProjectModal } from '../components/JoinProjectModal';
-import Icon from 'react-native-vector-icons/Ionicons'; // <--- ADICIONE ESTA LINHA
+import Icon from 'react-native-vector-icons/Ionicons'; 
 
-const polvo_pescando = require('../../../assets/polvo_pescando.png'); 
+const polvo_bau = require('../../../assets/polvo_bau.png'); 
 
 type ProjectScreenNavigationProp = CompositeScreenProps<
   BottomTabScreenProps<RootTabParamList, 'Projetos'>,
@@ -38,8 +38,9 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         addProject,
         loadMoreProjects,
         refreshProjects,
-        loadingProjects,
-        refreshingProjects: refreshingProjectList,
+        initialLoading, 
+        loadingProjects, 
+        refreshingProjects: refreshingProjectList, 
         hasMoreProjects,
         applyFilters,
         clearFilters,
@@ -90,7 +91,6 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         setFilterModalVisible(false);
     };
 
-    
     const handleCloseModalAndRefreshProjects = () => {
         handleCloseAddMembersModal();
         refreshProjects(); 
@@ -98,7 +98,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
 
     useEffect(() => {
         const handler = setTimeout(() => {
-            searchByTitle(search); //
+            searchByTitle(search); 
         }, 500);
 
         return () => {
@@ -106,19 +106,12 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
         };
     }, [search, searchByTitle]); 
 
-    useFocusEffect(
-      useCallback(() => {
-        if (signed) { 
-          refreshProjects(); 
-        }
-      }, [signed, refreshProjects]) 
-    );
-
     const handleEndReached = useCallback(() => {
         if (hasMoreProjects && !loadingProjects && !refreshingProjectList && projects.length > 0) { 
             loadMoreProjects(); 
         }
     }, [hasMoreProjects, loadingProjects, refreshingProjectList, projects.length, loadMoreProjects]); 
+
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -148,40 +141,45 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 <Text style={styles.joinButtonText}>Entrar com código</Text>
             </TouchableOpacity>
 
-            <FlatList
-                data={projects} //
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) =>
-                    <ProjectCard
-                        project={item}
-                        onPress={() => navigation.navigate('ProjectDetail', { 
-                            projectId: item.id,
-                            projectTitle: item.title,
-                            projectRole: item.projectRole || 'MEMBER'
-                        })}
-                    /> 
-                }
-                contentContainerStyle={styles.listContainer}
-                 ListEmptyComponent={
-                    (loadingProjects || refreshingProjectList) ? null : ( 
+            {initialLoading ? (
+                <View style={styles.centeredLoading}>
+                    <ActivityIndicator size="large" color="#EB5F1C" />
+                    <Text style={styles.loadingText}>Carregando projetos...</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={projects}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) =>
+                        <ProjectCard
+                            project={item}
+                            onPress={() => navigation.navigate('ProjectDetail', { 
+                                projectId: item.id,
+                                projectTitle: item.title,
+                                projectRole: item.projectRole || 'MEMBER'
+                            })}
+                        /> 
+                    }
+                    contentContainerStyle={styles.listContainer}
+                    ListEmptyComponent={
                         <EmptyState
-                            imageSource={polvo_pescando} 
+                            imageSource={polvo_bau} 
                             title="Nenhum Projeto Encontrado"
                             subtitle="Clique em + para adicionar um novo projeto."
                         /> 
-                    )
-                }
-                onEndReached={handleEndReached}
-                onEndReachedThreshold={0.5}
-                onRefresh={refreshProjects} 
-                refreshing={refreshingProjectList} 
-                ListFooterComponent={() => {
-                    if (loadingProjects && !refreshingProjectList) { 
-                        return ( <View style={styles.loadingFooter}><ActivityIndicator size="large" color="#EB5F1C" /></View> );
                     }
-                    return null;
-                }}
-            />
+                    onEndReached={handleEndReached}
+                    onEndReachedThreshold={0.5}
+                    onRefresh={refreshProjects} 
+                    refreshing={refreshingProjectList} 
+                    ListFooterComponent={() => {
+                        if (loadingProjects) { 
+                            return ( <View style={styles.loadingFooter}><ActivityIndicator size="large" color="#EB5F1C" /></View> );
+                        }
+                        return null;
+                    }}
+                />
+            )}
 
             <View style={styles.addButtonContainer}>
                 <NewItemButton onPress={handleNewProject} />
@@ -213,7 +211,6 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 onRefreshTeams={refreshTeams} 
                 isRefreshingTeams={refreshingTeams} 
             />
-
             <JoinProjectModal 
                 visible={isJoinModalVisible}
                 onClose={() => setJoinModalVisible(false)}
@@ -226,7 +223,7 @@ export const ProjectScreen = ({ navigation }: ProjectScreenNavigationProp) => {
                 title={infoPopup.title} 
                 message={infoPopup.message} 
                 onClose={() => setInfoPopup({ visible: false, title: '', message: '' })} 
-             />
+            />
         </SafeAreaView>
     );
 };
@@ -239,6 +236,9 @@ const styles = StyleSheet.create({
     listContainer: { flexGrow: 1, paddingHorizontal: 15, paddingBottom: 80 },
     addButtonContainer: { position: 'absolute', right: 25, bottom: 25 },
     loadingFooter: { padding: 20, alignItems: 'center' },
+    centeredLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { color: '#888', marginTop: 10, fontSize: 14 },
+    
     loadMoreButton: {
         backgroundColor: '#EB5F1C',
         paddingVertical: 12,

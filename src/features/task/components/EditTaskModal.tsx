@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native'; 
 import { MainButton } from '../../../components/common/MainButton';
 import { InputsField } from '../../../components/common/InputsField';
@@ -28,11 +28,13 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
 }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const isInitialized = useRef(false);
 
     useEffect(() => {
-        if (task) {
+        if (task && !isInitialized.current) {
             setTitle(task.title);
             setDescription(task.description);
+            isInitialized.current = true;
         }
     }, [task]);
 

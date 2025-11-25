@@ -435,7 +435,7 @@ export const ReportCenterScreen = () => {
 
                             {loadingTasks ? (
                                 <ActivityIndicator size="large" color="#EB5F1C" style={{ marginVertical: 20 }} />
-                            ) : tasks.length > 0 ? (
+                            ) : (tasks?.length ?? 0) > 0 ? (
                                 <>
                                     <View style={styles.taskHeaderRow}>
                                         <Text style={[styles.taskHeaderCol, styles.colTask]}>Tarefa</Text>
@@ -443,7 +443,7 @@ export const ReportCenterScreen = () => {
                                         <Text style={[styles.taskHeaderCol, styles.colStatus]}>Status</Text>
                                         <Text style={[styles.taskHeaderCol, styles.colDueDate]}>Prazo</Text>
                                     </View>
-                                    {tasks.map(item => (
+                                    {(tasks ?? []).map(item => (
                                         <TaskReportRow key={item.id} task={item} />
                                     ))}
                                 </>

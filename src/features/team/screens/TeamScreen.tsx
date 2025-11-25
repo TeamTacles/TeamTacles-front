@@ -8,7 +8,7 @@ import { EmptyState } from "../../../components/common/EmptyState";
 import { TeamCard } from "../components/TeamCard";
 import { FilterModal, Filters } from "../../task/components/FilterModal";
 import { FilterButton } from "../../task/components/FilterButton";
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types/Navigation';
 import { NewTeamModal } from "../components/NewTeamModal";
@@ -31,12 +31,12 @@ export const TeamScreen = () => {
 
     const {
         teams,
+        initialLoading, 
         loadingTeams,
         refreshingTeams,
         hasMoreTeams,
         loadMoreTeams,
         refreshTeams,
-        setTeams,
         applyFilters,
         clearFilters,
         searchByName,
@@ -58,14 +58,6 @@ export const TeamScreen = () => {
     const [isFilterModalVisible, setFilterModalVisible] = useState(false);
     const [isJoinModalVisible, setJoinModalVisible] = useState(false);
     
-    useFocusEffect(
-      useCallback(() => {
-        if (signed) {
-          refreshTeams();
-        }
-      }, [signed, refreshTeams])
-    );
-
     useEffect(() => {
       const handler = setTimeout(() => {
         searchByName(search);
@@ -77,7 +69,7 @@ export const TeamScreen = () => {
     }, [search, searchByName]);
 
     const handleProfilePress = () => navigation.navigate('EditProfile'); 
-    const handleNotificationsPress = () => { /* Lógica para notificações */ };
+    const handleNotificationsPress = () => {  };
     const handleNewTeam = () => setNewTeamModalVisible(true);
     const handleApplyFilters = (newFilters: Filters) => { applyFilters(newFilters); setFilterModalVisible(false); };
     const handleClearFilters = () => { clearFilters(); setSearch(''); setFilterModalVisible(false); };
@@ -110,33 +102,39 @@ export const TeamScreen = () => {
                 <Text style={styles.joinButtonText}>Entrar com código</Text>
             </TouchableOpacity>
 
-            <FlatList
-                data={teams}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <TeamCard team={item} onPress={() => navigation.navigate('TeamDetail', { team: item })} />
-                )}
-                contentContainerStyle={styles.listContainer}
-                ListEmptyComponent={
-                    (loadingTeams || refreshingTeams) ? null : (
+            {initialLoading ? (
+                <View style={styles.centeredLoading}>
+                    <ActivityIndicator size="large" color="#EB5F1C" />
+                    <Text style={styles.loadingText}>Carregando equipes...</Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={teams}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                        <TeamCard team={item} onPress={() => navigation.navigate('TeamDetail', { team: item })} />
+                    )}
+                    contentContainerStyle={styles.listContainer}
+                    ListEmptyComponent={
                         <EmptyState imageSource={mascot_isEmpty} title="Nenhuma Equipe Encontrada" subtitle="Ajuste os filtros ou crie uma nova equipe." />
-                    )
-                }
-                onEndReached={handleEndReached}
-                onEndReachedThreshold={0.5}
-                onRefresh={refreshTeams}
-                refreshing={refreshingTeams}
-                ListFooterComponent={() => {
-                    if (loadingTeams && !refreshingTeams) {
-                        return (
-                            <View style={styles.loadingFooter}>
-                                <ActivityIndicator size="large" color="#EB5F1C" />
-                            </View>
-                        );
                     }
-                    return null;
-                }}
-            />
+                    onEndReached={handleEndReached}
+                    onEndReachedThreshold={0.5}
+                    onRefresh={refreshTeams}
+                    refreshing={refreshingTeams}
+                    ListFooterComponent={() => {
+                        if (loadingTeams && !refreshingTeams) {
+                            return (
+                                <View style={styles.loadingFooter}>
+                                    <ActivityIndicator size="large" color="#EB5F1C" />
+                                </View>
+                            );
+                        }
+                        return null;
+                    }}
+                />
+            )}
+
             <View style={styles.addButtonContainer}>
                 <NewItemButton onPress={handleNewTeam} />
             </View>
@@ -147,7 +145,13 @@ export const TeamScreen = () => {
                 onApply={handleApplyFilters} 
                 onClear={handleClearFilters}
             />
-            <NewTeamModal visible={isNewTeamModalVisible} onClose={() => setNewTeamModalVisible(false)} onNext={(data) => handleCreateTeamAndProceed(data, setTeams)} isCreating={isCreatingTeam} />
+            
+            <NewTeamModal 
+                visible={isNewTeamModalVisible} 
+                onClose={() => setNewTeamModalVisible(false)} 
+                onNext={handleCreateTeamAndProceed} 
+                isCreating={isCreatingTeam} 
+            />
             
             <InviteMemberModal
               visible={isInviteModalVisible}
@@ -166,6 +170,7 @@ export const TeamScreen = () => {
         </SafeAreaView>
     );
 };
+
 const styles = StyleSheet.create({
     safeAreaView: { flex: 1, backgroundColor: '#191919' },
     searchContainer: { flexDirection: 'row', alignItems: 'flex-start', paddingRight: 15 },
@@ -192,6 +197,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginLeft: 10,
     },
+    centeredLoading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { color: '#888', marginTop: 10, fontSize: 14 },
 });
 
 export default TeamScreen;

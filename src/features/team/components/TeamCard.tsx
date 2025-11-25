@@ -35,10 +35,10 @@ export const TeamCard = ({ team, onPress }: TeamCardProps) => {
                 <View style={styles.footer}>
                     <View style={styles.memberInfo}>
                         <Icon name="people-outline" size={16} color="#A9A9A9" />
-                        <Text style={styles.memberText}>{`${memberCount} participante${memberCount !== 1 ? 's' : ''}`}</Text>
+                        <Text style={styles.memberText}>{`${memberCount ?? 0} participante${memberCount !== 1 ? 's' : ''}`}</Text>
                     </View>
                     <View style={styles.teamContainer}>
-                        {members.slice(0, 4).map((member, index) => (
+                        {(members ?? []).slice(0, 4).map((member, index) => (
                             <View key={index} style={[styles.avatar, { marginLeft: index > 0 ? -10 : 0 }]}>
                                 <Text style={styles.avatarText}>{member.initials}</Text>
                             </View>

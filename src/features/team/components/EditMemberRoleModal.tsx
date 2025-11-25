@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MainButton } from '../../../components/common/MainButton';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -31,10 +31,12 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
     const [selectedRole, setSelectedRole] = useState<MemberData['role']>('MEMBER');
     const [isPickerVisible, setPickerVisible] = useState(false);
     const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
+    const isInitialized = useRef(false);
 
     useEffect(() => {
-        if (member) {
+        if (member && !isInitialized.current) {
             setSelectedRole(member.role);
+            isInitialized.current = true;
         }
     }, [member]);
 

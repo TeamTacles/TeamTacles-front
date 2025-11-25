@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { taskService, TaskCreateResponse, TaskAssignmentRequest } from '../services/taskService';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { taskService, TaskAssignmentRequest } from '../services/taskService';
 import { ProjectTask } from '../../project/services/projectService';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { getErrorMessage } from '../../../utils/errorHandler';
 
 interface UseTaskCreationParams {
   projectId?: number;
-  onTaskCreated: (task: ProjectTask) => void;
+  onTaskCreated?: (task: ProjectTask) => void; 
 }
 
 interface NewTaskData {
@@ -17,61 +18,26 @@ interface NewTaskData {
 
 export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationParams) {
   const { showNotification } = useNotification();
+  const queryClient = useQueryClient();
 
   const [isNewTaskModalVisible, setNewTaskModalVisible] = useState(false);
   const [isSelectMembersModalVisible, setSelectMembersModalVisible] = useState(false);
   const [newTaskData, setNewTaskData] = useState<NewTaskData | null>(null);
-  const [isCreatingTask, setCreatingTask] = useState(false);
 
-  const handleProceedToMemberSelection = (data: NewTaskData) => {
-    setNewTaskData(data);
-    setNewTaskModalVisible(false);
-    setSelectMembersModalVisible(true);
-  };
+  const createTaskMutation = useMutation({
+    mutationFn: async (params: { data: NewTaskData; memberIds: number[] }) => {
+      if (!projectId) throw new Error("ID do projeto ausente.");
 
-  const convertToProjectTask = (response: TaskCreateResponse): ProjectTask => {
-    return {
-      id: response.id,
-      title: response.title,
-      description: response.description,
-      status: response.status,
-      dueDate: response.dueDate,
-      ownerId: response.ownerId,
-      projectId: projectId!,
-      assignments: response.assignments.map(a => ({
-        userId: a.userId,
-        username: a.username,
-      })),
-    };
-  };
-
-  const handleFinalizeTaskCreation = async (selectedMemberIds: number[]) => {
-    if (!newTaskData) {
-      showNotification({ type: 'error', message: 'Dados da tarefa não encontrados.' });
-      return;
-    }
-
-    if (!projectId) {
-      showNotification({ type: 'error', message: 'Projeto não encontrado.' });
-      return;
-    }
-
-    try {
-      setCreatingTask(true);
-
-      // Formata a data/hora para ISO 8601 UTC 
-      const formattedDueDate = newTaskData.dueDate.toISOString();
-
-      // Chama a API para criar a task
+      const formattedDueDate = params.data.dueDate.toISOString();
       const newTaskResponse = await taskService.createTask(projectId, {
-        title: newTaskData.title,
-        description: newTaskData.description,
+        title: params.data.title,
+        description: params.data.description,
         dueDate: formattedDueDate,
       });
 
       let finalTaskResponse = newTaskResponse;
-      if (selectedMemberIds.length > 0) {
-        const assignmentsPayload: TaskAssignmentRequest[] = selectedMemberIds.map(id => ({
+      if (params.memberIds.length > 0) {
+        const assignmentsPayload: TaskAssignmentRequest[] = params.memberIds.map(id => ({
           userId: id,
           taskRole: 'ASSIGNEE',
         }));
@@ -81,27 +47,62 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
           newTaskResponse.id,
           assignmentsPayload
         );
-
+        
         finalTaskResponse = {
-          ...newTaskResponse,
-          assignments: updatedTaskResponse.assignments,
+            ...newTaskResponse,
+            assignments: updatedTaskResponse.assignments
         };
       }
 
-      const newTask = convertToProjectTask(finalTaskResponse);
+      return finalTaskResponse;
+    },
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      
+      if (projectId) {
+        queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] });
+      }
 
-      onTaskCreated(newTask);
+      showNotification({ type: 'success', message: 'Tarefa criada com sucesso!' });
 
       setSelectMembersModalVisible(false);
       setNewTaskData(null);
-
-      showNotification({ type: 'success', message: 'Tarefa criada com sucesso!' });
-    } catch (error: any) {
-      const errorMessage = getErrorMessage(error);
-      showNotification({ type: 'error', message: errorMessage });
-    } finally {
-      setCreatingTask(false);
+      
+      if (onTaskCreated) {
+        const projectTask: ProjectTask = {
+          id: response.id,
+          title: response.title,
+          description: response.description,
+          status: response.status,
+          dueDate: response.dueDate,
+          ownerId: response.ownerId,
+          projectId: projectId!,
+          assignments: response.assignments.map(a => ({
+            userId: a.userId,
+            username: a.username,
+          })),
+        };
+        onTaskCreated(projectTask);
+      }
+    },
+    onError: (error) => {
+      showNotification({ type: 'error', message: getErrorMessage(error) });
     }
+  });
+
+
+  const handleProceedToMemberSelection = (data: NewTaskData) => {
+    setNewTaskData(data);
+    setNewTaskModalVisible(false);
+    setSelectMembersModalVisible(true);
+  };
+
+  const handleFinalizeTaskCreation = (selectedMemberIds: number[]) => {
+    if (!newTaskData) {
+      showNotification({ type: 'error', message: 'Dados da tarefa não encontrados.' });
+      return;
+    }
+    createTaskMutation.mutate({ data: newTaskData, memberIds: selectedMemberIds });
   };
 
   const handleCloseSelectMembersModal = () => {
@@ -125,7 +126,8 @@ export function useTaskCreation({ projectId, onTaskCreated }: UseTaskCreationPar
     isNewTaskModalVisible,
     setNewTaskModalVisible,
     isSelectMembersModalVisible,
-    isCreatingTask,
+    
+    isCreatingTask: createTaskMutation.isPending,
 
     handleOpenNewTaskModal,
     handleProceedToMemberSelection,

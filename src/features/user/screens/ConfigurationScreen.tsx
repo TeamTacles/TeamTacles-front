@@ -1,5 +1,5 @@
-import React, { useState} from "react"; 
-import { View, StyleSheet, Text, Alert, LayoutAnimation, UIManager, Platform, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
+import React, { useState } from "react"; 
+import { View, StyleSheet, Text, Alert, LayoutAnimation, Platform, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BaseCard } from "../../../components/common/BaseCard";
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,50 +7,15 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../../types/Navigation';
 import { useAppContext } from '../../../contexts/AppContext';
-import { userService } from '../services/userService';
-import { useFocusEffect } from '@react-navigation/native'; 
-
-// Caro programador lauton futuro, aqui podemos analisar o caso se é uma boa pratica carregar em tempo real os dados/nome do utilizador sempre que ele abre a aba ou se isso é uma má pratica por ficar dando GET demais na API.
-// Caro programador Caiao, acredito que seja interresante colocar algo armazenado em cache para evitar multiplas chamada ao backend. isso piora a usabilidade do usuario e deixar e sobrecarregado o back-end.
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 export const ConfigurationScreen = () => {
     const { signOut } = useAppContext(); 
-
-    type ConfigurationScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
-    const navigation = useNavigation<ConfigurationScreenNavigationProp>();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const [isProfileExpanded, setProfileExpanded] = useState(false);
-    const [user, setUser] = useState({ name: '', initials: '' }); 
-    const [loadingData, setLoadingData] = useState(true);
-
-   useFocusEffect(
-        React.useCallback(() => {
-            loadUserData();
-        }, [])
-    );
-    const loadUserData = async () => {
-    try {
-        setLoadingData(true);
-        
-        const userData = await userService.getCurrentUser();
-        
-        const initials = userData.username
-            .split(' ')
-            .map((n: string) => n[0])
-            .join('')
-            .toUpperCase()
-            .substring(0, 2);
-        
-        
-        setUser({
-            name: userData.username,
-            initials: initials
-        });
-    } catch (error) {
-    } finally {
-        setLoadingData(false);
-    }
-};
+    
+    const { user, isLoading: loadingData } = useCurrentUser();
 
     const toggleProfileExpansion = () => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -120,6 +85,7 @@ export const ConfigurationScreen = () => {
                             <Text style={styles.menuItemText}>Ver Tutorial (Onboarding)</Text>
                         </View>
                     </BaseCard>
+                    
                     <BaseCard style={[styles.cardOverride, styles.disabledMenuItem]} disabled>
                         <View style={styles.menuItemContent}>
                             <Icon name="notifications-outline" size={24} color="#888" />

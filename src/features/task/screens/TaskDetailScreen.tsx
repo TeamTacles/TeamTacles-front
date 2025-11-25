@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQuery, useQueryClient } from '@tanstack/react-query'; 
 
 import { RootStackParamList } from '../../../types/Navigation';
 import { Header } from '../../../components/common/Header';
@@ -14,13 +15,19 @@ import { ConfirmationModal } from '../../../components/common/ConfirmationModal'
 import { SelectTaskMembersModal } from '../components/SelectTaskMembersModal';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import TimeAgo from '../../../components/TimeAgo';
-import { ProjectMember, projectService } from '../../project/services/projectService';
+import { projectService } from '../../project/services/projectService';
 
 import { useAppContext } from '../../../contexts/AppContext';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { taskService, TaskDetailsApiResponse, TaskAssignmentRequest } from '../services/taskService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { getInitialsFromName } from '../../../utils/stringUtils';
+
+if (Platform.OS === 'android') {
+    if (UIManager.setLayoutAnimationEnabledExperimental) {
+        UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+}
 
 type TaskStatus = 'TO_DO' | 'IN_PROGRESS' | 'DONE' | 'OVERDUE';
 type TaskMember = TaskDetailsApiResponse['assignments'][0];
@@ -41,18 +48,16 @@ const MemberRow = ({ member, onRemove, canRemove }: { member: TaskMember, onRemo
     </View>
 );
 
-
 export const TaskDetailScreen = () => {
     const navigation = useNavigation<TaskDetailNavigationProp>();
     const route = useRoute<TaskDetailRouteProp>();
     const { projectId, taskId, projectRole: projectRoleFromNav, onTaskUpdate, onTaskDelete } = route.params;
+    
     const notificationRef = useRef<NotificationPopupRef>(null);
     const { user } = useAppContext();
     const { showNotification } = useNotification();
-    const [loading, setLoading] = useState(true);
-    const [task, setTask] = useState<TaskDetailsApiResponse | null>(null);
-    const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
-    const [projectRole, setProjectRole] = useState<'OWNER' | 'ADMIN' | 'MEMBER' | undefined>(projectRoleFromNav);
+    const queryClient = useQueryClient();
+
     const [isEditModalVisible, setEditModalVisible] = useState(false);
     const [isEditDeadlineModalVisible, setEditDeadlineModalVisible] = useState(false);
     const [isConfirmRemoveVisible, setConfirmRemoveVisible] = useState(false);
@@ -61,9 +66,41 @@ export const TaskDetailScreen = () => {
     const [memberToRemove, setMemberToRemove] = useState<TaskMember | null>(null);
     const [isAssignmentsExpanded, setAssignmentsExpanded] = useState(true);
     const [isConfirmLeaveVisible, setConfirmLeaveVisible] = useState(false);
+    
     const [isLeavingOrDeleting, setIsLeavingOrDeleting] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
 
+    const { data: task, isLoading: loadingTask } = useQuery({
+        queryKey: ['task', taskId],
+        queryFn: async () => {
+            try {
+                return await taskService.getTaskById(projectId, taskId);
+            } catch (error) {
+                showNotification({ type: 'error', message: 'Erro ao carregar tarefa.' });
+                navigation.goBack();
+                throw error;
+            }
+        },
+        staleTime: 1000 * 60 * 5, // 5 min
+    });
+
+    const { data: projectData } = useQuery({
+        queryKey: ['project', projectId],
+        queryFn: () => projectService.getProjectById(projectId),
+        enabled: !projectRoleFromNav, 
+        staleTime: 1000 * 60 * 10,
+    });
+    
+    
+    const { data: membersResponse } = useQuery({
+        queryKey: ['project-members', projectId],
+        queryFn: () => projectService.getProjectMembers(projectId, 0, 100),
+        staleTime: 1000 * 60 * 5,
+    });
+    const projectMembers = membersResponse?.content || [];
+
+    const projectRole = projectRoleFromNav || projectData?.projectRole;
+    
     const baseStatusItems = [
         { label: 'A Fazer', value: 'TO_DO', color: '#FFA500' },
         { label: 'Em Andamento', value: 'IN_PROGRESS', color: '#FFD700' },
@@ -93,51 +130,31 @@ export const TaskDetailScreen = () => {
     const isTaskOwner = task?.ownerId === user?.id;
     const isAdminOrOwnerOfProject = projectRole === 'ADMIN' || projectRole === 'OWNER';
     const isAssignee = task?.assignments.some(a => a.userId === user?.id && a.taskRole === 'ASSIGNEE');
+    
     const canEditTask = isTaskOwner || isAdminOrOwnerOfProject;
     const canRemoveAssignee = isTaskOwner || isAdminOrOwnerOfProject;
     const canChangeStatus = isTaskOwner || isAdminOrOwnerOfProject || isAssignee;
     const canAddAssignee = canEditTask;
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        try {
-            const [taskData, membersResponse, projectData] = await Promise.all([
-                taskService.getTaskById(projectId, taskId),
-                projectService.getProjectMembers(projectId, 0, 100),
-                // Busca o role do projeto se não foi passado por navigation
-                !projectRoleFromNav ? projectService.getProjectById(projectId) : Promise.resolve(null)
-            ]);
-            setTask(taskData);
-            setProjectMembers(membersResponse.content);
 
-            // Se o role não veio por navigation, usa o role buscado do projeto
-            if (!projectRoleFromNav && projectData?.projectRole) {
-                setProjectRole(projectData.projectRole);
-            }
-        } catch (error) {
-            notificationRef.current?.show({ type: 'error', message: 'Erro ao carregar dados da tarefa.' });
-             setTimeout(() => navigation.goBack(), 1500);
-        } finally {
-            setLoading(false);
-        }
-    }, [projectId, taskId, projectRoleFromNav, navigation]);
-
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
+    const updateLocalCache = (updater: (oldTask: TaskDetailsApiResponse) => TaskDetailsApiResponse) => {
+        queryClient.setQueryData(['task', taskId], (old: TaskDetailsApiResponse | undefined) => {
+            return old ? updater(old) : old;
+        });
+        queryClient.invalidateQueries({ queryKey: ['tasks'] }); 
+        queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] }); 
+    };
 
     const handleSaveDeadline = async (newDate: Date) => {
         if (!task || !canEditTask) return; 
         setIsUpdating(true);
         try {
-            // Converte para ISO 8601 UTC 
             const formattedDueDate = newDate.toISOString();
             const updatedTask = await taskService.updateTaskDetails(projectId, taskId, { dueDate: formattedDueDate });
-            setTask(updatedTask); 
+            
+            updateLocalCache((old) => ({ ...old, dueDate: updatedTask.dueDate }));
             setEditDeadlineModalVisible(false); 
-            onTaskUpdate?.(taskId, { dueDate: updatedTask.dueDate });
+            
             notificationRef.current?.show({ type: 'success', message: 'Prazo atualizado com sucesso!' });
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
@@ -146,29 +163,34 @@ export const TaskDetailScreen = () => {
         }
     };
 
-
     const handleUpdateStatus = async (newStatusValue: string | number) => {
         const newStatus = newStatusValue as TaskStatus;
         if (!task || task.status === newStatus || !canChangeStatus) return;
 
         if (newStatus === 'OVERDUE') {
-            notificationRef.current?.show({ type: 'error', message: 'O status "Atrasado" é definido automaticamente pelo sistema.' });
+            notificationRef.current?.show({ type: 'error', message: 'Status "Atrasado" é automático.' });
             return;
         }
-
         if (task.status === 'IN_PROGRESS' && newStatus === 'TO_DO') {
-            notificationRef.current?.show({ type: 'error', message: 'Não é possível voltar o status de "Em Andamento" para "A Fazer".' });
+            notificationRef.current?.show({ type: 'error', message: 'Não pode voltar de "Em Andamento".' });
             return;
         }
         if (task.status === 'DONE') {
-             notificationRef.current?.show({ type: 'error', message: 'Não é possível alterar o status de uma tarefa concluída.' });
+             notificationRef.current?.show({ type: 'error', message: 'Tarefa já concluída.' });
              return;
         }
+
         setIsUpdating(true);
         try {
-            const updatedTask = await taskService.updateTaskStatus(projectId, taskId, { newStatus: newStatus as 'TO_DO' | 'IN_PROGRESS' | 'DONE' });
-            setTask(prev => prev ? { ...prev, status: updatedTask.status, completedAt: updatedTask.completedAt, completionComment: updatedTask.completionComment } : null);
-            onTaskUpdate?.(taskId, { status: updatedTask.status });
+            const updatedTask = await taskService.updateTaskStatus(projectId, taskId, { newStatus: newStatus as any });
+            
+            updateLocalCache((old) => ({ 
+                ...old, 
+                status: updatedTask.status, 
+                completedAt: updatedTask.completedAt, 
+                completionComment: updatedTask.completionComment 
+            }));
+            
             notificationRef.current?.show({ type: 'success', message: 'Status Atualizado!' });
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
@@ -182,9 +204,14 @@ export const TaskDetailScreen = () => {
         setIsUpdating(true);
         try {
             const updatedTask = await taskService.updateTaskDetails(projectId, taskId, updatedData);
-            setTask(updatedTask);
+            
+            updateLocalCache((old) => ({ 
+                ...old, 
+                title: updatedTask.title, 
+                description: updatedTask.description 
+            }));
+            
             setEditModalVisible(false);
-            onTaskUpdate?.(taskId, { title: updatedTask.title, description: updatedTask.description });
             notificationRef.current?.show({ type: 'success', message: 'Tarefa atualizada!' });
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
@@ -199,7 +226,12 @@ export const TaskDetailScreen = () => {
         setConfirmRemoveVisible(false);
         try {
             await taskService.removeAssignees(projectId, taskId, { userIds: [memberToRemove.userId] });
-            setTask(prev => prev ? { ...prev, assignments: prev.assignments.filter(a => a.userId !== memberToRemove.userId) } : null);
+            
+            updateLocalCache((old) => ({ 
+                ...old, 
+                assignments: old.assignments.filter(a => a.userId !== memberToRemove.userId) 
+            }));
+
             notificationRef.current?.show({ type: 'success', message: `${memberToRemove.username} removido.` });
         } catch (error) {
             notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
@@ -209,14 +241,8 @@ export const TaskDetailScreen = () => {
         }
     };
 
-    const openRemoveConfirmation = (member: TaskMember) => {
-        if (!canRemoveAssignee) return; 
-        setMemberToRemove(member);
-        setConfirmRemoveVisible(true);
-    };
-
     const handleSaveNewAssignments = async (selectedMemberIds: number[]) => {
-        if (!task || selectedMemberIds.length === 0 || !canAddAssignee) { // Verifica permissão
+        if (!task || selectedMemberIds.length === 0 || !canAddAssignee) {
             setAssignModalVisible(false);
             return;
         }
@@ -230,7 +256,9 @@ export const TaskDetailScreen = () => {
 
         try {
             const updatedTask = await taskService.assignUsersToTask(projectId, taskId, assignmentsPayload);
-            setTask(updatedTask); 
+            
+            updateLocalCache((old) => updatedTask);
+
             notificationRef.current?.show({ type: 'success', message: 'Membros adicionados!' });
         } catch (error) {
              notificationRef.current?.show({ type: 'error', message: getErrorMessage(error) });
@@ -239,7 +267,6 @@ export const TaskDetailScreen = () => {
         }
     };
 
-
     const handleConfirmDeleteTask = async () => {
         if (!task || !canEditTask) return; 
         setIsLeavingOrDeleting(true); 
@@ -247,54 +274,41 @@ export const TaskDetailScreen = () => {
         setEditModalVisible(false); 
         try {
             await taskService.deleteTask(projectId, taskId);
-            onTaskDelete?.(taskId);
+            
+            queryClient.removeQueries({ queryKey: ['task', taskId] });
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] });
 
-            showNotification({
-                type: 'success',
-                message: 'Tarefa excluída com sucesso!'
-            });
-
+            showNotification({ type: 'success', message: 'Tarefa excluída com sucesso!' });
             navigation.goBack();
         } catch (error) {
-            showNotification({
-                type: 'error',
-                message: getErrorMessage(error)
-            });
+            showNotification({ type: 'error', message: getErrorMessage(error) });
             setIsLeavingOrDeleting(false); 
         }
     };
 
-
     const handleLeaveTask = async () => {
         if (!task) return;
-
-        const isMember = task.assignments.some(a => a.userId === user?.id);
-        if (!isMember) {
-            showNotification({
-                type: 'error',
-                message: 'Você não é membro desta tarefa para poder sair.'
-            });
-            return;
-        }
-
         setIsLeavingOrDeleting(true);
         setConfirmLeaveVisible(false);
         try {
             await taskService.leaveTask(projectId, taskId);
 
-            showNotification({
-                type: 'success',
-                message: `Você saiu da tarefa "${task.title}"`
-            });
+            queryClient.invalidateQueries({ queryKey: ['tasks'] });
+            queryClient.invalidateQueries({ queryKey: ['projectTasks', projectId] });
 
+            showNotification({ type: 'success', message: `Você saiu da tarefa` });
             navigation.goBack();
         } catch (error) {
-            showNotification({
-                type: 'error',
-                message: getErrorMessage(error)
-            });
+            showNotification({ type: 'error', message: getErrorMessage(error) });
             setIsLeavingOrDeleting(false);
         }
+    };
+
+    const openRemoveConfirmation = (member: TaskMember) => {
+        if (!canRemoveAssignee) return; 
+        setMemberToRemove(member);
+        setConfirmRemoveVisible(true);
     };
 
     const toggleAssignments = () => {
@@ -305,8 +319,7 @@ export const TaskDetailScreen = () => {
     const userProfileForHeader = user ? { initials: getInitialsFromName(user.name) } : { initials: '?' };
     const handleProfilePress = () => navigation.navigate('EditProfile');
 
-
-    if (loading || !task) {
+    if (loadingTask || !task) {
         return (
             <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
                  <Header
@@ -321,7 +334,6 @@ export const TaskDetailScreen = () => {
             </SafeAreaView>
          );
     }
-
 
     return (
         <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -429,7 +441,6 @@ export const TaskDetailScreen = () => {
 
             </ScrollView>
 
-
              <EditTaskModal
                 visible={isEditModalVisible}
                 task={task ? { title: task.title, description: task.description || '' } : null}
@@ -451,7 +462,7 @@ export const TaskDetailScreen = () => {
             <SelectTaskMembersModal
                 visible={isAssignModalVisible}
                 onClose={() => setAssignModalVisible(false)}
-                projectMembers={projectMembers.filter(pm => !task.assignments.some(a => a.userId === pm.userId))}
+                projectMembers={projectMembers.filter(pm => !(task?.assignments ?? []).some(a => a.userId === pm.userId))}
                 onSave={handleSaveNewAssignments}
                 isSaving={isUpdating} 
             />

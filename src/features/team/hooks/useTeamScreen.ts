@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { TeamType } from '../../../types/entities';
 import { teamService, CreateTeamRequest } from '../services/teamService';
 import { getErrorMessage } from '../../../utils/errorHandler';
@@ -7,12 +8,12 @@ import { useAppContext } from '../../../contexts/AppContext';
 
 export function useTeamScreen() {
   const modalNotificationRef = useRef<NotificationPopupRef>(null);
-  const { user } = useAppContext(); 
+  const { user } = useAppContext();
+  const queryClient = useQueryClient(); 
 
   const [isNewTeamModalVisible, setNewTeamModalVisible] = useState(false);
   const [isInviteModalVisible, setInviteModalVisible] = useState(false);
   const [newlyCreatedTeam, setNewlyCreatedTeam] = useState<TeamType | null>(null);
-  const [isCreatingTeam, setIsCreatingTeam] = useState(false);
   const [infoPopup, setInfoPopup] = useState({ visible: false, title: '', message: '' });
 
   useEffect(() => {
@@ -24,19 +25,10 @@ export function useTeamScreen() {
     }
   }, [isInviteModalVisible, newlyCreatedTeam]);
 
+  const createTeamMutation = useMutation({
+    mutationFn: async (data: { title: string; description: string }) => {
+      if (!user) throw new Error('Dados do usuário não carregados.');
 
-  const handleCreateTeamAndProceed = async (
-    data: { title: string; description: string },
-    setTeams: React.Dispatch<React.SetStateAction<TeamType[]>>
-  ) => {
-    // Verifica se os dados do usuário foram carregados
-    if (!user) {
-      setInfoPopup({ visible: true, title: 'Erro', message: 'Dados do usuário não carregados. Tente novamente.' });
-      return;
-    }
-
-    setIsCreatingTeam(true);
-    try {
       const apiData: CreateTeamRequest = {
         name: data.title,
         description: data.description,
@@ -48,27 +40,30 @@ export function useTeamScreen() {
         id: createdTeamFromApi.id,
         title: createdTeamFromApi.name,
         description: createdTeamFromApi.description,
-        // Usa os dados dinâmicos do usuário do contexto
         members: [{ name: user.name, initials: user.initials }],
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
         teamRole: 'OWNER',
         memberCount: 1,
-        // Usa os dados dinâmicos do usuário do contexto
         memberNames: [user.name],
       };
 
-      setTeams(currentTeams => [newTeam, ...currentTeams]);
+      return newTeam;
+    },
+    onSuccess: (newTeam) => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+
       setNewlyCreatedTeam(newTeam);
-      
       setNewTeamModalVisible(false);
       setInviteModalVisible(true);
-
-    } catch (error) {
+    },
+    onError: (error) => {
       const errorMessage = getErrorMessage(error);
       setInfoPopup({ visible: true, title: 'Erro na Criação', message: errorMessage });
-    } finally {
-      setIsCreatingTeam(false);
     }
+  });
+
+  const handleCreateTeamAndProceed = (data: { title: string; description: string }) => {
+    createTeamMutation.mutate(data);
   };
 
   const handleCloseInviteModal = () => {
@@ -80,12 +75,14 @@ export function useTeamScreen() {
     isNewTeamModalVisible,
     isInviteModalVisible,
     newlyCreatedTeam,
-    isCreatingTeam,
+    
+    isCreatingTeam: createTeamMutation.isPending,
+    
     infoPopup,
     modalNotificationRef,
     setNewTeamModalVisible,
     setInfoPopup,
-    handleCreateTeamAndProceed,
+    handleCreateTeamAndProceed, 
     handleCloseInviteModal,
   };
 }

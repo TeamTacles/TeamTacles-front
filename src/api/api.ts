@@ -1,5 +1,4 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 // Caio
 //const baseURL = 'http://192.168.15.42:8080/api'; 
 
@@ -16,18 +15,7 @@ const api = axios.create({
   },
 });
 
-// Interceptor para adicionar token em cada requisição
-api.interceptors.request.use(
-  async (config) => {
-    //busco o token do armazenamento a cada requisição
-    const token = await AsyncStorage.getItem('@TeamTacles:token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// O token é setado via api.defaults.headers.Authorization no AppContext (signIn e loadStorageData)
 
 // Callback de logout
 let onUnauthorizedCallback: (() => void) | null = null;
@@ -39,12 +27,11 @@ export const setOnUnauthorizedCallback = (callback: () => void) => {
 // Logout automático quando token expira
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    //  401 sem errorCode = token expirado
+  (error) => {
+    // 401 sem errorCode = token expirado
     if (error.response?.status === 401 && !error.response?.data?.errorCode) {
-      await AsyncStorage.removeItem('@TeamTacles:token');
       if (onUnauthorizedCallback) {
-        onUnauthorizedCallback();
+        onUnauthorizedCallback(); // signOut() limpa token, cache e headers
       }
     }
     return Promise.reject(error);

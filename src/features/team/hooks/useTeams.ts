@@ -1,112 +1,96 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { teamService } from '../services/teamService';
-import { getErrorMessage } from '../../../utils/errorHandler';
-import { Team, Member } from '../../../types/entities';
+import { Team } from '../../../types/entities';
 import { Filters } from '../../task/components/FilterModal';
 import { getInitialsFromName } from '../../../utils/stringUtils';
 
 export function useTeams(isAuthenticated: boolean) {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMoreTeams, setHasMoreTeams] = useState(true);
-  const [loadingTeams, setLoadingTeams] = useState(false);
-  const [refreshingTeams, setRefreshingTeams] = useState(false);
   const [filters, setFilters] = useState<Filters>({});
   const [nameFilter, setNameFilter] = useState('');
 
-  const fetchTeams = useCallback(async (page: number, currentFilters: Filters, currentName: string) => {
-    const isRefreshing = page === 0;
-    if (isRefreshing) {
-      setRefreshingTeams(true);
-    } else {
-      setLoadingTeams(true);
-    }
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isRefetching,
+    isLoading,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ['teams', filters, nameFilter],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await teamService.getTeams(pageParam, 20, filters, nameFilter);
 
-    try {
-      const response = await teamService.getTeams(page, 20, currentFilters, currentName);
-
-      const teamsFromApi: Team[] = response.content.map(team => ({
-        ...team,
+      const teamsFromApi: Team[] = response.content.map((team: any) => ({
+        ...team, 
         id: team.id,
-        title: team.name,
+        title: team.name, 
         description: team.description,
         memberCount: team.memberCount, 
-        members: team.memberNames.map(name => ({
+        
+        members: (team.memberNames || []).map((name: string) => ({
           name,
           initials: getInitialsFromName(name),
         })),
-        createdAt: new Date(),
+        
+        createdAt: team.createdAt || new Date().toISOString(),
       }));
 
-      if (isRefreshing) {
-        setTeams(teamsFromApi);
-      } else {
-        setTeams(prev => [...prev, ...teamsFromApi]);
-      }
-      
-      setCurrentPage(page + 1);
-      setHasMoreTeams(!response.last);
-    } catch (error) {
-      if (isRefreshing) {
-        setTeams([]);
-        setCurrentPage(0);
-        setHasMoreTeams(false);
-      }
-    } finally {
-      if (isRefreshing) {
-        setRefreshingTeams(false);
-      } else {
-        setLoadingTeams(false);
-      }
-    }
-  }, []); 
+      return {
+        teams: teamsFromApi,
+        nextPage: response.last ? undefined : pageParam + 1,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+    enabled: isAuthenticated,
+    
+    staleTime: 1000 * 60 * 5, // 5 minutos 
+    gcTime: 1000 * 60 * 10,   // 10 minutos 
+  });
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchTeams(0, filters, nameFilter);
-    } else {
-      setTeams([]);
-      setCurrentPage(0);
-      setHasMoreTeams(true);
-    }
-  }, [isAuthenticated, filters, nameFilter, fetchTeams]);
+  const teams = useMemo(() => {
+    const allTeams = data?.pages.flatMap(page => page.teams) ?? [];
+    return [...new Map(allTeams.map(t => [t.id, t])).values()];
+  }, [data]);
 
-  
   const refreshTeams = useCallback(() => {
-    fetchTeams(0, filters, nameFilter);
-  }, [fetchTeams, filters, nameFilter]);
+    refetch();
+  }, [refetch]);
   
   const loadMoreTeams = useCallback(() => {
-    if (hasMoreTeams && !loadingTeams && !refreshingTeams) {
-      fetchTeams(currentPage, filters, nameFilter);
+    if (hasNextPage && !isFetchingNextPage && !isRefetching) {
+      fetchNextPage();
     }
-  }, [hasMoreTeams, loadingTeams, refreshingTeams, currentPage, filters, nameFilter, fetchTeams]);
+  }, [hasNextPage, isFetchingNextPage, isRefetching, fetchNextPage]);
 
   const applyFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
-    setCurrentPage(0);
   }, []);
 
   const clearFilters = useCallback(() => {
     setFilters({});
     setNameFilter('');
-    setCurrentPage(0);
   }, []);
   
   const searchByName = useCallback((name: string) => {
     setNameFilter(name);
-    setCurrentPage(0);
   }, []);
-
 
   return {
     teams,
-    loadingTeams,
-    refreshingTeams,
-    hasMoreTeams,
+    
+    initialLoading: isLoading,
+    
+    loadingTeams: isFetchingNextPage,
+    
+    refreshingTeams: isRefetching && !isLoading && !isFetchingNextPage,
+    
+    hasMoreTeams: hasNextPage ?? false,
     loadMoreTeams,
     refreshTeams,
-    setTeams,
+    setTeams: () => {}, 
     applyFilters,
     clearFilters,
     searchByName,

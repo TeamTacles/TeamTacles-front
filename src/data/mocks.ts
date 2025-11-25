@@ -14,7 +14,7 @@ export const MOCK_TEAMS: Team[] = [
             { name: 'Túlio Santos', initials: 'TS' },
             { name: 'Luana Marques', initials: 'LM' }
         ],
-        createdAt: new Date('2025-08-15T10:00:00Z'),
+        createdAt: new Date('2025-08-15T10:00:00Z').toISOString(),
         memberCount: 5,
         memberNames: ['Caio Dib', 'João Victor', 'Ana Mello', 'Túlio Santos', 'Luana Marques']
     },
@@ -27,7 +27,7 @@ export const MOCK_TEAMS: Team[] = [
             { name: 'Sofia Costa', initials: 'SC' },
             { name: 'Felipe Garcia', initials: 'FG' }
         ],
-        createdAt: new Date('2025-09-20T11:30:00Z'),
+        createdAt: new Date('2025-09-20T11:30:00Z').toISOString(),
         memberCount: 3,
         memberNames: ['Pedro Ramos', 'Sofia Costa', 'Felipe Garcia']
     },
@@ -39,7 +39,7 @@ export const MOCK_TEAMS: Team[] = [
             { name: 'Mariana Costa', initials: 'MC' },
             { name: 'Daniel Almeida', initials: 'DA' }
         ],
-        createdAt: new Date('2025-10-01T15:00:00Z'),
+        createdAt: new Date('2025-10-01T15:00:00Z').toISOString(),
         memberCount: 2,
         memberNames: ['Mariana Costa', 'Daniel Almeida']
     }
@@ -56,7 +56,7 @@ export const MOCK_USER_TEAMS: Team[] = [
             { name: 'João Victor', initials: 'JV' },
             { name: 'Ana Mello', initials: 'AM' }
         ],
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
         memberCount: 3,
         memberNames: ['Caio Dib', 'João Victor', 'Ana Mello']
     },
@@ -68,7 +68,7 @@ export const MOCK_USER_TEAMS: Team[] = [
             { name: 'Pedro Ramos', initials: 'PR' },
             { name: 'Sofia Costa', initials: 'SC' }
         ],
-        createdAt: new Date(),
+        createdAt: new Date().toISOString(),
         memberCount: 2,
         memberNames: ['Pedro Ramos', 'Sofia Costa']
     },

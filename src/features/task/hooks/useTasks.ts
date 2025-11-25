@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { taskService, UserTaskApiResponse } from '../services/taskService';
 import { getErrorMessage } from '../../../utils/errorHandler';
 import { Task } from '../../../types/entities';
@@ -19,82 +20,52 @@ const mapApiResponseToTask = (apiTask: UserTaskApiResponse): Task => ({
 
 
 export function useTasks(isAuthenticated: boolean) {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMoreTasks, setHasMoreTasks] = useState(true);
-  const [loadingTasks, setLoadingTasks] = useState(false);
-  const [refreshingTasks, setRefreshingTasks] = useState(false);
   const [filters, setFilters] = useState<Filters>({});
   const [titleFilter, setTitleFilter] = useState('');
 
-  const fetchTasks = useCallback(async (page: number, currentFilters: Filters, currentTitle: string) => {
-    const isRefreshing = page === 0;
-    
-    if (!isRefreshing && !hasMoreTasks) {
-        return; // Sai se não for refresh e não houver mais páginas
-    }
-  
-     if (loadingTasks || refreshingTasks) {
-         return;
-     }
-
-
-    if (isRefreshing) {
-      setRefreshingTasks(true);
-      setLoadingTasks(false); 
-    } else {
-      setLoadingTasks(true);
-      setRefreshingTasks(false); 
-    }
-
-    try {
-      const pageToFetch = isRefreshing ? 0 : page;
-      const response = await taskService.getMyTasks(pageToFetch, 20, currentFilters, currentTitle);
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isRefetching,
+    isLoading,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ['tasks', filters, titleFilter],
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await taskService.getMyTasks(pageParam, 20, filters, titleFilter);
       const tasksFromApi = response.content.map(mapApiResponseToTask);
 
-      setTasks(prevTasks => (isRefreshing ? tasksFromApi : [...prevTasks, ...tasksFromApi]));
-      setHasMoreTasks(!response.last);
-      setCurrentPage(pageToFetch + 1);
+      return {
+        tasks: tasksFromApi,
+        nextPage: response.last ? undefined : pageParam + 1,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+    enabled: isAuthenticated, 
+    staleTime: 1000 * 60 * 5, // 5 minutos para evitar refetch desnecessário
+    gcTime: 1000 * 60 * 10,   // 10 minutos para manter o cache na memória
+  });
 
-    } catch (error) {
-      if (isRefreshing) {
-          setTasks([]);
-          setCurrentPage(0);
-          setHasMoreTasks(true);
-      }
-    } finally {
-      setRefreshingTasks(false);
-      setLoadingTasks(false);
-    }
-    
-  }, [isAuthenticated, filters, titleFilter]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-       setTasks([]); 
-       setCurrentPage(0); 
-       setHasMoreTasks(true); 
-       fetchTasks(0, filters, titleFilter); 
-    } else {
-      setTasks([]);
-      setCurrentPage(0);
-      setHasMoreTasks(true);
-    }
-  }, [isAuthenticated, filters, titleFilter]); 
+  const tasks = useMemo(() => {
+    const allTasks = data?.pages.flatMap(page => page.tasks) ?? [];
+    return [...new Map(allTasks.map(t => [t.id, t])).values()];
+  }, [data]);
 
   const refreshTasks = useCallback(() => {
-    fetchTasks(0, filters, titleFilter);
-  }, [fetchTasks, filters, titleFilter]);
+    refetch();
+  }, [refetch]);
 
   const loadMoreTasks = useCallback(() => {
-    if (hasMoreTasks && !loadingTasks && !refreshingTasks) {
-      fetchTasks(currentPage, filters, titleFilter);
+    if (hasNextPage && !isFetchingNextPage && !isRefetching) {
+      fetchNextPage();
     }
-  }, [hasMoreTasks, loadingTasks, refreshingTasks, currentPage, filters, titleFilter, fetchTasks]); 
+  }, [hasNextPage, isFetchingNextPage, isRefetching, fetchNextPage]);
 
   const applyFilters = useCallback((newFilters: Filters) => {
     setFilters(newFilters);
-    
   }, []);
 
   const clearFilters = useCallback(() => {
@@ -108,9 +79,14 @@ export function useTasks(isAuthenticated: boolean) {
 
   return {
     tasks,
-    loadingTasks,
-    refreshingTasks,
-    hasMoreTasks,
+    
+    initialLoading: isLoading,
+    
+    loadingTasks: isFetchingNextPage,
+    
+    refreshingTasks: isRefetching && !isLoading && !isFetchingNextPage,
+    
+    hasMoreTasks: hasNextPage ?? false,
     loadMoreTasks,
     refreshTasks,
     applyFilters,

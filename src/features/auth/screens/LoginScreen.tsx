@@ -7,7 +7,10 @@ import { useAppContext } from "../../../contexts/AppContext";
 import { LoginData } from "../../../types/auth";
 import { getErrorMessage } from "../../../utils/errorHandler";
 import { ErrorCode } from "../../../types/api";
-import { resendVerification } from "../services/authService";
+import { resendVerification, login } from "../services/authService";
+import { userService } from "../../user/services/userService";
+import api from "../../../api/api";
+import { getInitialsFromName } from "../../../utils/stringUtils";
 
 import { MainButton } from "../../../components/common/MainButton";
 import { InputsField } from "../../../components/common/InputsField";
@@ -47,7 +50,23 @@ export const LoginScreen = () => {
         setIsLoading(true);
         try {
             const credentials: LoginData = { email: trimmedEmail, password: trimmedPassword };
-            await signIn(credentials);
+            const authResponse = await login(credentials);
+            
+            // Adiciona token ao header para a próxima requisição
+            if (authResponse.token) {
+                api.defaults.headers.Authorization = `Bearer ${authResponse.token}`;
+            }
+            
+            const userData = await userService.getCurrentUser();
+            
+            // Adiciona name e initials se não existirem
+            const userDataComplete = {
+                ...userData,
+                name: userData.name || userData.username || 'User',
+                initials: userData.initials || getInitialsFromName(userData.username || userData.name || 'U'),
+            };
+            
+            await signIn(userDataComplete, authResponse.token);
 
         } catch (error) {
             // Verifica se é erro de conta não verificada

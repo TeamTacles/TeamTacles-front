@@ -1,86 +1,66 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { projectService, ProjectMember } from '../services/projectService';
 import { useNotification } from '../../../contexts/NotificationContext';
 
 export function useProjectMembers(projectId: number) {
   const { showNotification } = useNotification();
+  const queryClient = useQueryClient();
 
-  const [members, setMembers] = useState<ProjectMember[]>([]);
-  const [loadingMembers, setLoadingMembers] = useState(false);
-  const [refreshingMembers, setRefreshingMembers] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const isFetching = useRef(false);
+ 
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading: initialLoading,
+    isRefetching: refreshingMembers,
+    refetch
+  } = useInfiniteQuery({
+    queryKey: ['project-members', projectId], 
+    queryFn: async ({ pageParam = 0 }) => {
+      const response = await projectService.getProjectMembers(projectId, pageParam, 10);
+      return {
+        members: response.content,
+        nextPage: response.last ? undefined : pageParam + 1,
+      };
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 0,
+    enabled: !!projectId, // Só busca se tiver ID
+    
+    staleTime: 1000 * 60 * 5, // 5 minutos
+    gcTime: 1000 * 60 * 10,   // 10 minutos
+  });
 
-  const fetchMembers = useCallback(async (page: number, isInitialLoad = false, isRefresh = false) => {
-    if (isFetching.current) return;
-    if (!hasMore && !isInitialLoad && !isRefresh) return;
-
-    isFetching.current = true;
-
-    if (isInitialLoad) {
-        setInitialLoading(true);
-    } else if (isRefresh) {
-        setRefreshingMembers(true);
-    } else {
-        setLoadingMembers(true);
-    }
-
-    try {
-      const pageToFetch = isInitialLoad || isRefresh ? 0 : page;
-      const response = await projectService.getProjectMembers(projectId, pageToFetch, 10);
-      const membersFromApi = response.content;
-
-      setMembers(prev => {
-          const currentMembers = (isInitialLoad || isRefresh) ? [] : prev;
-          const existingIds = new Set(currentMembers.map(m => m.userId));
-          const newMembers = membersFromApi.filter(m => !existingIds.has(m.userId));
-          return [...currentMembers, ...newMembers];
-      });
-
-      setHasMore(!response.last);
-      setCurrentPage(pageToFetch + 1);
-
-    } catch (error) {
-      showNotification({ type: 'error', message: 'Erro ao carregar membros.' });
-       if(isInitialLoad || isRefresh){
-           setMembers([]);
-           setCurrentPage(0);
-           setHasMore(true);
-       }
-    } finally {
-       if (isInitialLoad) {
-           setInitialLoading(false);
-       } else if (isRefresh) {
-           setRefreshingMembers(false);
-       } else {
-           setLoadingMembers(false);
-       }
-       isFetching.current = false;
-    }
-  }, [projectId, hasMore, showNotification]);
-
-  useEffect(() => {
-    fetchMembers(0, true);
-  }, [projectId, fetchMembers]);
+  const members = useMemo(() => {
+    const allMembers = data?.pages.flatMap(page => page.members) ?? [];
+    return [...new Map(allMembers.map(m => [m.userId, m])).values()];
+  }, [data]);
 
   const handleRefresh = useCallback(() => {
-    fetchMembers(0, false, true);
-  }, [fetchMembers]);
+    refetch();
+  }, [refetch]);
 
   const handleLoadMore = useCallback(() => {
-    if (hasMore && !loadingMembers && !refreshingMembers && !initialLoading && !isFetching.current) {
-        fetchMembers(currentPage);
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
-  }, [hasMore, loadingMembers, refreshingMembers, initialLoading, currentPage, fetchMembers]);
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const setMembers = (updater: (prev: ProjectMember[]) => ProjectMember[]) => {
+      queryClient.invalidateQueries({ queryKey: ['project-members', projectId] });
+      
+  };
 
   return {
     members,
-    setMembers,
-    loadingMembers,
-    refreshingMembers,
-    initialLoading,
+    setMembers, 
+    
+    loadingMembers: isFetchingNextPage, 
+    initialLoading, 
+    refreshingMembers: !!refreshingMembers, 
+    
     handleRefresh,
     handleLoadMore,
   };

@@ -45,9 +45,17 @@ export interface Team {
   description: string;
   teamRole?: 'OWNER' | 'ADMIN' | 'MEMBER';
   members: Member[];
-  createdAt: Date | number;
+  createdAt: string;
   memberCount: number;
   memberNames: string[];
+}
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  initials: string; 
+  username?: string;
 }
 
 export type TeamType = Team;
