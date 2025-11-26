@@ -18,6 +18,7 @@ import { TaskCompletionModal } from '../components/TaskCompletionModal';
 import NotificationPopup, { NotificationPopupRef } from '../../../components/common/NotificationPopup';
 import TimeAgo from '../../../components/TimeAgo';
 import { projectService } from '../../project/services/projectService';
+import { useProjectMembers } from '../../project/hooks/useProjectMembers';
 
 import { useAppContext } from '../../../contexts/AppContext';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -97,12 +98,7 @@ export const TaskDetailScreen = () => {
         staleTime: 1000 * 60 * 10,
     });
 
-    const { data: membersResponse } = useQuery({
-        queryKey: ['project-members', projectId],
-        queryFn: () => projectService.getProjectMembers(projectId, 0, 100),
-        staleTime: 1000 * 60 * 5,
-    });
-    const projectMembers = membersResponse?.content || [];
+    const { members: projectMembers, initialLoading: loadingMembers } = useProjectMembers(projectId);
 
     const projectRole = projectRoleFromNav || projectData?.projectRole;
 
