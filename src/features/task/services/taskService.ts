@@ -48,6 +48,7 @@ export interface TaskUpdateStatusResponse {
     title: string;
     description: string;
     status: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
+    originalStatus?: 'TO_DO' | 'IN_PROGRESS' | 'DONE';
     createdAt: string; 
     dueDate: string; 
     completedAt?: string; 

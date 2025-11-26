@@ -56,6 +56,7 @@ export interface User {
   email: string;
   initials: string; 
   username?: string;
+  onboardingCompleted?: boolean;
 }
 
 export type TeamType = Team;
