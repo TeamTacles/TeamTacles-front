@@ -297,7 +297,7 @@ export const TaskDetailScreen = () => {
 
     if (loadingTask || !task) {
         return (
-            <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+            <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
                 <Header userProfile={userProfileForHeader} onPressProfile={handleProfilePress} notificationCount={0} onPressNotifications={() => { }} />
                 <View style={styles.loadingView}><ActivityIndicator size="large" color="#EB5F1C" /></View>
             </SafeAreaView>
@@ -305,7 +305,7 @@ export const TaskDetailScreen = () => {
     }
 
     return (
-        <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <SafeAreaView style={styles.container} edges={['top', 'left', 'right', 'bottom']}>
             <Header userProfile={userProfileForHeader} onPressProfile={handleProfilePress} notificationCount={0} onPressNotifications={() => { }} />
 
             <View style={styles.pageHeader}>
