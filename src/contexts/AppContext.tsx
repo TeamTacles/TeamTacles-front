@@ -28,16 +28,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const queryClient = useQueryClient(); 
 
-  // Função auxiliar para limpar TUDO (Use apenas para testes se necessário)
-  // const clearAllData = async () => await AsyncStorage.clear();
-
   const signOut = useCallback(async () => {
     try {
       delete api.defaults.headers.Authorization;
       await AsyncStorage.removeItem('@TeamTacles:user');
       await AsyncStorage.removeItem('@TeamTacles:token');
       
-      // Resetamos o estado do pós-login ao sair
       setShowPostLoginOnboarding(false);
 
       queryClient.clear(); 
@@ -56,8 +52,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     async function loadStorageData() {
       try {
-        // DICA: Descomente a linha abaixo UMA VEZ para resetar seu emulador e testar o Pre-Onboarding, depois comente de novo.
-        // await AsyncStorage.removeItem('@TeamTacles:onboardingComplete');
 
         const storedUser = await AsyncStorage.getItem('@TeamTacles:user');
         const storedToken = await AsyncStorage.getItem('@TeamTacles:token');
@@ -73,7 +67,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           const parsedUser: User = JSON.parse(storedUser);
           setUser(parsedUser);
 
-          // Lógica Robusta: Mostra se NÃO for true (cobre false, null e undefined)
           const shouldShowPostLogin = !parsedUser.onboardingCompleted;
           console.log('[DEBUG] Post-Login Check (Storage):', { 
               statusNoBanco: parsedUser.onboardingCompleted, 
@@ -83,7 +76,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           setShowPostLoginOnboarding(shouldShowPostLogin);
         }
         
-        // Se onboardingComplete for diferente de 'true', mostramos os slides iniciais
         setShowOnboarding(onboardingComplete !== 'true');
 
       } catch (error) {
@@ -99,12 +91,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const signIn = async (userData: User, token: string) => {
     try {
       await AsyncStorage.setItem('@TeamTacles:token', token);
-      // Salvamos o user COMPLETO (incluindo o campo onboardingCompleted)
       await AsyncStorage.setItem('@TeamTacles:user', JSON.stringify(userData));
       
       api.defaults.headers.Authorization = `Bearer ${token}`;
       
-      // Lógica Robusta: Se não é true, mostra.
       const shouldShowPostLogin = !userData.onboardingCompleted;
       console.log('[DEBUG] Post-Login Check (SignIn):', { 
           statusNoBanco: userData.onboardingCompleted, 
@@ -128,7 +118,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  // PRE-ONBOARDING: App Intro Slides
   const completeOnboarding = async () => {
     try {
       await AsyncStorage.setItem('@TeamTacles:onboardingComplete', 'true');
@@ -138,13 +127,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
-  // POST-LOGIN: Tutorial do Usuário
   const completePostLoginOnboarding = async () => {
     try {
-      // 1. Atualiza no Backend
       const updatedUserFromApi = await userService.completeOnboarding();
       
-      // 2. Atualiza Contexto e Storage Local para garantir sincronia
       if (user) {
           const userAtualizado = { ...user, ...updatedUserFromApi, onboardingCompleted: true };
           
@@ -152,12 +138,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           await AsyncStorage.setItem('@TeamTacles:user', JSON.stringify(userAtualizado));
       }
 
-      // 3. Fecha a tela
       setShowPostLoginOnboarding(false);
       
     } catch (error) {
       console.error("Erro ao salvar tutorial pós-login no backend:", error);
-      // Mesmo com erro de rede, fechamos para não travar o usuário (ele verá de novo no próximo login se o banco não atualizou)
       setShowPostLoginOnboarding(false);
     }
   };
