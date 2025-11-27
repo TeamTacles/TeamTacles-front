@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MainButton } from '../../../components/common/MainButton';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { ConfirmationModal } from '../../../components/common/ConfirmationModal';
@@ -30,6 +31,7 @@ const roleTranslations: Record<MemberData['role'], string> = {
 export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visible, member, currentUserRole, onClose, onSave, onDelete }) => {
     const [selectedRole, setSelectedRole] = useState<MemberData['role']>('MEMBER');
     const [isPickerVisible, setPickerVisible] = useState(false);
+    const insets = useSafeAreaInsets();
     const [isConfirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
     const isInitialized = useRef(false);
 
@@ -125,7 +127,7 @@ export const EditMemberRoleModal: React.FC<EditMemberRoleModalProps> = ({ visibl
                     onRequestClose={() => setPickerVisible(false)}
                 >
                     <TouchableOpacity style={styles.pickerCenteredView} activeOpacity={1} onPressOut={() => setPickerVisible(false)}>
-                        <View style={styles.pickerModalView}>
+                        <View style={[styles.pickerModalView, { paddingBottom: insets.bottom }]}>
                             <Text style={styles.pickerTitle}>Selecione um Cargo</Text>
                             {ROLES.filter(role => role !== 'OWNER').map((role) => (
                                 <TouchableOpacity key={role} style={styles.pickerItem} onPress={() => handleSelectRole(role)}>

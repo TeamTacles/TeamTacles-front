@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, StyleProp, ViewStyle } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -32,6 +32,7 @@ export const FilterPicker: React.FC<FilterPickerProps> = ({
   selectedColorOverride,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const selectedItem = items.find(item => item.value === selectedValue);
   const selectedItemLabel = selectedLabelOverride ?? selectedItem?.label ?? placeholder;
@@ -61,7 +62,7 @@ export const FilterPicker: React.FC<FilterPickerProps> = ({
 
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <TouchableOpacity style={styles.bottomSheetOverlay} activeOpacity={1} onPressOut={() => setModalVisible(false)}>
-          <View style={styles.bottomSheetView}>
+          <View style={[styles.bottomSheetView, { paddingBottom: insets.bottom }]}>
             <Text style={styles.modalTitle}>{`Selecione um ${label}`}</Text>
             <FlatList
               data={items}
@@ -75,7 +76,6 @@ export const FilterPicker: React.FC<FilterPickerProps> = ({
             <TouchableOpacity style={[styles.itemButton, styles.cancelButton]} onPress={() => setModalVisible(false)}>
               <Text style={[styles.itemText, styles.cancelText]}>Cancelar</Text>
             </TouchableOpacity>
-            <SafeAreaView edges={['bottom']} />
           </View>
         </TouchableOpacity>
       </Modal>
