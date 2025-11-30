@@ -36,7 +36,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       
       setShowPostLoginOnboarding(false);
 
-      queryClient.clear(); 
+      queryClient.clear(); //  resolve o erro  de salvar dados do login anterior quando o usuario faz logout e loga novamente
       await AsyncStorage.removeItem('REACT_QUERY_OFFLINE_CACHE');
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
